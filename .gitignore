@@ -1,0 +1,9 @@
+# Local agent pointer files — keep this template agent-agnostic.
+# If you want a per-agent pointer to AGENTS.md (e.g. for Claude Code / Cowork),
+# create it locally; it won't be tracked here.
+CLAUDE.md
+CODEX.md
+GEMINI.md
+
+# macOS
+.DS_Store

@@ -2,7 +2,9 @@
 
 Prepend new session notes to the top of this file.
 
-Rotation policy: keep the current month's entries here; rotate older entries to [`work_log_archive.md`](work_log_archive.md) at the start of each month (or whenever this file grows past roughly 200-300 lines). Last rotation: [YYYY-MM-DD].
+Rotation policy: the live log holds at most the **5 most recent unique calendar dates**. When a new date would push the file past 5 unique dates, move the oldest 5 dates as a chunk into a new file at `work_log_archive/work_log_<earliest>_to_<latest>.md`. The live file always holds at most 5 unique dates; each archive file always holds exactly 5.
+
+If today's date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it rather than starting a second `## YYYY-MM-DD` header for the same date.
 
 <!--
 Each session entry follows this shape:

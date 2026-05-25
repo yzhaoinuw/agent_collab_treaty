@@ -31,11 +31,10 @@ Describe the path from "user invokes the app" to "result". List each layer brief
 ```text
 project_root/
 |- AGENTS.md
-|- CLAUDE.md
 |- project_overview.md
 |- next_steps.md
 |- work_log.md
-|- work_log_archive.md
+|- work_log_archive/
 |- README.md
 |- [src/ or app/ or lib/]
 |- [tests/]

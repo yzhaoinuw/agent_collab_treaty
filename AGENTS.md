@@ -2,6 +2,10 @@
 
 This file is the first thing any agent (Claude, Codex, or other) should read when joining a session on this repo. It defines the runtime, the common tasks, the conventions, and the project-specific reminders. Keep it short and current.
 
+## Startup Rule
+
+At the beginning of a new chat or agent session for this project, read this file first and do not automatically read every markdown file in the repository. Use the [Documentation](#documentation) map below to decide which other files are relevant to the current task.
+
 ## Runtime Environment
 
 When running code, tests, or the application for this repository, use:
@@ -50,15 +54,50 @@ Pre-flight checklist before committing:
 
 If the change touches active modules, confirm imports still work — the smoke tests in `[tests/test_smoke.py or equivalent]` cover this.
 
-Fetch recent work log context efficiently — instead of reading the full file, grep the date anchors and read just the slice you need:
+## Branch Handoff Discipline
+
+Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.
+
+Do not switch to the integration branch (`[main]` — replace with your project's integration branch, often `main`, `master`, or `dev`) or start new work on another branch while important experimental-branch changes are only local, unmerged, or unverified. If related work accidentally lands on the integration branch, move that work back onto the experimental branch first and retest the combined behavior there before updating the integration branch.
+
+Useful checks before switching or merging (portable git commands; run in any shell):
 
 ```
-grep -nE '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md
+git status --short --branch
+git log --oneline --left-right --cherry-pick [main]...HEAD
+git merge-base --is-ancestor [main] HEAD
 ```
 
-Take the line numbers of the first N entries you want, then read from the first one through just before entry N+1. `work_log_archive.md` uses the same convention for older entries. The same anchor-grep pattern works for any structured Markdown doc in the repo (`project_overview.md`, `next_steps.md`) — `grep -n '^## ' <file>` for the section map, then a targeted slice read rather than loading the whole file.
+## Documentation
 
-See [`project_overview.md`](project_overview.md) for the active vs. legacy code map before touching anything substantial.
+Read these documents only as needed. The map below names each file and when it's worth opening.
+
+- `work_log.md` and `work_log_archive/`
+  - Use when the task needs recent implementation history, experiment outcomes, or verification breadcrumbs.
+  - The live `work_log.md` holds at most the 5 most recent unique calendar dates. Default to reading only the two most recent dated entries.
+  - Find date anchors with ripgrep and read only the slice you need:
+    `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md`
+  - When older context is needed, open the matching file under `work_log_archive/` by its date-range filename, or grep across both at once:
+    `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md work_log_archive/`
+  - When prepending a dated entry, if today's calendar date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it. Do not start a second `## YYYY-MM-DD` header for the same date.
+  - When prepending a new date would push the live log past 5 unique calendar dates, move the oldest 5 dates as a chunk into a new file at `work_log_archive/work_log_<earliest>_to_<latest>.md`. The live file always holds at most 5 unique dates; each archive file always holds exactly 5.
+
+- `next_steps.md`
+  - Use when planning or continuing unfinished work from previous sessions.
+  - The "Currently Hot" pointer at the top names the active threads — read it first to know what's in flight.
+  - Remove items after they are completed. Add new planned follow-ups when they become concrete.
+
+- `project_overview.md`
+  - Use when onboarding to the codebase structure or when a task touches an unfamiliar area.
+  - The "What Looks Active vs. Legacy" section is the single most important map before editing — many repos accumulate parallel implementations, and this section keeps an agent from editing the wrong file.
+
+- `README.md`
+  - Use when changing user-facing setup, packaging, usage, or input-file expectations.
+
+- `CONTRIBUTING.md` (if present)
+  - Use when changing collaboration workflow, branch/test expectations, or documentation conventions.
+
+The same anchor-grep pattern works for any structured Markdown doc in the repo — `grep -n '^## ' <file>` for the section map, then a targeted slice read rather than loading the whole file.
 
 ## Git Ownership Note
 
