@@ -64,7 +64,7 @@ pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
 
 ### Option 3 — just copy the files
 
-Old-school: copy the root-level Markdown files (`AGENTS.md`, `work_log.md`, `next_steps.md`, `project_overview.md`, `work_log_archive/`) from this repo into your project and fill in the `[...]` placeholders by hand.
+Old-school: copy from the [`template/`](template/) directory of this repo into your project — **not** the repo root, which holds the treaty's own dogfooded versions (real session entries, real next-steps threads). The `template/AGENTS.md.jinja` file uses Jinja markers like `{{ integration_branch }}`; replace those by hand with your values and rename to `AGENTS.md`. The other files (`work_log.md`, `next_steps.md`, `project_overview.md`, `work_log_archive/`) are plain Markdown — copy as-is and fill in the `[...]` bracket placeholders.
 
 Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 

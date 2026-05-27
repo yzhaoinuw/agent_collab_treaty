@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Disentangle dogfooded root files from the shipped template; populate real next-steps threads (claude-opus-4-7)
+
+- Clarified the architectural seam between the **shipped template** (`template/`) and the **dogfooded root files** (this repo applying the treaty to itself): the root holds real session entries and real next-steps threads, the template holds pristine placeholders.
+- Fixed `README.md` Option 3 ("just copy the files") — previously pointed at the repo root, which would have leaked our dogfooded content into anyone doing a manual copy. Now points at `template/` and notes the `AGENTS.md.jinja` markers users need to fill in.
+- Replaced the placeholder `next_steps.md` at the repo root with three real threads tracking the deliberately-deferred follow-ups from the MVP installer PR: Publish to PyPI, Per-agent pointer files in `treaty init`, and `treaty validate`. Each thread carries the model attribution (`claude-opus-4-7`) per the metadata convention.
+- Committed and pushed directly to `main` (no PR) per the user's note that this is a single-contributor repo with Claude as the agent; the change is doc-only and the user explicitly authorized it.
+- Verification:
+  - `git diff` to confirm only `README.md`, `next_steps.md`, and `work_log.md` changed
+  - manual read of the rendered `next_steps.md` to confirm the "Currently Hot" anchors match the section headings below
+
 ### Fix `treaty update` end-to-end: add answers-file template + overwrite flag (claude-opus-4-7)
 
 - Added `template/.copier-answers.yml.jinja` — required by Copier to persist the recorded source + commit ref + user answers into the rendered project. Without it, `.copier-answers.yml` was never written, so `treaty update` had no anchor and would fail.
