@@ -9,9 +9,11 @@ Active threads — read these first to know what work is in flight:
 - [Thread A — short name and link to its section below, plus the single most important next action]
 - [Thread B — same format]
 
+When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
+
 Other sections below are background or paused; treat them as reference unless a new request reopens them.
 
-## [Thread A name]
+## [Thread A name] (model, effort, tokens if known)
 
 Status: [implemented and validated / in progress / paused / blocked]
 
