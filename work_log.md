@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Add opt-in agent pointer files to treaty init (gpt-5)
+
+- Added an `agent_pointers` Copier multiselect so `treaty init` can optionally generate tool-specific pointers while keeping the default install vendor-neutral.
+- Added conditional templates for `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml`, all pointing back to `AGENTS.md` as the shared treaty.
+- Updated README, project overview, root agent guidance, and `next_steps.md` to document the new pointer behavior and mark the pointer-file thread complete.
+- Verification:
+  - reviewed current official guidance for Claude Code `CLAUDE.md` imports, Cursor project rules / `AGENTS.md`, Windsurf rules / `AGENTS.md`, Aider always-read conventions, and Copier multiselect/exclude behavior
+  - `.venv\Scripts\treaty.exe --help`
+  - `.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"`
+  - rendered `treaty init` from a temporary non-git source copy with default answers and confirmed no pointer files or empty pointer directories were emitted
+  - rendered `treaty init` with all `agent_pointers` selected and confirmed `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` were emitted
+
 ### Replace placeholder repo docs with treaty-specific maintainer guidance (gpt-5)
 
 - Rewrote root `AGENTS.md` so future agents get real package/runtime guidance, including the root-vs-template boundary, local smoke-test recipes, release notes, and project-specific reminders.

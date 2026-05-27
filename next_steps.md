@@ -6,29 +6,11 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- **Per-agent pointer files in `treaty init`** — auto-generate `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurfrules`, etc. based on a multiselect prompt. See [Per-agent pointer files in init](#per-agent-pointer-files-in-init-claude-opus-4-7).
 - **`treaty validate`** — lint work_log entries against the documented format and rotation policy. See [`treaty validate`](#treaty-validate-claude-opus-4-7).
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 
 Other sections below are background or paused; treat them as reference unless a new request reopens them.
-
-## Per-agent pointer files in init (claude-opus-4-7)
-
-Status: proposed
-
-The MVP `treaty init` doesn't generate per-agent pointer files — the post-install message just tells users to set them up manually. That defeats part of the original value prop: "agents automatically follow the treaty moving forward."
-
-Proposed plan:
-
-- Add a multiselect `agents` question to `copier.yml` with choices: `claude-code`, `cursor`, `windsurf`, `aider`. (Codex doesn't need a pointer file — it reads `AGENTS.md` natively.)
-- For each selected agent, conditionally render the right pointer file using Copier's filename-templating pattern: `{% if "claude-code" in agents %}CLAUDE.md.jinja{% endif %}`.
-- Pointer file contents should be minimal — a one-liner pointing at `AGENTS.md` is plenty.
-
-Remaining work:
-
-- Confirm the exact filenames and paths each agent looks for: Cursor's `.cursor/rules/*.mdc` format, Windsurf's `.windsurfrules`, Aider's conventions doc.
-- Decide whether to commit these pointer files by default (currently the repo's `.gitignore` excludes `CLAUDE.md`/`CODEX.md`/`GEMINI.md` — that policy was about keeping the *treaty repo itself* agent-agnostic, and may not apply to projects that install the treaty).
 
 ## `treaty validate` (claude-opus-4-7)
 

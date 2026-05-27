@@ -3,14 +3,16 @@
 
 _subdirectory: template
 _min_copier_version: "9.0"
+_exclude:
+  - "{% if 'cursor' not in agent_pointers %}.cursor{% endif %}"
+  - "{% if 'windsurf' not in agent_pointers %}.windsurf{% endif %}"
 
 _message_after_copy: |
   Treaty installed. Next steps:
     1. Open AGENTS.md and fill in any remaining bracket-placeholders (env name,
        test/lint commands, project-specific reminders).
-    2. If your agents need a pointer file (CLAUDE.md, .cursor/rules/treaty.mdc,
-       .windsurfrules, etc.), see the "Wiring Up Your Agent" section in the
-       project's README.
+    2. If you selected optional agent pointer files, commit them with the treaty
+       docs so those tools can find AGENTS.md automatically.
     3. Start prepending session notes to work_log.md as you go.
 
 integration_branch:
@@ -27,3 +29,14 @@ test_command:
   type: str
   help: "Command to run the CI-equivalent test suite (e.g. 'pytest' or 'npm test'). Leave blank to fill in later."
   default: ""
+
+agent_pointers:
+  type: yaml
+  multiselect: true
+  help: "Optional agent-specific pointer files to generate so tools that do not natively load AGENTS.md still follow the treaty."
+  choices:
+    "Claude Code / Cowork (CLAUDE.md)": "claude-code"
+    "Cursor project rule (.cursor/rules/treaty.mdc)": "cursor"
+    "Windsurf workspace rule (.windsurf/rules/treaty.md)": "windsurf"
+    "Aider config (.aider.conf.yml)": "aider"
+  default: []
