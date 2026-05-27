@@ -1,141 +1,164 @@
 # Guidelines and Tips for Agents
 
-This file is the first thing any agent (Claude, Codex, or other) should read when joining a session on this repo. It defines the runtime, the common tasks, the conventions, and the project-specific reminders. Keep it short and current.
+This file is the first thing any agent (Claude, Codex, or other) should read when joining a session on this repo. It defines the runtime, common tasks, conventions, and project-specific reminders for maintaining the Agent Collab Treaty package itself.
 
 ## Startup Rule
 
 At the beginning of a new chat or agent session for this project, read this file first and do not automatically read every markdown file in the repository. Use the [Documentation](#documentation) map below to decide which other files are relevant to the current task.
 
+## What This Repo Maintains
+
+This repository publishes `agent-collab-treaty`, a small Python package exposing the `treaty` CLI. The CLI installs and updates a Copier template containing the standard collaboration docs:
+
+- `AGENTS.md`
+- `project_overview.md`
+- `next_steps.md`
+- `work_log.md`
+- `work_log_archive/`
+
+Important boundary: the repo root dogfoods the treaty for this project, while `template/` is the product shipped into user projects. Do not copy root-level `AGENTS.md`, `next_steps.md`, `work_log.md`, or `project_overview.md` into the template unless the change is intentionally part of the installable treaty.
+
 ## Runtime Environment
 
-When running code, tests, or the application for this repository, use:
+There is no dedicated conda environment for this repo yet. For local work on Windows, use the base Miniconda Python unless you create a project venv:
 
-- [name of the conda env / virtualenv / nvm version / etc.]
-
-Typical startup:
-
-```
-[activation command — e.g. `conda activate <env>` or `source .venv/bin/activate` or `nvm use`]
+```powershell
+C:\Users\yzhao\miniconda3\python.exe --version
 ```
 
-After activation, use that environment for commands such as:
+For isolated development:
 
-- [test runner, e.g. `pytest` or `npm test`]
-- [app launch, e.g. `python run.py` or `npm run dev`]
-- import checks, one-off scripts, etc.
+```powershell
+C:\Users\yzhao\miniconda3\python.exe -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+The package requires Python 3.10+ and depends on:
+
+- `copier>=9.0`
+- `typer>=0.12`
 
 ## Common Tasks
 
-Short recipes for the things you'll usually do in a session. All commands assume the env above is active.
+Install the package locally in editable mode:
 
-Run the app for manual testing:
-
-```
-[app launch command]
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-Run the test suite (the CI-equivalent subset — skips slow or optional-dependency tests):
+Show the CLI:
 
-```
-[test command — e.g. `pytest -v -m "not slow"` or `npm run test:unit`]
+```powershell
+.\.venv\Scripts\treaty.exe --help
+.\.venv\Scripts\treaty.exe init --help
+.\.venv\Scripts\treaty.exe update --help
+.\.venv\Scripts\treaty.exe validate --help
 ```
 
-Run the full suite, including any slow or optional-dependency tests:
+Smoke-test rendering the template into a scratch directory:
 
+```powershell
+$scratch = Join-Path $env:TEMP "treaty-smoke"
+if (Test-Path $scratch) { Remove-Item -LiteralPath $scratch -Recurse -Force }
+.\.venv\Scripts\treaty.exe init $scratch --source . --defaults --data integration_branch=main --data env_activation="conda activate example" --data test_command="pytest"
+Get-ChildItem $scratch
 ```
-[full test command]
+
+Build distribution artifacts:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install --upgrade build
+.\.venv\Scripts\python.exe -m build
 ```
+
+Run the CI-equivalent checks:
+
+```powershell
+git diff --check
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\treaty.exe --help
+.\.venv\Scripts\treaty.exe validate .
+.\.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"
+```
+
+There is now a small `unittest` suite focused on validation behavior. For CLI/template changes, still use focused smoke tests for the paths you touch and record the exact commands in `work_log.md`.
 
 Pre-flight checklist before committing:
 
-- Formatter / linter is clean (matches the CI format job): `[formatter command]`
-- Test suite is green (matches the CI test job): `[test command]`
-- A new entry has been prepended to `work_log.md` describing what was done (including model + version, effort/thinking mode, and token budget if available), intended profiling signal if any, and the verification commands that were actually run.
-
-If the change touches active modules, confirm imports still work — the smoke tests in `[tests/test_smoke.py or equivalent]` cover this.
+- `git diff --check` is clean.
+- Unit tests and CLI/import smoke tests relevant to the change pass.
+- `treaty validate .` passes for the repo's own dogfooded treaty docs.
+- Template changes were tested by rendering into a scratch directory.
+- User-facing docs (`README.md`, `project_overview.md`, and template docs as applicable) match the behavior.
+- A new entry has been prepended to `work_log.md` describing what was done, including model/version metadata when available and the verification commands actually run.
 
 ## Branch Handoff Discipline
 
-Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.
+The integration branch for this single-maintainer repo is `main`. Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.
 
-Do not switch to the integration branch (`[main]` — replace with your project's integration branch, often `main`, `master`, or `dev`) or start new work on another branch while important experimental-branch changes are only local, unmerged, or unverified. If related work accidentally lands on the integration branch, move that work back onto the experimental branch first and retest the combined behavior there before updating the integration branch.
+Useful checks before switching or merging:
 
-Useful checks before switching or merging (portable git commands; run in any shell):
-
-```
+```powershell
 git status --short --branch
-git log --oneline --left-right --cherry-pick [main]...HEAD
-git merge-base --is-ancestor [main] HEAD
+git log --oneline --left-right --cherry-pick main...HEAD
+git merge-base --is-ancestor main HEAD
 ```
 
 ## Documentation
 
-Read these documents only as needed. The map below names each file and when it's worth opening.
+Read these documents only as needed. The map below names each file and when it is worth opening.
 
 - `work_log.md` and `work_log_archive/`
   - Use when the task needs recent implementation history, experiment outcomes, or verification breadcrumbs.
   - The live `work_log.md` holds at most the 5 most recent unique calendar dates. Default to reading only the two most recent dated entries.
   - Find date anchors with ripgrep and read only the slice you need:
     `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md`
-  - When older context is needed, open the matching file under `work_log_archive/` by its date-range filename, or grep across both at once:
+  - When older context is needed, open the matching file under `work_log_archive/`, or grep across both:
     `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md work_log_archive/`
   - When prepending a dated entry, if today's calendar date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it. Do not start a second `## YYYY-MM-DD` header for the same date.
-  - When prepending a new date would push the live log past 5 unique calendar dates, move the oldest 5 dates as a chunk into a new file at `work_log_archive/work_log_<earliest>_to_<latest>.md`. The live file always holds at most 5 unique dates; each archive file always holds exactly 5.
+  - When prepending a new date would push the live log past 5 unique calendar dates, move the oldest 5 dates as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`.
 
 - `next_steps.md`
   - Use when planning or continuing unfinished work from previous sessions.
-  - The "Currently Hot" pointer at the top names the active threads — read it first to know what's in flight.
-  - Remove items after they are completed. Add new planned follow-ups when they become concrete.
+  - The "Currently Hot" pointer at the top names active threads; read it first.
+  - Remove items after they are completed. Add concrete follow-ups when they become actionable.
 
 - `project_overview.md`
   - Use when onboarding to the codebase structure or when a task touches an unfamiliar area.
-  - The "What Looks Active vs. Legacy" section is the single most important map before editing — many repos accumulate parallel implementations, and this section keeps an agent from editing the wrong file.
+  - The "What Looks Active vs. Legacy" section is the most important map before editing.
 
 - `README.md`
-  - Use when changing user-facing setup, packaging, usage, or input-file expectations.
+  - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
 
-- `CONTRIBUTING.md` (if present)
-  - Use when changing collaboration workflow, branch/test expectations, or documentation conventions.
+- `template/`
+  - Use when changing what `treaty init` installs into downstream projects.
+  - Keep template docs generic and project-agnostic; root docs should stay specific to this repo.
 
-The same anchor-grep pattern works for any structured Markdown doc in the repo — `grep -n '^## ' <file>` for the section map, then a targeted slice read rather than loading the whole file.
+- `copier.yml`
+  - Use when adding or changing questions, defaults, Copier configuration, or post-copy messaging.
+
+- `.github/workflows/`
+  - Use when changing release or TestPyPI publishing behavior.
 
 ## Git Ownership Note
 
-If Git reports a "detected dubious ownership" warning for this repo, mark this repository as safe.
-
-Windows (PowerShell):
+If Git reports a "detected dubious ownership" warning for this repo, mark this repository as safe:
 
 ```powershell
-git config --global --add safe.directory C:/path/to/this/repo
+git config --global --add safe.directory C:/Users/yzhao/python_projects/agent_collab_treaty
 ```
 
-macOS / Linux:
+This is the preferred fix unless repository ownership itself needs to be changed at the OS level.
 
-```bash
-git config --global --add safe.directory "$HOME/path/to/this/repo"
-```
+## Release Notes
 
-This is the preferred fix unless the repository ownership itself needs to be changed at the OS level.
+The package is published as `agent-collab-treaty` on PyPI. Release automation lives in:
 
-## Pre-commit Note
+- `.github/workflows/test-publish.yml` for manual TestPyPI dry-runs.
+- `.github/workflows/release.yml` for `v*` tag pushes to PyPI plus GitHub Release creation.
 
-If your stack uses [pre-commit](https://pre-commit.com) and it cannot write to its default cache location, set a repo-local cache before running it.
-
-Windows (PowerShell):
-
-```powershell
-$env:PRE_COMMIT_HOME = "C:\path\to\this\repo\.pre-commit-cache"
-python -m pre_commit run --all-files
-```
-
-macOS / Linux:
-
-```bash
-export PRE_COMMIT_HOME="$PWD/.pre-commit-cache"
-python -m pre_commit run --all-files
-```
-
-Adjust the formatter / linter invocation for your stack (e.g., `npx lint-staged`, `cargo fmt`, `gofmt -l .`).
+Both workflows use PyPI Trusted Publishing (OIDC). See the README "Releasing to PyPI" section before changing release behavior.
 
 ## Commit Message Guidelines
 
@@ -144,18 +167,12 @@ Commit messages should use:
 - a short title line
 - a short body with flat bullet points for additional requested changes when a commit contains multiple user-requested updates
 
-Commit message bullets should describe high-level added or changed behavior, not implementation details.
-
-For feature commits, mention only the user-facing behavior that was added or changed.
-
-Do not mention tests, docs, project memory updates, or behind-the-scenes implementation details in a feature commit message unless that internal work is itself the main purpose of the commit.
+Commit message bullets should describe high-level added or changed behavior, not implementation details. For feature commits, mention only the user-facing behavior that was added or changed. Do not mention tests, docs, project memory updates, or behind-the-scenes implementation details unless that internal work is itself the main purpose of the commit.
 
 ## Project-Specific Reminders
 
-Add domain-specific gotchas here. These are the things that aren't obvious from reading the code and that an agent would otherwise have to learn the hard way.
-
-Examples (delete and replace with your own):
-
-- [Don't blow away debug breadcrumbs / parameter-rich filenames during pipeline iteration — they're load-bearing for explaining regressions later.]
-- [Migrations must be reviewed against the staging snapshot before merge; the schema in `db/schema.sql` is the source of truth, not the ORM model.]
-- [The `api/v1/` surface is frozen; new endpoints land under `api/v2/`.]
+- Keep the root-vs-template boundary explicit. Root docs are this repo's dogfood state; `template/` is the installable treaty.
+- When changing `template/AGENTS.md.jinja`, also consider whether `README.md`, root `AGENTS.md`, and `project_overview.md` need matching guidance.
+- `treaty update` depends on Copier's answers file in rendered projects. Do not remove or rename `template/.copier-answers.yml.jinja` without testing update behavior.
+- Keep validation checks grounded in the documented treaty shape. If you tighten `treaty validate`, update tests and dogfooded docs in the same change.
+- Local agent pointer files such as `CLAUDE.md`, `CODEX.md`, and `GEMINI.md` are ignored in this repo to keep the package repo vendor-neutral. Downstream pointer files generated by the template are opt-in through the `agent_pointers` Copier question.

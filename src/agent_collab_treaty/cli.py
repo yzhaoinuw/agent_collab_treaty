@@ -97,5 +97,35 @@ def update(
     copier.run_update(dst_path=str(destination), defaults=defaults, overwrite=True)
 
 
+@app.command()
+def validate(
+    path: Path = typer.Argument(
+        Path("."),
+        help="Project directory containing the treaty docs (defaults to the current directory).",
+    ),
+    warn_only: bool = typer.Option(
+        False,
+        "--warn-only",
+        help="Print validation issues but exit successfully.",
+    ),
+) -> None:
+    """Validate installed Agent Collab Treaty docs."""
+
+    from .validation import format_issue, validate_project
+
+    path = path.expanduser().resolve()
+    issues = validate_project(path)
+
+    if not issues:
+        typer.echo("Treaty validation passed.")
+        return
+
+    for issue in issues:
+        typer.echo(format_issue(issue, path), err=True)
+
+    if not warn_only:
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

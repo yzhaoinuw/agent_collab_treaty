@@ -41,6 +41,47 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Add treaty validate CLI and validation tests (gpt-5)
+
+- Added `treaty validate [path]` with strict-by-default validation and a `--warn-only` advisory mode.
+- Added validation checks for required treaty paths, work-log metadata and verification sections, live-log rotation, duplicate date headings, and broken `next_steps.md` Currently Hot anchors.
+- Added focused `unittest` coverage for valid docs, missing work-log metadata/verification, rotation overflow, and broken hot links.
+- Updated README, root agent guidance, project overview, and `next_steps.md` to document `treaty validate` and mark the validation thread complete.
+- Verification:
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  - `.venv\Scripts\treaty.exe validate .`
+  - `.venv\Scripts\treaty.exe --help`
+
+### Add opt-in agent pointer files to treaty init (gpt-5)
+
+- Added an `agent_pointers` Copier multiselect so `treaty init` can optionally generate tool-specific pointers while keeping the default install vendor-neutral.
+- Added conditional templates for `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml`, all pointing back to `AGENTS.md` as the shared treaty.
+- Updated README, project overview, root agent guidance, and `next_steps.md` to document the new pointer behavior and mark the pointer-file thread complete.
+- Verification:
+  - reviewed current official guidance for Claude Code `CLAUDE.md` imports, Cursor project rules / `AGENTS.md`, Windsurf rules / `AGENTS.md`, Aider always-read conventions, and Copier multiselect/exclude behavior
+  - `.venv\Scripts\treaty.exe --help`
+  - `.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"`
+  - rendered `treaty init` from a temporary non-git source copy with default answers and confirmed no pointer files or empty pointer directories were emitted
+  - rendered `treaty init` with all `agent_pointers` selected and confirmed `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` were emitted
+
+### Replace placeholder repo docs with treaty-specific maintainer guidance (gpt-5)
+
+- Rewrote root `AGENTS.md` so future agents get real package/runtime guidance, including the root-vs-template boundary, local smoke-test recipes, release notes, and project-specific reminders.
+- Rewrote root `project_overview.md` to describe the actual Typer/Copier package structure, active runtime path, release automation, current test gap, and open product questions.
+- Verification:
+  - manual read of `AGENTS.md` and `project_overview.md`
+  - `git diff -- AGENTS.md project_overview.md`
+
+### Verify PyPI release and clean active handoff queue (gpt-5)
+
+- Confirmed the user-side PyPI/TestPyPI setup, TestPyPI dry-run, and real `v0.1.0` release are complete.
+- Verified `v0.1.0` is pushed to `origin`, the GitHub Actions TestPyPI and PyPI release runs both completed successfully, the GitHub Release exists with wheel/sdist assets and publish attestations, and both PyPI registries report `agent-collab-treaty` version `0.1.0`.
+- Removed the completed PyPI publish thread from `next_steps.md` so the active queue now only tracks the per-agent pointer-file and `treaty validate` follow-ups.
+- Verification:
+  - `git ls-remote --tags origin` — confirmed remote `v0.1.0` tag exists
+  - `C:\Users\yzhao\miniconda3\python.exe` one-off registry/API probe — confirmed PyPI, TestPyPI, GitHub Actions, and GitHub Release state
+  - fresh `.tmp_pypi_smoke` venv: `pip install agent-collab-treaty==0.1.0`, `treaty --help`, and `import agent_collab_treaty, agent_collab_treaty.cli` all passed
+
 ### Wire up PyPI publishing — LICENSE + release/test-publish workflows + maintainer docs (claude-opus-4-7)
 
 - Added MIT `LICENSE` at the repo root, matching the license metadata already declared in `pyproject.toml`.
