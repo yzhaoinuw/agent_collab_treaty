@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Ship pip-installable `treaty` CLI and Copier template (claude-opus-4-7)
+
+- Added a one-command installer so the treaty can be dropped into any project without manually copying files. After `pipx install agent-collab-treaty`, users run `treaty init` (interactive) or `treaty init --defaults --data key=value ...` (scriptable), and the files land in the current directory with their integration branch / env activation / test command pre-filled.
+- Added `treaty update` to pull upstream treaty refinements back into projects that were previously initialized, without losing local edits.
+- Authored a Copier template at `template/` plus `copier.yml` at the repo root, so the treaty is also usable directly via `pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .` without installing our CLI.
+- Updated `README.md` with three installation paths (CLI, direct Copier, manual copy) so users can pick their level of tooling.
+- Verification:
+  - `pip install -e .` into a fresh venv; `treaty --help` shows the `init` and `update` subcommands
+  - `treaty init <tempdir> --source <repo> --defaults` rendered all 5 docs cleanly with bracket-placeholders intact for empty answers
+  - `treaty init <tempdir> --source <repo> --data integration_branch=trunk --data env_activation='source .venv/bin/activate' --data test_command='npm test' --defaults` substituted all three values into `AGENTS.md` at every expected site (`git checkout trunk`, activation block, test runner / pre-flight test command lines)
+
 ### Review pass on PR #1 — apply fixes and tighten token-budget spec (claude-opus-4-7)
 
 - Reviewed PR #1 against current repo state; applied three fixes on `dev`:
