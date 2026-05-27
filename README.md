@@ -26,10 +26,47 @@ The template is language- and framework-agnostic. It works whether the project i
 
 ## How To Use
 
-1. Copy these files into the root of your repo (excluding this `README.md`, which is for the template itself).
-2. Fill in the placeholders — they're marked `[...]` in each file and are obvious in context.
-3. Commit them. Future agent sessions will read them automatically.
-4. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
+The fastest path is the `treaty` CLI, which scaffolds (and later updates) the treaty files in any project — new or existing.
+
+### Option 1 — install the CLI, then run `treaty init`
+
+```bash
+# isolated install (recommended; requires pipx)
+pipx install agent-collab-treaty
+
+# or in a regular venv
+pip install agent-collab-treaty
+
+# then, from inside the project you want to add the treaty to:
+treaty init
+```
+
+`treaty init` asks a few short questions (integration branch, env activation command, test command) and drops the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing your local edits.
+
+> **Note**: `treaty update` requires the target project to be a git-tracked repo (Copier uses git for three-way merges). If your project isn't a git repo yet, run `git init && git add . && git commit -m "treaty baseline"` once before the first `treaty update`.
+
+Non-interactive use:
+
+```bash
+treaty init . --defaults \
+  --data integration_branch=main \
+  --data env_activation='conda activate myenv' \
+  --data test_command='pytest -v -m "not slow"'
+```
+
+### Option 2 — use Copier directly (no install)
+
+The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/). If you'd rather not install another tool:
+
+```bash
+pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
+```
+
+### Option 3 — just copy the files
+
+Old-school: copy the root-level Markdown files (`AGENTS.md`, `work_log.md`, `next_steps.md`, `project_overview.md`, `work_log_archive/`) from this repo into your project and fill in the `[...]` placeholders by hand.
+
+Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 
 ## Wiring Up Your Agent
 

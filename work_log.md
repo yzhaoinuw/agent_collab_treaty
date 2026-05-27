@@ -41,6 +41,29 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Fix `treaty update` end-to-end: add answers-file template + overwrite flag (claude-opus-4-7)
+
+- Added `template/.copier-answers.yml.jinja` — required by Copier to persist the recorded source + commit ref + user answers into the rendered project. Without it, `.copier-answers.yml` was never written, so `treaty update` had no anchor and would fail.
+- Updated `treaty update` in `cli.py` to pass `overwrite=True` to `copier.run_update`. Without it, Copier refused with `UserMessageError: Enable overwrite to update a subproject.` The destination is already required by Copier to be a git-tracked repo (so the user can review the diff), making overwrite the right default.
+- Documented the `git init` prerequisite in the `treaty update` docstring (Copier requires git in the destination for three-way merges).
+- Verification (full update round-trip in /tmp scratch):
+  - Cloned dev to /tmp/treaty_scratch, added answers template, committed
+  - Init test project from scratch; `.copier-answers.yml` now records `_commit: 5648bc2`, `_src_path`, and all user answers
+  - Made a local edit in test project (`LOCAL_EDIT_SENTINEL` in work_log.md), committed it (Copier requires git-tracked destination)
+  - Modified scratch template (added `UPSTREAM_SENTINEL` section to AGENTS.md.jinja), committed → new HEAD 5857077
+  - Ran `treaty update`: `UPSTREAM_SENTINEL` appeared in test project's AGENTS.md at line 153, `LOCAL_EDIT_SENTINEL` still present in work_log.md at line 44, `_commit` advanced to `5857077`
+
+### Ship pip-installable `treaty` CLI and Copier template (claude-opus-4-7)
+
+- Added a one-command installer so the treaty can be dropped into any project without manually copying files. After `pipx install agent-collab-treaty`, users run `treaty init` (interactive) or `treaty init --defaults --data key=value ...` (scriptable), and the files land in the current directory with their integration branch / env activation / test command pre-filled.
+- Added `treaty update` to pull upstream treaty refinements back into projects that were previously initialized, without losing local edits.
+- Authored a Copier template at `template/` plus `copier.yml` at the repo root, so the treaty is also usable directly via `pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .` without installing our CLI.
+- Updated `README.md` with three installation paths (CLI, direct Copier, manual copy) so users can pick their level of tooling.
+- Verification:
+  - `pip install -e .` into a fresh venv; `treaty --help` shows the `init` and `update` subcommands
+  - `treaty init <tempdir> --source <repo> --defaults` rendered all 5 docs cleanly with bracket-placeholders intact for empty answers
+  - `treaty init <tempdir> --source <repo> --data integration_branch=trunk --data env_activation='source .venv/bin/activate' --data test_command='npm test' --defaults` substituted all three values into `AGENTS.md` at every expected site (`git checkout trunk`, activation block, test runner / pre-flight test command lines)
+
 ### Review pass on PR #1 — apply fixes and tighten token-budget spec (claude-opus-4-7)
 
 - Reviewed PR #1 against current repo state; applied three fixes on `dev`:

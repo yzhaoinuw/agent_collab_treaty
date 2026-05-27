@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-collab-treaty"
+version = "0.1.0"
+description = "Drop-in documentation contract for multi-agent (and human + agent) collaboration on a shared codebase."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Yue Zhao", email = "yzhaoinuw@gmail.com" },
+]
+keywords = ["agents", "claude", "codex", "copier", "template", "collaboration"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "copier>=9.0",
+    "typer>=0.12",
+]
+
+[project.scripts]
+treaty = "agent_collab_treaty.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/yzhaoinuw/agent_collab_treaty"
+Repository = "https://github.com/yzhaoinuw/agent_collab_treaty"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_collab_treaty"]

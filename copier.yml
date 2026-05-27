@@ -1,0 +1,29 @@
+# Copier configuration for the Agent Collab Treaty.
+# https://copier.readthedocs.io/
+
+_subdirectory: template
+_min_copier_version: "9.0"
+
+_message_after_copy: |
+  Treaty installed. Next steps:
+    1. Open AGENTS.md and fill in any remaining bracket-placeholders (env name,
+       test/lint commands, project-specific reminders).
+    2. If your agents need a pointer file (CLAUDE.md, .cursor/rules/treaty.mdc,
+       .windsurfrules, etc.), see the "Wiring Up Your Agent" section in the
+       project's README.
+    3. Start prepending session notes to work_log.md as you go.
+
+integration_branch:
+  type: str
+  help: "Your integration branch (the branch PRs merge into; usually main, master, or dev)"
+  default: "main"
+
+env_activation:
+  type: str
+  help: "Command to activate your dev environment (e.g. 'conda activate myenv' or 'source .venv/bin/activate'). Leave blank to fill in later."
+  default: ""
+
+test_command:
+  type: str
+  help: "Command to run the CI-equivalent test suite (e.g. 'pytest' or 'npm test'). Leave blank to fill in later."
+  default: ""
