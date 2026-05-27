@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Add treaty validate CLI and validation tests (gpt-5)
+
+- Added `treaty validate [path]` with strict-by-default validation and a `--warn-only` advisory mode.
+- Added validation checks for required treaty paths, work-log metadata and verification sections, live-log rotation, duplicate date headings, and broken `next_steps.md` Currently Hot anchors.
+- Added focused `unittest` coverage for valid docs, missing work-log metadata/verification, rotation overflow, and broken hot links.
+- Updated README, root agent guidance, project overview, and `next_steps.md` to document `treaty validate` and mark the validation thread complete.
+- Verification:
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  - `.venv\Scripts\treaty.exe validate .`
+  - `.venv\Scripts\treaty.exe --help`
+
 ### Add opt-in agent pointer files to treaty init (gpt-5)
 
 - Added an `agent_pointers` Copier multiselect so `treaty init` can optionally generate tool-specific pointers while keeping the default install vendor-neutral.

@@ -76,6 +76,16 @@ Old-school: copy from the [`template/`](template/) directory of this repo into y
 
 Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 
+### Validate an installed treaty
+
+Run `treaty validate` from any project using the treaty:
+
+```bash
+treaty validate
+```
+
+It checks that the standard files exist, `work_log.md` follows the dated-entry and rotation conventions, session entries include metadata and verification sections, and `next_steps.md` Currently Hot links point at real thread sections. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
+
 ## Wiring Up Your Agent
 
 `AGENTS.md` is the one file every agent should read at the start of a session. Some tools load it directly; others are more reliable with a small tool-specific pointer file.
@@ -101,7 +111,7 @@ When a new agent session opens in a repo that uses this template:
 3. Read the top of `work_log.md` to pick up in-flight context. Use the cheap-read recipe in `AGENTS.md` to load only the most recent entries rather than the whole file.
 4. Check `next_steps.md` → "Currently Hot" for the active priorities.
 5. Do the work, following the conventions in `AGENTS.md`.
-6. Before commit: run the pre-flight checklist from `AGENTS.md` and prepend a structured entry to `work_log.md`.
+6. Before commit: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, and prepend a structured entry to `work_log.md`.
 
 ## Rotation Policy
 

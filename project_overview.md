@@ -23,12 +23,20 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py)
 
-- Defines the Typer app and the `treaty init` / `treaty update` commands.
+- Defines the Typer app and the `treaty init`, `treaty update`, and `treaty validate` commands.
 - `treaty init` calls `copier.run_copy(...)` with the official template source by default: `gh:yzhaoinuw/agent_collab_treaty`.
 - `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject.
+- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default; `--warn-only` keeps it advisory.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
 
-### 3. Copier template configuration
+### 3. Validator module
+
+[`src/agent_collab_treaty/validation.py`](src/agent_collab_treaty/validation.py)
+
+- Checks required treaty paths, `work_log.md` session metadata, verification subsections, date rotation, duplicate dates, and `next_steps.md` Currently Hot anchors.
+- Returns structured issues with file, line, code, and message fields for CLI output and tests.
+
+### 4. Copier template configuration
 
 [`copier.yml`](copier.yml)
 
@@ -37,7 +45,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Defines the current template questions: `integration_branch`, `env_activation`, `test_command`, and `agent_pointers`.
 - Prints post-copy guidance about filling placeholders and wiring agent pointer files.
 
-### 4. Installable treaty template
+### 5. Installable treaty template
 
 [`template/`](template/)
 
@@ -47,7 +55,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Optional pointer templates render `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` when selected.
 - Other template docs are plain Markdown starting points for project-specific context.
 
-### 5. Release automation
+### 6. Release automation
 
 [`.github/workflows/test-publish.yml`](.github/workflows/test-publish.yml) and [`.github/workflows/release.yml`](.github/workflows/release.yml)
 
@@ -64,7 +72,8 @@ project_root/
 |  `- test-publish.yml
 |- src/agent_collab_treaty/
 |  |- __init__.py
-|  `- cli.py
+|  |- cli.py
+|  `- validation.py
 |- template/
 |  |- .copier-answers.yml.jinja
 |  |- AGENTS.md.jinja
@@ -102,10 +111,16 @@ project_root/
 
 ## Tests And Fixtures
 
-There is not yet a committed test suite. Current verification is smoke-test based:
+The committed test suite currently focuses on validation behavior:
+
+- [`tests/test_validation.py`](tests/test_validation.py) - temporary project fixtures for valid docs, missing metadata/verification, work-log rotation, and broken Currently Hot anchors.
+
+Broader CLI/template verification is still smoke-test based:
 
 - Install editable package into a venv.
 - Run `treaty --help`, `treaty init --help`, and `treaty update --help`.
+- Run `python -m unittest discover -s tests -v`.
+- Run `treaty validate .`.
 - Render `treaty init` into a scratch directory using `--source . --defaults --data ...`.
 - For update behavior, use a git-tracked scratch project because Copier requires git for three-way updates.
 - Run `git diff --check` before committing.
@@ -141,7 +156,6 @@ The key idea: `treaty init` copies the template into a target repo, and `treaty 
 
 ## Questions Worth Clarifying Later
 
-- Whether `treaty validate` should fail CI by default or run in advisory mode unless explicitly configured.
-- What minimum automated test suite should gate future releases.
+- What minimum broader CLI/template test suite should gate future releases.
 - Whether the GitHub-URL install fallback should remain prominent now that the package is on PyPI.
 - Whether the package should include a first-run command that audits an existing repo and suggests project-specific values before rendering the treaty.
