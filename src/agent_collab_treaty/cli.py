@@ -85,12 +85,16 @@ def update(
         help="Use previously answered values; skip interactive prompts.",
     ),
 ) -> None:
-    """Pull the latest treaty revisions into a project that was previously initialized."""
+    """Pull the latest treaty revisions into a project that was previously initialized.
+
+    The target must be a git-tracked project (Copier needs git for three-way merges).
+    Run `git init && git add . && git commit -m "treaty baseline"` if you haven't yet.
+    """
     import copier
 
     destination = destination.expanduser().resolve()
     typer.echo(f"Updating the Agent Collab Treaty in {destination}")
-    copier.run_update(dst_path=str(destination), defaults=defaults)
+    copier.run_update(dst_path=str(destination), defaults=defaults, overwrite=True)
 
 
 if __name__ == "__main__":

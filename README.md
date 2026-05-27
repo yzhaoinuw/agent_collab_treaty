@@ -43,6 +43,8 @@ treaty init
 
 `treaty init` asks a few short questions (integration branch, env activation command, test command) and drops the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing your local edits.
 
+> **Note**: `treaty update` requires the target project to be a git-tracked repo (Copier uses git for three-way merges). If your project isn't a git repo yet, run `git init && git add . && git commit -m "treaty baseline"` once before the first `treaty update`.
+
 Non-interactive use:
 
 ```bash

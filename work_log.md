@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Fix `treaty update` end-to-end: add answers-file template + overwrite flag (claude-opus-4-7)
+
+- Added `template/.copier-answers.yml.jinja` — required by Copier to persist the recorded source + commit ref + user answers into the rendered project. Without it, `.copier-answers.yml` was never written, so `treaty update` had no anchor and would fail.
+- Updated `treaty update` in `cli.py` to pass `overwrite=True` to `copier.run_update`. Without it, Copier refused with `UserMessageError: Enable overwrite to update a subproject.` The destination is already required by Copier to be a git-tracked repo (so the user can review the diff), making overwrite the right default.
+- Documented the `git init` prerequisite in the `treaty update` docstring (Copier requires git in the destination for three-way merges).
+- Verification (full update round-trip in /tmp scratch):
+  - Cloned dev to /tmp/treaty_scratch, added answers template, committed
+  - Init test project from scratch; `.copier-answers.yml` now records `_commit: 5648bc2`, `_src_path`, and all user answers
+  - Made a local edit in test project (`LOCAL_EDIT_SENTINEL` in work_log.md), committed it (Copier requires git-tracked destination)
+  - Modified scratch template (added `UPSTREAM_SENTINEL` section to AGENTS.md.jinja), committed → new HEAD 5857077
+  - Ran `treaty update`: `UPSTREAM_SENTINEL` appeared in test project's AGENTS.md at line 153, `LOCAL_EDIT_SENTINEL` still present in work_log.md at line 44, `_commit` advanced to `5857077`
+
 ### Ship pip-installable `treaty` CLI and Copier template (claude-opus-4-7)
 
 - Added a one-command installer so the treaty can be dropped into any project without manually copying files. After `pipx install agent-collab-treaty`, users run `treaty init` (interactive) or `treaty init --defaults --data key=value ...` (scriptable), and the files land in the current directory with their integration branch / env activation / test command pre-filled.
