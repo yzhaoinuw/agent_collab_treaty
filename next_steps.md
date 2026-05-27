@@ -6,38 +6,12 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- **Publish to PyPI** — `LICENSE` + GitHub Actions workflows landed. Blocked on user-side PyPI Pending Publisher + GitHub environments setup, then a TestPyPI dry-run, then a `v0.1.0` tag. See [Publish to PyPI](#publish-to-pypi-claude-opus-4-7).
 - **Per-agent pointer files in `treaty init`** — auto-generate `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurfrules`, etc. based on a multiselect prompt. See [Per-agent pointer files in init](#per-agent-pointer-files-in-init-claude-opus-4-7).
 - **`treaty validate`** — lint work_log entries against the documented format and rotation policy. See [`treaty validate`](#treaty-validate-claude-opus-4-7).
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 
 Other sections below are background or paused; treat them as reference unless a new request reopens them.
-
-## Publish to PyPI (claude-opus-4-7)
-
-Status: in progress — code landed, blocked on user-side PyPI setup
-
-Today the only install path is `pip install git+https://github.com/yzhaoinuw/agent_collab_treaty.git@main`. To get to the README's promised `pipx install agent-collab-treaty`, we need a real PyPI release.
-
-Done:
-
-- `LICENSE` (MIT) at the repo root, matching the metadata in `pyproject.toml`.
-- `.github/workflows/release.yml` — fires on `v*` tag push, builds sdist + wheel, publishes to PyPI via trusted publishing (OIDC), creates a GitHub Release with auto-generated notes + attached dist files.
-- `.github/workflows/test-publish.yml` — `workflow_dispatch` (manual) trigger, publishes to TestPyPI for dry-runs without burning a real version number.
-- README "Releasing to PyPI" section documenting the one-time setup steps and the release flow.
-
-Remaining work (blocked on the user):
-
-- Create PyPI account at https://pypi.org (if you don't have one) and a separate TestPyPI account at https://test.pypi.org.
-- Register `agent-collab-treaty` as a Pending Publisher on both PyPI and TestPyPI with the exact values documented in the README "Releasing to PyPI" section (repo `yzhaoinuw/agent_collab_treaty`, workflow filename `release.yml` / `test-publish.yml`, environment name `pypi` / `testpypi`).
-- Create the two GitHub Environments (`pypi`, `testpypi`) under repo Settings → Environments.
-- Manually fire `test-publish.yml` from the Actions tab to dry-run against TestPyPI.
-- Once TestPyPI looks good, tag `v0.1.0` on `main` to trigger the real release.
-
-Open question:
-
-- Whether to keep the GitHub-URL install documented as a fallback for unreleased changes, or remove it once PyPI is the canonical path.
 
 ## Per-agent pointer files in init (claude-opus-4-7)
 

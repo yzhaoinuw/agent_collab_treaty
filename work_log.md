@@ -41,6 +41,24 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Replace placeholder repo docs with treaty-specific maintainer guidance (gpt-5)
+
+- Rewrote root `AGENTS.md` so future agents get real package/runtime guidance, including the root-vs-template boundary, local smoke-test recipes, release notes, and project-specific reminders.
+- Rewrote root `project_overview.md` to describe the actual Typer/Copier package structure, active runtime path, release automation, current test gap, and open product questions.
+- Verification:
+  - manual read of `AGENTS.md` and `project_overview.md`
+  - `git diff -- AGENTS.md project_overview.md`
+
+### Verify PyPI release and clean active handoff queue (gpt-5)
+
+- Confirmed the user-side PyPI/TestPyPI setup, TestPyPI dry-run, and real `v0.1.0` release are complete.
+- Verified `v0.1.0` is pushed to `origin`, the GitHub Actions TestPyPI and PyPI release runs both completed successfully, the GitHub Release exists with wheel/sdist assets and publish attestations, and both PyPI registries report `agent-collab-treaty` version `0.1.0`.
+- Removed the completed PyPI publish thread from `next_steps.md` so the active queue now only tracks the per-agent pointer-file and `treaty validate` follow-ups.
+- Verification:
+  - `git ls-remote --tags origin` — confirmed remote `v0.1.0` tag exists
+  - `C:\Users\yzhao\miniconda3\python.exe` one-off registry/API probe — confirmed PyPI, TestPyPI, GitHub Actions, and GitHub Release state
+  - fresh `.tmp_pypi_smoke` venv: `pip install agent-collab-treaty==0.1.0`, `treaty --help`, and `import agent_collab_treaty, agent_collab_treaty.cli` all passed
+
 ### Wire up PyPI publishing — LICENSE + release/test-publish workflows + maintainer docs (claude-opus-4-7)
 
 - Added MIT `LICENSE` at the repo root, matching the license metadata already declared in `pyproject.toml`.
