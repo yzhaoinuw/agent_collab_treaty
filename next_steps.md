@@ -28,7 +28,7 @@ Remaining work:
 
 - [concrete next action]
 
-## [Thread B name]
+## [Thread B name] (model, effort, tokens if known)
 
 [Same structure as above. Add as many threads as the project actually has — one per active engineering concern.]
 
