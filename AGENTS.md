@@ -50,7 +50,7 @@ Pre-flight checklist before committing:
 
 - Formatter / linter is clean (matches the CI format job): `[formatter command]`
 - Test suite is green (matches the CI test job): `[test command]`
-- A new entry has been prepended to `work_log.md` describing what was done, intended profiling signal if any, and the verification commands that were actually run.
+- A new entry has been prepended to `work_log.md` describing what was done (including model + version, effort/thinking mode, and token budget if available), intended profiling signal if any, and the verification commands that were actually run.
 
 If the change touches active modules, confirm imports still work — the smoke tests in `[tests/test_smoke.py or equivalent]` cover this.
 
