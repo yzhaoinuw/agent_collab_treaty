@@ -1,0 +1,46 @@
+name: Publish to TestPyPI (manual dry-run)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build (defaults to the workflow's branch)."
+        required: false
+        default: ""
+
+jobs:
+  build-and-publish:
+    name: Build and publish to TestPyPI
+    runs-on: ubuntu-latest
+
+    # The TestPyPI trusted publisher must be configured separately from PyPI
+    # (TestPyPI is a fully independent service with its own account + project).
+    # See README "Releasing to PyPI" for the one-time setup steps.
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/agent-collab-treaty
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

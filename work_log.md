@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-27
 
+### Wire up PyPI publishing — LICENSE + release/test-publish workflows + maintainer docs (claude-opus-4-7)
+
+- Added MIT `LICENSE` at the repo root, matching the license metadata already declared in `pyproject.toml`.
+- Added `.github/workflows/release.yml`: fires on `v*` tag push, builds sdist + wheel, publishes to PyPI via PyPI Trusted Publishing (OIDC) — no API token lives in repo secrets. Also creates a GitHub Release with auto-generated notes and attached dist files.
+- Added `.github/workflows/test-publish.yml`: `workflow_dispatch` (manual) trigger, publishes to TestPyPI via OIDC for dry-runs without burning a real version number. Accepts an optional `ref` input for building from a non-default branch.
+- Added a new "Releasing to PyPI" section to `README.md` documenting the one-time PyPI/TestPyPI Pending Publisher setup (exact values to enter), the GitHub Environments to create, and the dry-run → tag-and-push release flow.
+- Updated `next_steps.md` PyPI thread from "proposed" to "in progress — code landed, blocked on user-side PyPI setup," with the concrete remaining steps the user has to do in the PyPI web UI.
+- Verification:
+  - `python3 -c "import yaml; yaml.safe_load(open(...))"` on both workflows — both parse as valid YAML
+  - manual read of both workflow files for correct `permissions: id-token: write` (OIDC) and `environment: name: …` (Trusted Publisher anchor)
+  - cannot smoke-test the workflows locally — they only fire on GitHub Actions runners and require the PyPI Pending Publisher to be registered before the first publish
+
 ### Disentangle dogfooded root files from the shipped template; populate real next-steps threads (claude-opus-4-7)
 
 - Clarified the architectural seam between the **shipped template** (`template/`) and the **dogfooded root files** (this repo applying the treaty to itself): the root holds real session entries and real next-steps threads, the template holds pristine placeholders.
