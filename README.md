@@ -103,6 +103,57 @@ When a new agent session opens in a repo that uses this template:
 
 Because it's a small, deliberate agreement between humans and agents about how they'll work together on the same code — what each side reads, what each side writes, where context lives, and how it stays current. Drop it into any repo and every agent that walks in inherits the same contract.
 
+## Releasing to PyPI
+
+(This section is for maintainers of this repo. End users should follow [How To Use](#how-to-use) instead.)
+
+Two GitHub Actions workflows handle publishing:
+
+- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, and creates a GitHub Release.
+- `.github/workflows/test-publish.yml` — `workflow_dispatch` (manual) trigger, publishes to TestPyPI for dry-runs.
+
+Both use [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo.
+
+### One-time setup (per maintainer)
+
+1. **PyPI account**: create one at https://pypi.org if you don't have one.
+2. **TestPyPI account**: create a *separate* one at https://test.pypi.org. (TestPyPI is fully independent and uses different credentials.)
+3. **Register the project as a Pending Publisher on PyPI**:
+   - Go to https://pypi.org/manage/account/publishing/
+   - Click "Add a new pending publisher"
+   - Fill in: PyPI project name `agent-collab-treaty`, owner `yzhaoinuw`, repo `agent_collab_treaty`, workflow filename `release.yml`, environment name `pypi`.
+4. **Register on TestPyPI the same way**:
+   - Go to https://test.pypi.org/manage/account/publishing/
+   - Same values, except workflow filename `test-publish.yml` and environment name `testpypi`.
+5. **Create the two GitHub environments**: in repo Settings → Environments, create `pypi` and `testpypi`. No secrets needed (OIDC handles auth). Optionally add protection rules (e.g., require manual approval for `pypi`).
+
+### Cutting a release
+
+Dry-run first:
+
+```bash
+# in the GitHub Actions tab → "Publish to TestPyPI (manual dry-run)" → Run workflow
+# (or via CLI:)
+gh workflow run test-publish.yml
+```
+
+After the TestPyPI publish succeeds, install from TestPyPI to smoke-test:
+
+```bash
+pipx install --index-url https://test.pypi.org/simple/ \
+  --pip-args="--extra-index-url https://pypi.org/simple/" \
+  agent-collab-treaty
+```
+
+When the dry-run looks good, cut the real release:
+
+```bash
+# bump pyproject.toml version if needed, then:
+git tag v0.1.0
+git push origin v0.1.0
+# release.yml will fire, publish to PyPI, and create a GitHub Release
+```
+
 ## Customization
 
 Treat this as a starting point, not a fixed standard. Common per-project additions:
