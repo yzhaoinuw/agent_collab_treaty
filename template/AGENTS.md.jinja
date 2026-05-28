@@ -54,6 +54,25 @@ Pre-flight checklist before committing:
 
 If the change touches active modules, confirm imports still work — the smoke tests in `[tests/test_smoke.py or equivalent]` cover this.
 
+## When To Update Treaty Docs
+
+At the end of any substantive work session, update `work_log.md` unless the user explicitly asks not to document it, says it is off the book, or the exchange was clearly trivial.
+
+A session is substantive when it includes any of:
+
+- file edits
+- meaningful validation, debugging, profiling, or artifact inspection
+- a technical decision or reversal
+- discovered evidence future agents should not have to rediscover
+- branch, PR, release, deployment, or environment state changes
+- unfinished follow-up that belongs in `next_steps.md`
+
+No work-log entry is usually needed for casual Q&A, explanation-only exchanges with no lasting project state, or tiny one-off commands with no future coordination value.
+
+Log experiments when they produce reusable evidence, a decision, or a warning for future agents, even if the code change is reverted. Skip pure scratch work when it has no future coordination value or the user wants it omitted.
+
+When a session creates or changes future work, update `next_steps.md` in the same pass: add concrete follow-ups, remove completed items, and keep "Currently Hot" accurate.
+
 ## Branch Handoff Discipline
 
 Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.

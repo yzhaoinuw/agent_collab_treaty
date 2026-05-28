@@ -24,19 +24,29 @@ The product is not an agent runtime. It is the coordination layer agents read be
 [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py)
 
 - Defines the Typer app and the `treaty init`, `treaty update`, and `treaty validate` commands.
-- `treaty init` calls `copier.run_copy(...)` with the official template source by default: `gh:yzhaoinuw/agent_collab_treaty`.
+- `treaty init` prints non-destructive adoption preflight notices for existing treaty files, case-mismatched treaty-looking files, and common overlapping project/agent docs before calling `copier.run_copy(...)` with the official template source by default: `gh:yzhaoinuw/agent_collab_treaty`; matching treaty template paths are passed through Copier's `skip_if_exists`, and noncanonical treaty-looking paths block init until the user resolves them.
 - `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject.
-- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default; `--warn-only` keeps it advisory.
+- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default; `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
 
-### 3. Validator module
+### 3. Adoption preflight module
+
+[`src/agent_collab_treaty/adoption.py`](src/agent_collab_treaty/adoption.py)
+
+- Detects existing docs that may affect adoption without changing them.
+- Groups findings into concise notices for existing canonical treaty paths, noncanonical treaty-looking paths, and common overlapping project or agent docs.
+- Keeps migration policy conservative: surface what exists, preserve matching template paths, block case-mismatched treaty paths that would collide, then let the user decide what to bridge, rename, or archive.
+- Also formats validation-time migration hints while filtering out ordinary existing canonical treaty files.
+
+### 4. Validator module
 
 [`src/agent_collab_treaty/validation.py`](src/agent_collab_treaty/validation.py)
 
-- Checks required treaty paths, `work_log.md` session metadata, verification subsections, date rotation, duplicate dates, and `next_steps.md` Currently Hot anchors.
+- Checks required treaty paths with canonical casing, `work_log.md` session metadata, verification subsections, date rotation, duplicate dates, and `next_steps.md` Currently Hot anchors.
+- Reports case-only legacy path mismatches or collisions before validating file contents, so older files such as `Work_Log.md` do not produce noisy work-log format errors.
 - Returns structured issues with file, line, code, and message fields for CLI output and tests.
 
-### 4. Copier template configuration
+### 5. Copier template configuration
 
 [`copier.yml`](copier.yml)
 
@@ -45,7 +55,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Defines the current template questions: `integration_branch`, `env_activation`, `test_command`, and `agent_pointers`.
 - Prints post-copy guidance about filling placeholders and wiring agent pointer files.
 
-### 5. Installable treaty template
+### 6. Installable treaty template
 
 [`template/`](template/)
 
@@ -55,7 +65,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Optional pointer templates render `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` when selected.
 - Other template docs are plain Markdown starting points for project-specific context.
 
-### 6. Release automation
+### 7. Release automation
 
 [`.github/workflows/test-publish.yml`](.github/workflows/test-publish.yml) and [`.github/workflows/release.yml`](.github/workflows/release.yml)
 
@@ -72,6 +82,7 @@ project_root/
 |  `- test-publish.yml
 |- src/agent_collab_treaty/
 |  |- __init__.py
+|  |- adoption.py
 |  |- cli.py
 |  `- validation.py
 |- template/

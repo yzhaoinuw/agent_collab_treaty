@@ -32,19 +32,29 @@ class ValidationIssue:
     message: str
 
 
+@dataclass(frozen=True)
+class RequiredPathState:
+    """Actual filesystem matches for one canonical treaty path."""
+
+    canonical: Path
+    exact: Path | None
+    case_insensitive_matches: tuple[Path, ...]
+
+
 def validate_project(root: Path) -> list[ValidationIssue]:
     """Validate standard treaty files under root."""
 
     root = root.expanduser().resolve()
     issues: list[ValidationIssue] = []
-    issues.extend(_validate_required_paths(root))
+    required_paths = _inspect_required_paths(root)
+    issues.extend(_validate_required_paths(required_paths))
 
-    work_log = root / "work_log.md"
-    if work_log.exists():
+    work_log = required_paths["work_log.md"].exact
+    if work_log is not None:
         issues.extend(_validate_work_log(work_log))
 
-    next_steps = root / "next_steps.md"
-    if next_steps.exists():
+    next_steps = required_paths["next_steps.md"].exact
+    if next_steps is not None:
         issues.extend(_validate_next_steps(next_steps))
 
     return issues
@@ -61,15 +71,59 @@ def format_issue(issue: ValidationIssue, root: Path) -> str:
     return f"{path}:{issue.line}: {issue.code}: {issue.message}"
 
 
-def _validate_required_paths(root: Path) -> Iterable[ValidationIssue]:
+def _inspect_required_paths(root: Path) -> dict[str, RequiredPathState]:
+    entries = tuple(root.iterdir()) if root.exists() else ()
+    states: dict[str, RequiredPathState] = {}
+
     for relative in REQUIRED_PATHS:
-        path = root / relative
-        if not path.exists():
+        canonical = root / relative
+        matches = tuple(entry for entry in entries if entry.name.lower() == relative.lower())
+        exact = next((entry for entry in matches if entry.name == relative), None)
+        states[relative] = RequiredPathState(
+            canonical=canonical,
+            exact=exact,
+            case_insensitive_matches=matches,
+        )
+
+    return states
+
+
+def _validate_required_paths(
+    states: dict[str, RequiredPathState],
+) -> Iterable[ValidationIssue]:
+    for relative, state in states.items():
+        if not state.case_insensitive_matches:
             yield ValidationIssue(
-                path=path,
+                path=state.canonical,
                 line=1,
                 code="missing-required-file",
                 message=f"Required treaty path is missing: {relative}",
+            )
+            continue
+
+        if len(state.case_insensitive_matches) > 1:
+            found = ", ".join(path.name for path in state.case_insensitive_matches)
+            yield ValidationIssue(
+                path=state.exact or state.case_insensitive_matches[0],
+                line=1,
+                code="path-case-collision",
+                message=(
+                    f"Multiple treaty paths match {relative!r} by case-insensitive name: "
+                    f"{found}. Keep one canonical path named {relative!r}."
+                ),
+            )
+            continue
+
+        if state.exact is None:
+            found = state.case_insensitive_matches[0]
+            yield ValidationIssue(
+                path=found,
+                line=1,
+                code="noncanonical-path-case",
+                message=(
+                    f"Found {found.name!r}, but the canonical treaty path is {relative!r}. "
+                    "Rename or migrate it before validating treaty content."
+                ),
             )
 
 
