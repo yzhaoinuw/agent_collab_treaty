@@ -1,6 +1,8 @@
 # Agent Collab Treaty
 
-A drop-in template for the documentation contract that lets multiple coding agents (Claude, Codex, future tools) collaborate productively on the same repository.
+An efficient, agent-agnostic standard that instructs any coding agent to log its work, track plans, ramp up on a new repo, and capture project-specific user preferences — all from a small set of root-level Markdown files every agent reads at session start.
+
+Battle-tested on real projects with collaboration between Codex, Claude Code / Cowork, and Grok with near-zero friction — every agent walks into the same contract and picks up where the last one left off.
 
 ## What This Is
 
