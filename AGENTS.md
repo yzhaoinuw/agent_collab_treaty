@@ -124,6 +124,12 @@ git log --oneline --left-right --cherry-pick main...HEAD
 git merge-base --is-ancestor main HEAD
 ```
 
+## PR Merge Strategy
+
+When merging PRs from `dev` into `main`, prefer `gh pr merge --rebase` (or `--squash`) over the default `--merge`. The merge-commit option creates a commit on `main` that is not in `dev`'s history, so the two branches diverge on the DAG even when their working trees match. A follow-on commit on either branch (for example, a version bump made after the PR merges) then can't be fast-forwarded across — it has to be cherry-picked or merged manually.
+
+`--rebase` keeps `main` and `dev` pointing at the same commit after the merge, so post-merge follow-ups stay linear.
+
 ## Documentation
 
 Read these documents only as needed. The map below names each file and when it is worth opening.

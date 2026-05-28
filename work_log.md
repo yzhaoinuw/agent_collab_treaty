@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-28
 
+### Review PR #5, release v0.3.0, document PR merge strategy (claude-opus-4-7)
+
+- Reviewed and merged PR #5 (adoption preflight, case-mismatch validation, `--migration-hints`, session documentation rules).
+- Bumped version to 0.3.0 on `dev`, cherry-picked onto `main`, tagged `v0.3.0`, and confirmed the PyPI release workflow succeeded.
+- Hit branch divergence after merging PR #5 with a merge commit: the post-merge version bump on `dev` could not be fast-forwarded onto `main`. Recorded the lesson in `AGENTS.md` under a new "PR Merge Strategy" section so future agents default to `--rebase`/`--squash` and keep `main` and `dev` co-located after each merge.
+- Verification:
+  - `gh pr view 5 --json state,mergedAt,mergeCommit` confirmed merged at `a12c421`.
+  - `gh run list --workflow=release.yml --limit 1` showed the `v0.3.0` release run completed successfully in 37s.
+  - `gh release view v0.3.0` confirmed the GitHub Release exists.
+
 ### Add session documentation rules and migration hints (gpt-5)
 
 - Added explicit rules for when agents should update treaty docs, including substantive-session criteria, off-the-book exceptions, and reverted-experiment guidance.
