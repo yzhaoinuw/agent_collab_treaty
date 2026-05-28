@@ -86,6 +86,24 @@ treaty validate
 
 It checks that the standard files exist, `work_log.md` follows the dated-entry and rotation conventions, session entries include metadata and verification sections, and `next_steps.md` Currently Hot links point at real thread sections. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
 
+## Badge
+
+If you want to signal that your repo uses the Agent Collab Treaty (similar to the "code style: black" badges many projects display), add one of these to your README:
+
+**Recommended (custom hosted SVG — full branding control, looks official):**
+
+```markdown
+[![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
+```
+
+**Quick alternative (shields.io — zero maintenance, no image hosting):**
+
+```markdown
+[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-0D9488?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+```
+
+This repo itself uses the first version (see the top of this file).
+
 ## Wiring Up Your Agent
 
 `AGENTS.md` is the one file every agent should read at the start of a session. Some tools load it directly; others are more reliable with a small tool-specific pointer file.
