@@ -42,6 +42,59 @@ class TreatyValidationTests(unittest.TestCase):
         self.assertIn("work-log-missing-session-metadata", codes)
         self.assertIn("work-log-missing-verification", codes)
 
+    def test_wrong_case_work_log_reports_one_path_issue_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "work_log.md").unlink()
+            (root / "Work_Log.md").write_text(
+                "\n".join(
+                    [
+                        "# Work Log",
+                        "",
+                        "## 2026-05-27",
+                        "",
+                        "### Legacy heading",
+                        "",
+                        "- Did a thing.",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_project(root)
+
+        codes = [issue.code for issue in issues]
+        self.assertEqual(["noncanonical-path-case"], codes)
+
+    def test_wrong_case_required_path_reports_noncanonical_name(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "next_steps.md").unlink()
+            (root / "Next_Steps.md").write_text("# Next Steps\n", encoding="utf-8")
+
+            issues = validate_project(root)
+
+        codes = [issue.code for issue in issues]
+        self.assertIn("noncanonical-path-case", codes)
+        self.assertNotIn("next-steps-missing-currently-hot", codes)
+
+    def test_case_collision_reports_path_collision_when_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "Work_Log.md").write_text("# Legacy Work Log\n", encoding="utf-8")
+            work_log_matches = [
+                path.name for path in root.iterdir() if path.name.lower() == "work_log.md"
+            ]
+            if len(work_log_matches) < 2:
+                self.skipTest("Filesystem does not support case-only duplicate paths")
+
+            issues = validate_project(root)
+
+        self.assertIn("path-case-collision", {issue.code for issue in issues})
+
     def test_work_log_reports_rotation_needed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

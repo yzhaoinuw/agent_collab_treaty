@@ -43,6 +43,8 @@ treaty init
 
 `treaty init` asks a few short questions (integration branch, env activation command, test command) and drops the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing your local edits.
 
+When you run `treaty init` in an existing project, it first prints a non-destructive adoption preflight if it sees canonical treaty files, case-mismatched treaty-looking files such as `Work_Log.md`, or common planning/agent docs such as `TODO.md`, `ROADMAP.md`, `NOTES.md`, or `CLAUDE.md`. The preflight is informational for overlapping project docs: `treaty init` does not move, archive, rewrite, or delete existing project docs automatically, and matching treaty template paths are skipped instead of overwritten. Case-mismatched treaty-looking paths are blocking because they can prevent the canonical treaty file from being created; rename or archive them, then rerun `treaty init`.
+
 > **Note**: `treaty update` requires the target project to be a git-tracked repo (Copier uses git for three-way merges). If your project isn't a git repo yet, run `git init && git add . && git commit -m "treaty baseline"` once before the first `treaty update`.
 
 By default, `treaty init` installs only the vendor-neutral treaty docs. During the prompt you can also opt into agent-specific pointer files:
@@ -84,7 +86,13 @@ Run `treaty validate` from any project using the treaty:
 treaty validate
 ```
 
-It checks that the standard files exist, `work_log.md` follows the dated-entry and rotation conventions, session entries include metadata and verification sections, and `next_steps.md` Currently Hot links point at real thread sections. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
+It checks that the standard files exist with their canonical treaty names, `work_log.md` follows the dated-entry and rotation conventions, session entries include metadata and verification sections, and `next_steps.md` Currently Hot links point at real thread sections. If an older project has a case-only filename mismatch such as `Work_Log.md`, validation reports that as a migration issue instead of treating the legacy file as canonical treaty content. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
+
+For existing projects that already have planning or agent docs, add `--migration-hints` to print concise, non-destructive overlap hints without changing files:
+
+```bash
+treaty validate --migration-hints
+```
 
 ## Wiring Up Your Agent
 
@@ -111,7 +119,7 @@ When a new agent session opens in a repo that uses this template:
 3. Read the top of `work_log.md` to pick up in-flight context. Use the cheap-read recipe in `AGENTS.md` to load only the most recent entries rather than the whole file.
 4. Check `next_steps.md` → "Currently Hot" for the active priorities.
 5. Do the work, following the conventions in `AGENTS.md`.
-6. Before commit: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, and prepend a structured entry to `work_log.md`.
+6. At the end of substantive work: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, prepend a structured entry to `work_log.md`, and update `next_steps.md` if follow-up changed. Skip the log only for trivial exchanges or when the user explicitly says not to document the session.
 
 ## Rotation Policy
 
