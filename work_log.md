@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Shrink badge another 20% to 96px (equal stripes) (grok-4.3)
+
+- Further reduced badge width by 20% to 96px (32px equal-length stripes) while keeping the tri-color vertical layout, per user request.
+- Reduced text to font-size 9 with stronger negative letter-spacing (-0.5) to minimize color boundary cutoff on the narrower canvas.
+- Kept clipPath for clean rounded corners and alignment.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding
+
 ### Implement minimal centrally-hosted treaty badge on `treaty init` (grok-4.3)
 
 - Added `include_treaty_badge` question to `copier.yml` (default: true) so adopters get the option during setup.
@@ -57,6 +67,27 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Manual simulation of post-copy message for both true/false values of the new question
   - Confirmed zero badge assets were added to `template/` (central hosting respected)
   - All changes limited to 4 files, 31 insertions
+
+### Badge micro-iteration: Codex blue + clean rounding + text fit (grok-4.3)
+
+- Switched Codex stripe to `#4261e2` per request.
+- Switched to `<clipPath>` technique so the three color blocks are properly contained inside the rounded rectangle (fixes the sharp right edge and stripe alignment).
+- Tightened text (font-size 10 + negative letter-spacing) and adjusted vertical position to reduce the black stripe cutting into "Treaty".
+- Pushed to `branding` for immediate visual review on GitHub.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding (commit 3f4ed69)
+
+### Redesign treaty badge as tri-color (Codex / Claude / Grok) (grok-4.3)
+
+- Updated `assets/treaty-adopted.svg` to 120px wide tri-color vertical stripes (French flag style) using Codex `#10A37F`, Claude `#D97706`, Grok `#111827`, with centered white text.
+- Updated shields.io fallback example (now using Codex teal) and refreshed all references in README, post-copy message, root AGENTS.md, and template/AGENTS.md.jinja.
+- Pushed to `branding` so the new design is immediately visible on GitHub when viewing that branch.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding (commit 52d2bd2)
 
 ### Reconcile PR #6 and fix main/dev divergence (claude-opus-4-8)
 

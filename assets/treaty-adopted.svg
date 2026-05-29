@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20" viewBox="0 0 120 20">
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="20" viewBox="0 0 96 20">
   <defs>
     <clipPath id="badge">
-      <rect width="120" height="20" rx="3" ry="3"/>
+      <rect width="96" height="20" rx="3" ry="3"/>
     </clipPath>
   </defs>
   <g clip-path="url(#badge)">
-    <rect width="40" height="20" fill="#4261e2"/>
-    <rect x="40" width="40" height="20" fill="#D97706"/>
-    <rect x="80" width="40" height="20" fill="#111827"/>
+    <rect width="32" height="20" fill="#4261e2"/>
+    <rect x="32" width="32" height="20" fill="#D97706"/>
+    <rect x="64" width="32" height="20" fill="#111827"/>
   </g>
-  <text x="60" y="13.5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="10" fill="#ffffff" font-weight="600" letter-spacing="-0.3" text-anchor="middle">Agent Collab Treaty</text>
+  <text x="48" y="13.5" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="9" fill="#ffffff" font-weight="600" letter-spacing="-0.5" text-anchor="middle">Agent Collab Treaty</text>
 </svg>
