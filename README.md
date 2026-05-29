@@ -120,13 +120,13 @@ The exact markdown snippet is printed in the post-copy message when you run `tre
 [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
-**Zero-dependency alternative (shields.io — no image hosting required):**
+**Simplified single-color alternative (shields.io — no image hosting required):**
 
 ```markdown
-[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-0D9488?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-10A37F?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
-This repo itself uses the locally-hosted version of the badge (relative path in our README) so the dogfood experience does not depend on raw.githubusercontent.com. All other adopters use the central URL above.
+This repo itself uses the locally-hosted version of the badge (relative path in our README) so the dogfood experience does not depend on raw.githubusercontent.com. All other adopters use the central tri-color URL above. The shields.io version is a simplified single-color fallback.
 
 ## Wiring Up Your Agent
 

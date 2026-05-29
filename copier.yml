@@ -24,8 +24,10 @@ _message_after_copy: |
        [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
        ```
 
-       Alternative (zero image dependency): the shields.io version is documented in
-       the "Badge" section of your new AGENTS.md.
+       Simplified single-color alternative (zero image dependency):
+       ```markdown
+       [![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-10A37F?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+       ```
   {% endif %}
 
 integration_branch:
