@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Shrink badge another 10% to 86.4px (equal stripes, local first) (grok-4.3)
+
+- Shrunk badge width by another 10% (96px → 86.4px, 28.8px equal-length stripes) while keeping the tri-color vertical layout, per user request. Change made locally first via the dogfood `./assets/treaty-adopted.svg` (referenced at top of README.md); central raw URL will pick it up after push.
+- Kept existing text sizing (font-size 9, letter-spacing -0.5) and clipPath/rounding; text may appear relatively larger — tighten in follow-up if local render shows color-boundary cutoff.
+- Verification (local only):
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Confirmed top of README.md still uses local relative path to the badge asset
+  - No push yet (local iteration)
+
 ### Shrink badge another 20% to 96px (equal stripes) (grok-4.3)
 
 - Further reduced badge width by 20% to 96px (32px equal-length stripes) while keeping the tri-color vertical layout, per user request.
