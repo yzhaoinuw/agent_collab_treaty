@@ -39,6 +39,17 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-05-29
+
+### Tighten README intro and migration guidance (gpt-5)
+
+- Revised README opening to emphasize future-session continuity, fewer repeated reads, and clearer handoffs before multi-agent collaboration.
+- Tightened README setup, template file descriptions, validation, workflow, and treaty rationale wording.
+- Added explicit guidance showing users how to authorize an agent to migrate existing planning/logging docs into the treaty.
+- Verification:
+  - `.\.venv\Scripts\treaty.exe validate .`
+  - `git diff --check`
+
 ## 2026-05-28
 
 ### Review PR #5, release v0.3.0, document PR merge strategy (claude-opus-4-7)
