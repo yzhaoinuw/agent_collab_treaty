@@ -5,9 +5,9 @@
     </clipPath>
   </defs>
   <g clip-path="url(#badge)">
-    <rect width="28.8" height="20" fill="#10A37F"/>
+    <rect width="28.8" height="20" fill="#6d81f1"/>
     <rect x="28.8" width="28.8" height="20" fill="#D97706"/>
     <rect x="57.6" width="28.8" height="20" fill="#111827"/>
   </g>
-  <text x="43.2" y="13.7" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="8.5" fill="#ffffff" font-weight="600" letter-spacing="-0.6" text-anchor="middle">Agent Collab Treaty</text>
+  <text x="43.2" y="13.7" font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-size="8.8" fill="#ffffff" font-weight="600" letter-spacing="-0.35" text-anchor="middle">Agent Collab Treaty</text>
 </svg>

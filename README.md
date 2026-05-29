@@ -117,7 +117,7 @@ The exact markdown snippet is printed in the post-copy message when you run `tre
 **Recommended (reliable single-color via shields.io — works everywhere on GitHub):**
 
 ```markdown
-[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-10A37F?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
 **Richer tri-color visual (centrally-hosted SVG — automatic updates on design changes):**

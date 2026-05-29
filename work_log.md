@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Logo color/layout polish — Codex blue + text fit (grok-4.3 design, integrated by claude-opus-4-8)
+
+- Grok pushed two follow-up badge tweaks to `branding` after v0.3.1: Codex stripe `#10A37F` teal → `#6d81f1` blue (with all shields.io hexes and "Codex teal" → "Codex blue" prose updated together), and SVG text loosened (`font-size` 8.5 → 8.8, `letter-spacing` -0.6 → -0.35) so "Treaty" is no longer clipped.
+- `branding` had diverged from `dev` (it predates the PR #7 squash + 0.3.1 bump), so a wholesale merge would have reverted the version. Instead pulled only the five intended content files (`assets/treaty-adopted.svg`, `README.md`, `copier.yml`, `AGENTS.md`, `template/AGENTS.md.jinja`) from `branding` onto `dev` — verified those files differed from `dev` by exactly the color/layout edits and nothing else.
+- Also cleared the stale `next_steps.md` "Currently Hot" entry (still said "PR #7 open … ready for merge" after the feature had shipped).
+- Verification:
+  - Rasterized the new SVG (QuickLook) and visually confirmed no edge clipping at 86.4px.
+  - `git diff origin/dev origin/branding -- <content files>` showed only the intended changes before pulling.
+  - `treaty validate .` passed; `git diff --check` clean.
+
 ### Release v0.3.1 (adoption badge) (claude-opus-4-8)
 
 - Reviewed PR #7 (independently re-rendered the template both ways and rasterized the badge SVG to confirm fixes), squash-merged it into `dev`, then fast-forwarded `main` so `main` and `dev` stayed co-located.
