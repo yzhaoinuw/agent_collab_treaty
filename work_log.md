@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Reconcile PR #6 and fix main/dev divergence (claude-opus-4-8)
+
+- Reviewed PR #6 (README adoption tightening) and found `main` and `dev` had diverged from the merge-commit merges of PRs #4/#5: `main` carried README content (`3c549b4` battle-tested/Grok pitch) that `dev` never received, so PR #6 would have conflicted and silently dropped that pitch.
+- Rebased `dev` onto `main`. The duplicate version-bump and PR-strategy commits auto-dropped as already-applied cherry-picks, leaving a single clean README commit. `dev` is now linear on top of `main`.
+- Resolved the README intro conflict by keeping the PR's tightened opening and preserving the battle-tested line, updated to name **Grok Build** (the Grok CLI) instead of "Grok".
+- Verification:
+  - `git merge-base --is-ancestor main dev` confirmed linear history.
+  - `git diff --check main..dev` clean; diff limited to `README.md` + `work_log.md`.
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed.
+  - `PYTHONPATH=src python -m unittest discover -s tests` (14 passed; 2 errored only on missing `copier` in this env, unrelated to the doc change).
+
 ### Tighten README intro and migration guidance (gpt-5)
 
 - Revised README opening to emphasize future-session continuity, fewer repeated reads, and clearer handoffs before multi-agent collaboration.
