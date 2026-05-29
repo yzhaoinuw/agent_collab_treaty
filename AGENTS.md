@@ -156,6 +156,9 @@ Read these documents only as needed. The map below names each file and when it i
 - `README.md`
   - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
 
+- Treaty badge (in README)
+  - `treaty init` offers to include a centrally-hosted "Agent Collab Treaty - adopted" badge by default. It is a visibility signal only (links back to this treaty repo). No asset files are added to the adopter's project; the image URL stays current if the badge design improves later. The badge is fully optional.
+
 - `template/`
   - Use when changing what `treaty init` installs into downstream projects.
   - Keep template docs generic and project-agnostic; root docs should stay specific to this repo.

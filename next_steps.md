@@ -6,7 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- No active threads right now. Add the next concrete follow-up here when it becomes actionable.
+- Centrally-hosted treaty badge on `treaty init` (grok-4.3) — minimal implementation complete on `branding` branch (new Copier question + central hosting only, no adopter files). Next: full smoke-test renders + review before merging to dev.
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 

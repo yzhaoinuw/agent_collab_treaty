@@ -1,5 +1,7 @@
 # Agent Collab Treaty
 
+[![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
+
 A drop-in documentation contract that helps future agent sessions pick up a repository where the last session left off, with less repeated reading, fewer lost decisions, and clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
 
 Battle-tested on real projects with collaboration between Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
@@ -108,21 +110,23 @@ The agent should inspect legacy docs, summarize active work into `next_steps.md`
 
 ## Badge
 
-If you want to signal that your repo uses the Agent Collab Treaty (similar to the "code style: black" badges many projects display), add one of these to your README:
+`treaty init` offers to add the Agent Collab Treaty "adopted" badge to your README by default. The badge is hosted centrally by this repository — your project receives **no extra files**, and the image URL will continue to serve the latest design if we improve the badge later.
 
-**Recommended (custom hosted SVG — full branding control, looks official):**
+The exact markdown snippet is printed in the post-copy message when you run `treaty init` (with the `include_treaty_badge` question enabled, the default).
+
+**Recommended (centrally hosted SVG — automatic updates, official look):**
 
 ```markdown
 [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
-**Quick alternative (shields.io — zero maintenance, no image hosting):**
+**Zero-dependency alternative (shields.io — no image hosting required):**
 
 ```markdown
 [![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-0D9488?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
-This repo itself uses the first version (see the top of this file).
+This repo itself uses the locally-hosted version of the badge (relative path in our README) so the dogfood experience does not depend on raw.githubusercontent.com. All other adopters use the central URL above.
 
 ## Wiring Up Your Agent
 

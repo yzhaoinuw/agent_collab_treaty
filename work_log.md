@@ -41,6 +41,23 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Implement minimal centrally-hosted treaty badge on `treaty init` (grok-4.3)
+
+- Added `include_treaty_badge` question to `copier.yml` (default: true) so adopters get the option during setup.
+- Badge uses central hosting only (raw URL into this repo's `assets/treaty-adopted.svg`) — adopters get zero extra files; future badge design changes automatically propagate to all existing badges.
+- Extended `_message_after_copy` (Jinja conditional) to print the exact recommended markdown snippet when the flag is true; shields.io alternative also documented.
+- Added concise "Treaty badge" guidance to both the shipped `template/AGENTS.md.jinja` and root `AGENTS.md` (Documentation map) so agents understand the signal.
+- Updated dogfood `README.md`: real badge now renders under the H1 (local relative path for this repo), and the entire "## Badge" section rewritten to describe the new default central-hosted behavior instead of manual copy-paste.
+- First synced `branding` branch with latest `origin/main` (merge commit), then implemented on the feature branch per user request.
+- Verification:
+  - `git fetch --all --prune`
+  - `git checkout branding && git merge origin/main` (clean, no conflicts)
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Manual simulation of post-copy message for both true/false values of the new question
+  - Confirmed zero badge assets were added to `template/` (central hosting respected)
+  - All changes limited to 4 files, 31 insertions
+
 ### Reconcile PR #6 and fix main/dev divergence (claude-opus-4-8)
 
 - Reviewed PR #6 (README adoption tightening) and found `main` and `dev` had diverged from the merge-commit merges of PRs #4/#5: `main` carried README content (`3c549b4` battle-tested/Grok pitch) that `dev` never received, so PR #6 would have conflicted and silently dropped that pitch.
