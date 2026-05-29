@@ -157,7 +157,7 @@ Read these documents only as needed. The map below names each file and when it i
   - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
 
 - Treaty badge (in README)
-  - `treaty init` offers to include a centrally-hosted tri-color "Agent Collab Treaty - adopted" badge by default (Codex teal / Claude amber / Grok dark). It is a visibility signal only (links back to this treaty repo). No asset files are added to the adopter's project; the image URL stays current if the badge design improves later. A simplified single-color shields.io fallback exists. The badge is fully optional.
+  - `treaty init` offers (opt-in) a centrally-hosted "Agent Collab Treaty - adopted" badge (Codex teal / Claude amber / Grok dark tri-color SVG, or reliable single-color shields.io). It is a pure visibility signal that links back to this treaty repository. No asset files are added to your project; the image updates automatically if the design improves later. The badge is fully optional. The shields.io version is the dependable recommendation for GitHub READMEs.
 
 - `template/`
   - Use when changing what `treaty init` installs into downstream projects.

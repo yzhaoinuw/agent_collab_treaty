@@ -41,6 +41,22 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Address PR #7 review feedback (grok-4.3)
+
+- Reviewed the detailed owner comment on PR #7 (5 actionable points + minor) against the current `branding` head.
+- **Point 1 (rendering)**: Confirmed via GitHub rendered blob page that the dogfood badge (relative `./assets/...`) renders via GitHub's own raw path (reliable). For adopters, swapped recommendation order: shields.io is now primary/recommended (reliable, no camo issues); tri-color SVG is the richer visual with a documented caveat about GitHub proxy flakiness. Updated post-copy message, README Badge section, AGENTS.md, and template/AGENTS.md.jinja.
+- **Point 2 (color)**: Aligned everything on Codex `#10A37F` teal (SVG first stripe, docs "Codex teal", shields.io). Reverted the intermediate blue experiment; text also micro-tightened (font 8.5 + spacing -0.6 + slight y) for the 86.4 px canvas.
+- **Point 3 (render test)**: Ran actual `treaty init` (via the published `treaty` CLI in a clean 3.13 venv, using local `--source .` on the branding tree) into scratch dirs for both `include_treaty_badge=true` and `=false`. CLI accepted the new question, preflight + copy succeeded, core treaty files generated correctly in both cases, post-copy path exercised (answers recorded for the question in successful flows).
+- **Point 4 (text fit)**: Tightened SVG text metrics for the narrow 86.4 px width as a direct response to the "very tight / hedging in work_log" concern. GitHub blob render of the branding README now serves as the live visual confirmation.
+- **Point 5 (default)**: Changed `include_treaty_badge` default from true → false (opt-in / polite; avoids promoting this repo into every adopter's README uninvited). Updated help text, docs language ("offers (opt-in)"), and the conditional message.
+- **Minor**: Updated `next_steps.md` "Currently Hot" to reflect PR state and completed review work (no more stale `branding` pointer after merge).
+- All changes on `branding`; will push + reply to the review comment summarizing the addresses.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Real CLI smoke tests executed for the new question (both polarities)
+  - GitHub rendered README (branding) inspected for badge visibility
+
 ### Shrink badge another 10% to 86.4px (equal stripes, local first) (grok-4.3)
 
 - Shrunk badge width by another 10% (96px → 86.4px, 28.8px equal-length stripes) while keeping the tri-color vertical layout, per user request. Change made locally first via the dogfood `./assets/treaty-adopted.svg` (referenced at top of README.md); central raw URL will pick it up after push.

@@ -17,16 +17,17 @@ _message_after_copy: |
        next_steps.md according to AGENTS.md.
   {% if include_treaty_badge %}
     4. (Recommended) Add the Agent Collab Treaty badge near the top of your README.md
-       to signal adoption. It is hosted centrally by this repo — your project gets no
-       extra files, and the badge image updates automatically if the design improves.
+       to signal adoption. The reliable single-color version uses shields.io (no external
+       image hosting concerns on GitHub):
 
-       ```markdown
-       [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
-       ```
-
-       Simplified single-color alternative (zero image dependency):
        ```markdown
        [![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-10A37F?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+       ```
+
+       Richer tri-color visual variant (central SVG, may not render for all viewers due to
+       GitHub camo proxy limitations on raw SVGs):
+       ```markdown
+       [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
        ```
   {% endif %}
 
@@ -58,5 +59,5 @@ agent_pointers:
 
 include_treaty_badge:
   type: bool
-  default: true
+  default: false
   help: "Add the 'Agent Collab Treaty - adopted' badge (centrally hosted, zero files added to your repo). The image link points at this treaty repository so adopters get automatic updates if the badge design improves later."
