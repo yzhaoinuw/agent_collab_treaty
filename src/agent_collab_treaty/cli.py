@@ -63,6 +63,22 @@ def init(
     destination = destination.expanduser().resolve()
     destination.mkdir(parents=True, exist_ok=True)
 
+    from .adoption import (
+        INIT_SKIP_IF_EXISTS,
+        format_adoption_notices,
+        inspect_adoption_context,
+    )
+
+    adoption_notices = inspect_adoption_context(destination)
+    for line in format_adoption_notices(adoption_notices):
+        typer.echo(line, err=True)
+    if any(notice.code == "noncanonical-treaty-paths" for notice in adoption_notices):
+        typer.echo(
+            "Resolve noncanonical treaty-looking paths, then rerun treaty init.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
     typer.echo(f"Installing the Agent Collab Treaty into {destination}")
     copier.run_copy(
         src_path=source,
@@ -70,6 +86,7 @@ def init(
         vcs_ref=ref,
         defaults=defaults,
         data=_parse_data(data),
+        skip_if_exists=INIT_SKIP_IF_EXISTS,
     )
 
 
@@ -108,6 +125,11 @@ def validate(
         "--warn-only",
         help="Print validation issues but exit successfully.",
     ),
+    migration_hints: bool = typer.Option(
+        False,
+        "--migration-hints",
+        help="Also print non-destructive hints for overlapping legacy project docs.",
+    ),
 ) -> None:
     """Validate installed Agent Collab Treaty docs."""
 
@@ -115,6 +137,11 @@ def validate(
 
     path = path.expanduser().resolve()
     issues = validate_project(path)
+    if migration_hints:
+        from .adoption import format_migration_hints, inspect_adoption_context
+
+        for line in format_migration_hints(inspect_adoption_context(path)):
+            typer.echo(line, err=True)
 
     if not issues:
         typer.echo("Treaty validation passed.")

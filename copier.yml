@@ -13,7 +13,8 @@ _message_after_copy: |
        test/lint commands, project-specific reminders).
     2. If you selected optional agent pointer files, commit them with the treaty
        docs so those tools can find AGENTS.md automatically.
-    3. Start prepending session notes to work_log.md as you go.
+    3. At the end of substantive work sessions, update work_log.md and
+       next_steps.md according to AGENTS.md.
 
 integration_branch:
   type: str

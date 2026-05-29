@@ -1,10 +1,12 @@
 # Agent Collab Treaty
 
-A drop-in template for the documentation contract that lets multiple coding agents (Claude, Codex, future tools) collaborate productively on the same repository.
+A drop-in documentation contract that helps future agent sessions pick up a repository where the last session left off, with less repeated reading, fewer lost decisions, and clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
+
+Battle-tested on real projects with collaboration between Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
 ## What This Is
 
-A small, opinionated set of root-level Markdown files that any agent reads at the start of a session to know:
+Agent Collab Treaty installs a small, opinionated set of root-level Markdown files that any coding agent reads at the start of a session to learn:
 
 - what environment to run in,
 - what's active code versus legacy,
@@ -12,23 +14,23 @@ A small, opinionated set of root-level Markdown files that any agent reads at th
 - what was done in recent sessions,
 - and what conventions to follow for commits and code style.
 
-The template is language- and framework-agnostic. It works whether the project is Python, JavaScript, Go, Rust, or a mix — you fill in the project-specific details, the structure stays the same.
+The template is language- and framework-agnostic. You fill in the project details once; future sessions follow the same map.
 
 ## What's In The Template
 
 | File | Purpose |
 |---|---|
-| `AGENTS.md` | First-read contract. Startup rule, documentation map, runtime env, common task recipes, git/commit conventions, project-specific reminders. Both Codex and Claude Code / Cowork recognize this file by convention. |
-| `project_overview.md` | Orientation doc. Active vs. legacy code map, repo structure, recommended read order. The single most valuable artifact for an agent that's never seen the codebase. |
-| `next_steps.md` | The roadmap. A "Currently Hot" pointer at the top names the active threads so an agent doesn't have to scroll. |
-| `work_log.md` | Session journal, newest-on-top. Holds at most the 5 most recent unique calendar dates. Each agent session prepends a structured entry before handoff. |
-| `work_log_archive/` | Directory of rotated 5-date chunks from `work_log.md`. Each file is named `work_log_<earliest>_to_<latest>.md` and holds exactly 5 dates. Keeps the live log cheap to load. |
+| `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. |
+| `project_overview.md` | Orientation map: active vs. legacy code, repo structure, and where to look first. |
+| `next_steps.md` | Active roadmap. The "Currently Hot" section points agents to the threads that matter now. |
+| `work_log.md` | Recent session journal, newest first. Agents prepend substantive work before handoff. |
+| `work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
 
 ## How To Use
 
-The fastest path is the `treaty` CLI, which scaffolds (and later updates) the treaty files in any project — new or existing.
+The fastest path is the `treaty` CLI. It installs and later updates the treaty files in new or existing projects.
 
-### Option 1 — install the CLI, then run `treaty init`
+### Option 1 - install the CLI, then run `treaty init`
 
 ```bash
 # isolated install (recommended; requires pipx)
@@ -41,11 +43,15 @@ pip install agent-collab-treaty
 treaty init
 ```
 
-`treaty init` asks a few short questions (integration branch, env activation command, test command) and drops the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing your local edits.
+`treaty init` asks a few short questions and writes the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing local edits.
 
-> **Note**: `treaty update` requires the target project to be a git-tracked repo (Copier uses git for three-way merges). If your project isn't a git repo yet, run `git init && git add . && git commit -m "treaty baseline"` once before the first `treaty update`.
+In existing projects, `treaty init` first runs a non-destructive adoption preflight. It warns about existing treaty files, case-mismatched treaty-looking files such as `Work_Log.md`, and common planning/agent docs such as `TODO.md`, `ROADMAP.md`, `NOTES.md`, or `CLAUDE.md`. It does not move, archive, rewrite, or delete existing docs. Matching treaty template paths are skipped instead of overwritten.
 
-By default, `treaty init` installs only the vendor-neutral treaty docs. During the prompt you can also opt into agent-specific pointer files:
+Case-mismatched treaty-looking paths are blocking because they can prevent canonical files from being created, especially on Windows. Rename or archive them, then rerun `treaty init`.
+
+> **Note**: `treaty update` requires a git-tracked project because Copier uses git for three-way merges. If needed, run `git init && git add . && git commit -m "treaty baseline"` once before the first update.
+
+By default, `treaty init` installs only vendor-neutral treaty docs. You can also opt into pointer files for tools that do not reliably load `AGENTS.md` directly:
 
 - `CLAUDE.md` for Claude Code / Cowork
 - `.cursor/rules/treaty.mdc` for Cursor
@@ -62,17 +68,17 @@ treaty init . --defaults \
   --data 'agent_pointers=["claude-code", "cursor"]'
 ```
 
-### Option 2 — use Copier directly (no install)
+### Option 2 - use Copier directly
 
-The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/). If you'd rather not install another tool:
+The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/):
 
 ```bash
 pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
 ```
 
-### Option 3 — just copy the files
+### Option 3 - just copy the files
 
-Old-school: copy from the [`template/`](template/) directory of this repo into your project — **not** the repo root, which holds the treaty's own dogfooded versions (real session entries, real next-steps threads). The `template/AGENTS.md.jinja` file uses Jinja markers like `{{ integration_branch }}`; replace those by hand with your values and rename to `AGENTS.md`. The other files (`work_log.md`, `next_steps.md`, `project_overview.md`, `work_log_archive/`) are plain Markdown — copy as-is and fill in the `[...]` bracket placeholders.
+Copy from [`template/`](template/) into your project, not from the repo root. The root files are this project's own dogfooded treaty docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files.
 
 Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 
@@ -84,7 +90,21 @@ Run `treaty validate` from any project using the treaty:
 treaty validate
 ```
 
-It checks that the standard files exist, `work_log.md` follows the dated-entry and rotation conventions, session entries include metadata and verification sections, and `next_steps.md` Currently Hot links point at real thread sections. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
+It checks canonical treaty filenames, `work_log.md` structure, live-log rotation, session verification sections, and `next_steps.md` Currently Hot links. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
+
+For existing projects that already have planning or agent docs, add `--migration-hints` to print concise, non-destructive overlap hints without changing files:
+
+```bash
+treaty validate --migration-hints
+```
+
+### Migrate existing docs with an agent
+
+If a repo already has planning or logging docs, you can ask an agent to adopt them into the treaty. Be explicit that migration is authorized. For example:
+
+> Please migrate this repo's existing planning and logging docs into the Agent Collab Treaty. Preserve originals unless you explain and get approval before moving or rewriting them.
+
+The agent should inspect legacy docs, summarize active work into `next_steps.md`, preserve useful history in `work_log.md` or `work_log_archive/`, add bridge notes where helpful, run `treaty validate . --migration-hints`, and document what changed in `work_log.md`.
 
 ## Badge
 
@@ -106,7 +126,7 @@ This repo itself uses the first version (see the top of this file).
 
 ## Wiring Up Your Agent
 
-`AGENTS.md` is the one file every agent should read at the start of a session. Some tools load it directly; others are more reliable with a small tool-specific pointer file.
+`AGENTS.md` is the one file every agent should read at the start of a session. Some tools load it directly; others work better with a small pointer file.
 
 `treaty init` keeps the default install vendor-neutral, but it can generate pointer files when you select them during setup:
 
@@ -118,22 +138,22 @@ This repo itself uses the first version (see the top of this file).
 | Windsurf | `.windsurf/rules/treaty.md` | Always-on workspace rule that points Cascade back to `AGENTS.md`. Windsurf also processes root `AGENTS.md` directly. |
 | Aider | `.aider.conf.yml` | Configures Aider to always read `AGENTS.md` as read-only context. |
 
-For any other tool, add a one-line default instruction (system prompt, custom instructions, or equivalent) such as: *"At the start of every new chat or session in this repository, read `AGENTS.md` first and follow the documentation map there."*
+For any other tool, add a one-line default instruction such as: *"At the start of every new chat or session in this repository, read `AGENTS.md` first and follow the documentation map there."*
 
 ## The Workflow In Practice
 
-When a new agent session opens in a repo that uses this template:
+When a new agent session opens:
 
-1. Read `AGENTS.md` first. Its **Startup Rule** tells the agent not to auto-load every Markdown file, and its **Documentation** section is the map of which other docs to open for which kind of task.
-2. From the documentation map, skim `project_overview.md` if the task touches an unfamiliar area, or jump straight to the relevant doc otherwise.
-3. Read the top of `work_log.md` to pick up in-flight context. Use the cheap-read recipe in `AGENTS.md` to load only the most recent entries rather than the whole file.
-4. Check `next_steps.md` → "Currently Hot" for the active priorities.
+1. Read `AGENTS.md` first.
+2. Use its documentation map to open only the relevant docs.
+3. Read the top of `work_log.md` for recent context.
+4. Check `next_steps.md` -> "Currently Hot" for active priorities.
 5. Do the work, following the conventions in `AGENTS.md`.
-6. Before commit: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, and prepend a structured entry to `work_log.md`.
+6. At the end of substantive work: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, prepend a structured entry to `work_log.md`, and update `next_steps.md` if follow-up changed. Skip the log only for trivial exchanges or when the user explicitly says not to document the session.
 
 ## Rotation Policy
 
-`work_log.md` grows linearly over time. The template's policy keeps the live file cheap to load by rotating in fixed-size chunks:
+`work_log.md` stays small by rotating older dates into archive files:
 
 - The live `work_log.md` holds at most the **5 most recent unique calendar dates**.
 - When prepending a new date would push the live log past 5 unique dates, move the oldest 5 dates as a chunk into a new file at `work_log_archive/work_log_<earliest>_to_<latest>.md`. Each archive file holds exactly 5 dates.
@@ -145,7 +165,7 @@ When a new agent session opens in a repo that uses this template:
 
 ## Why "Treaty"
 
-Because it's a small, deliberate agreement between humans and agents about how they'll work together on the same code — what each side reads, what each side writes, where context lives, and how it stays current. Drop it into any repo and every agent that walks in inherits the same contract.
+Because it is a small agreement about where project context lives, what agents read first, and what they write back before leaving.
 
 ## Releasing to PyPI
 

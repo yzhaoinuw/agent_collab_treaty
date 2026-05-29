@@ -93,6 +93,25 @@ Pre-flight checklist before committing:
 - User-facing docs (`README.md`, `project_overview.md`, and template docs as applicable) match the behavior.
 - A new entry has been prepended to `work_log.md` describing what was done, including model/version metadata when available and the verification commands actually run.
 
+## When To Update Treaty Docs
+
+At the end of any substantive work session, update `work_log.md` unless the user explicitly asks not to document it, says it is off the book, or the exchange was clearly trivial.
+
+A session is substantive when it includes any of:
+
+- file edits
+- meaningful validation, debugging, profiling, or artifact inspection
+- a technical decision or reversal
+- discovered evidence future agents should not have to rediscover
+- branch, PR, release, deployment, or environment state changes
+- unfinished follow-up that belongs in `next_steps.md`
+
+No work-log entry is usually needed for casual Q&A, explanation-only exchanges with no lasting project state, or tiny one-off commands with no future coordination value.
+
+Log experiments when they produce reusable evidence, a decision, or a warning for future agents, even if the code change is reverted. Skip pure scratch work when it has no future coordination value or the user wants it omitted.
+
+When a session creates or changes future work, update `next_steps.md` in the same pass: add concrete follow-ups, remove completed items, and keep "Currently Hot" accurate.
+
 ## Branch Handoff Discipline
 
 The integration branch for this single-maintainer repo is `main`. Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.
@@ -104,6 +123,12 @@ git status --short --branch
 git log --oneline --left-right --cherry-pick main...HEAD
 git merge-base --is-ancestor main HEAD
 ```
+
+## PR Merge Strategy
+
+When merging PRs from `dev` into `main`, prefer `gh pr merge --rebase` (or `--squash`) over the default `--merge`. The merge-commit option creates a commit on `main` that is not in `dev`'s history, so the two branches diverge on the DAG even when their working trees match. A follow-on commit on either branch (for example, a version bump made after the PR merges) then can't be fast-forwarded across — it has to be cherry-picked or merged manually.
+
+`--rebase` keeps `main` and `dev` pointing at the same commit after the merge, so post-merge follow-ups stay linear.
 
 ## Documentation
 

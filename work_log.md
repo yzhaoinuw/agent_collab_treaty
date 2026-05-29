@@ -39,6 +39,86 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-05-29
+
+### Reconcile PR #6 and fix main/dev divergence (claude-opus-4-8)
+
+- Reviewed PR #6 (README adoption tightening) and found `main` and `dev` had diverged from the merge-commit merges of PRs #4/#5: `main` carried README content (`3c549b4` battle-tested/Grok pitch) that `dev` never received, so PR #6 would have conflicted and silently dropped that pitch.
+- Rebased `dev` onto `main`. The duplicate version-bump and PR-strategy commits auto-dropped as already-applied cherry-picks, leaving a single clean README commit. `dev` is now linear on top of `main`.
+- Resolved the README intro conflict by keeping the PR's tightened opening and preserving the battle-tested line, updated to name **Grok Build** (the Grok CLI) instead of "Grok".
+- Verification:
+  - `git merge-base --is-ancestor main dev` confirmed linear history.
+  - `git diff --check main..dev` clean; diff limited to `README.md` + `work_log.md`.
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed.
+  - `PYTHONPATH=src python -m unittest discover -s tests` (14 passed; 2 errored only on missing `copier` in this env, unrelated to the doc change).
+
+### Tighten README intro and migration guidance (gpt-5)
+
+- Revised README opening to emphasize future-session continuity, fewer repeated reads, and clearer handoffs before multi-agent collaboration.
+- Tightened README setup, template file descriptions, validation, workflow, and treaty rationale wording.
+- Added explicit guidance showing users how to authorize an agent to migrate existing planning/logging docs into the treaty.
+- Verification:
+  - `.\.venv\Scripts\treaty.exe validate .`
+  - `git diff --check`
+
+## 2026-05-28
+
+### Review PR #5, release v0.3.0, document PR merge strategy (claude-opus-4-7)
+
+- Reviewed and merged PR #5 (adoption preflight, case-mismatch validation, `--migration-hints`, session documentation rules).
+- Bumped version to 0.3.0 on `dev`, cherry-picked onto `main`, tagged `v0.3.0`, and confirmed the PyPI release workflow succeeded.
+- Hit branch divergence after merging PR #5 with a merge commit: the post-merge version bump on `dev` could not be fast-forwarded onto `main`. Recorded the lesson in `AGENTS.md` under a new "PR Merge Strategy" section so future agents default to `--rebase`/`--squash` and keep `main` and `dev` co-located after each merge.
+- Verification:
+  - `gh pr view 5 --json state,mergedAt,mergeCommit` confirmed merged at `a12c421`.
+  - `gh run list --workflow=release.yml --limit 1` showed the `v0.3.0` release run completed successfully in 37s.
+  - `gh release view v0.3.0` confirmed the GitHub Release exists.
+
+### Add session documentation rules and migration hints (gpt-5)
+
+- Added explicit rules for when agents should update treaty docs, including substantive-session criteria, off-the-book exceptions, and reverted-experiment guidance.
+- Added `treaty validate --migration-hints` so adopters can request concise, non-destructive overlap guidance without making default validation noisy.
+- Updated template docs, root docs, README, Copier post-copy messaging, tests, and `next_steps.md` to reflect the completed threads.
+- Verification:
+  - `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  - dirty-template scratch render from a non-git source copy, confirmed rendered `AGENTS.md`, `work_log.md`, and post-copy message include the new session-documentation guidance
+  - `.\.venv\Scripts\treaty.exe validate .`
+  - `.\.venv\Scripts\treaty.exe validate . --migration-hints`
+  - `.\.venv\Scripts\treaty.exe validate --help`
+  - `.\.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli, agent_collab_treaty.adoption; print('import ok')"`
+  - `git diff --check`
+
+### Add conservative adoption preflight to treaty init (gpt-5)
+
+- Added non-destructive `treaty init` preflight notices for existing canonical treaty paths, case-mismatched treaty-looking paths, and common overlapping project/agent docs.
+- Preserved matching template paths with Copier `skip_if_exists` and blocked noncanonical treaty-looking paths before copying to avoid partial installs on case-insensitive filesystems.
+- Added adoption helper and CLI tests, plus README/project overview documentation for the preflight behavior.
+- Moved the existing-docs adoption thread out of Currently Hot after the first pass.
+- Verification:
+  - `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  - scratch `treaty init --source . --defaults` with `Work_Log.md` + `TODO.md`, confirmed exit 1 and no copied treaty files
+  - scratch `treaty init --source . --defaults` with `TODO.md`, confirmed advisory warning and successful canonical treaty file creation
+
+### Add adoption and session-documentation planning threads (gpt-5)
+
+- Updated `next_steps.md` with active follow-up threads for existing-docs adoption, automatic session documentation rules, and legacy overlap validation.
+- Captured conservative defaults: do not auto-migrate existing docs without consent, log substantive sessions by default, and keep validation guidance concise and non-destructive.
+- Verification:
+  - `.\.venv\Scripts\treaty.exe validate .`
+  - `git diff --check`
+
+### Tame validation output for legacy case-mismatched treaty files (gpt-5)
+
+- Updated `treaty validate` to inspect actual top-level directory entries before content validation.
+- Added clear path issues for wrong-case treaty files and case-only collisions, so legacy files such as `Work_Log.md` are not validated as canonical `work_log.md` content.
+- Added regression coverage for wrong-case `work_log.md`, wrong-case required treaty paths, and case-only duplicate paths when supported by the filesystem.
+- Updated README and project overview notes to document canonical filename validation and legacy migration behavior.
+- Verification:
+  - `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  - `git diff --check`
+  - `.\.venv\Scripts\treaty.exe validate .`
+  - `.\.venv\Scripts\treaty.exe --help`
+  - `.\.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"`
+
 ## 2026-05-27
 
 ### Add treaty validate CLI and validation tests (gpt-5)
