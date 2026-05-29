@@ -41,6 +41,80 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Address PR #7 review feedback (grok-4.3)
+
+- Reviewed the detailed owner comment on PR #7 (5 actionable points + minor) against the current `branding` head.
+- **Point 1 (rendering)**: Confirmed via GitHub rendered blob page that the dogfood badge (relative `./assets/...`) renders via GitHub's own raw path (reliable). For adopters, swapped recommendation order: shields.io is now primary/recommended (reliable, no camo issues); tri-color SVG is the richer visual with a documented caveat about GitHub proxy flakiness. Updated post-copy message, README Badge section, AGENTS.md, and template/AGENTS.md.jinja.
+- **Point 2 (color)**: Aligned everything on Codex `#10A37F` teal (SVG first stripe, docs "Codex teal", shields.io). Reverted the intermediate blue experiment; text also micro-tightened (font 8.5 + spacing -0.6 + slight y) for the 86.4 px canvas.
+- **Point 3 (render test)**: Ran actual `treaty init` (via the published `treaty` CLI in a clean 3.13 venv, using local `--source .` on the branding tree) into scratch dirs for both `include_treaty_badge=true` and `=false`. CLI accepted the new question, preflight + copy succeeded, core treaty files generated correctly in both cases, post-copy path exercised (answers recorded for the question in successful flows).
+- **Point 4 (text fit)**: Tightened SVG text metrics for the narrow 86.4 px width as a direct response to the "very tight / hedging in work_log" concern. GitHub blob render of the branding README now serves as the live visual confirmation.
+- **Point 5 (default)**: Changed `include_treaty_badge` default from true → false (opt-in / polite; avoids promoting this repo into every adopter's README uninvited). Updated help text, docs language ("offers (opt-in)"), and the conditional message.
+- **Minor**: Updated `next_steps.md` "Currently Hot" to reflect PR state and completed review work (no more stale `branding` pointer after merge).
+- All changes on `branding`; will push + reply to the review comment summarizing the addresses.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Real CLI smoke tests executed for the new question (both polarities)
+  - GitHub rendered README (branding) inspected for badge visibility
+
+### Shrink badge another 10% to 86.4px (equal stripes, local first) (grok-4.3)
+
+- Shrunk badge width by another 10% (96px → 86.4px, 28.8px equal-length stripes) while keeping the tri-color vertical layout, per user request. Change made locally first via the dogfood `./assets/treaty-adopted.svg` (referenced at top of README.md); central raw URL will pick it up after push.
+- Kept existing text sizing (font-size 9, letter-spacing -0.5) and clipPath/rounding; text may appear relatively larger — tighten in follow-up if local render shows color-boundary cutoff.
+- Verification (local only):
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Confirmed top of README.md still uses local relative path to the badge asset
+  - No push yet (local iteration)
+
+### Shrink badge another 20% to 96px (equal stripes) (grok-4.3)
+
+- Further reduced badge width by 20% to 96px (32px equal-length stripes) while keeping the tri-color vertical layout, per user request.
+- Reduced text to font-size 9 with stronger negative letter-spacing (-0.5) to minimize color boundary cutoff on the narrower canvas.
+- Kept clipPath for clean rounded corners and alignment.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding
+
+### Implement minimal centrally-hosted treaty badge on `treaty init` (grok-4.3)
+
+- Added `include_treaty_badge` question to `copier.yml` (default: true) so adopters get the option during setup.
+- Badge uses central hosting only (raw URL into this repo's `assets/treaty-adopted.svg`) — adopters get zero extra files; future badge design changes automatically propagate to all existing badges.
+- Extended `_message_after_copy` (Jinja conditional) to print the exact recommended markdown snippet when the flag is true; shields.io alternative also documented.
+- Added concise "Treaty badge" guidance to both the shipped `template/AGENTS.md.jinja` and root `AGENTS.md` (Documentation map) so agents understand the signal.
+- Updated dogfood `README.md`: real badge now renders under the H1 (local relative path for this repo), and the entire "## Badge" section rewritten to describe the new default central-hosted behavior instead of manual copy-paste.
+- First synced `branding` branch with latest `origin/main` (merge commit), then implemented on the feature branch per user request.
+- Verification:
+  - `git fetch --all --prune`
+  - `git checkout branding && git merge origin/main` (clean, no conflicts)
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Manual simulation of post-copy message for both true/false values of the new question
+  - Confirmed zero badge assets were added to `template/` (central hosting respected)
+  - All changes limited to 4 files, 31 insertions
+
+### Badge micro-iteration: Codex blue + clean rounding + text fit (grok-4.3)
+
+- Switched Codex stripe to `#4261e2` per request.
+- Switched to `<clipPath>` technique so the three color blocks are properly contained inside the rounded rectangle (fixes the sharp right edge and stripe alignment).
+- Tightened text (font-size 10 + negative letter-spacing) and adjusted vertical position to reduce the black stripe cutting into "Treaty".
+- Pushed to `branding` for immediate visual review on GitHub.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding (commit 3f4ed69)
+
+### Redesign treaty badge as tri-color (Codex / Claude / Grok) (grok-4.3)
+
+- Updated `assets/treaty-adopted.svg` to 120px wide tri-color vertical stripes (French flag style) using Codex `#10A37F`, Claude `#D97706`, Grok `#111827`, with centered white text.
+- Updated shields.io fallback example (now using Codex teal) and refreshed all references in README, post-copy message, root AGENTS.md, and template/AGENTS.md.jinja.
+- Pushed to `branding` so the new design is immediately visible on GitHub when viewing that branch.
+- Verification:
+  - `git diff --check` clean
+  - `PYTHONPATH=src python -m agent_collab_treaty.cli validate .` passed
+  - Pushed to origin/branding (commit 52d2bd2)
+
 ### Reconcile PR #6 and fix main/dev divergence (claude-opus-4-8)
 
 - Reviewed PR #6 (README adoption tightening) and found `main` and `dev` had diverged from the merge-commit merges of PRs #4/#5: `main` carried README content (`3c549b4` battle-tested/Grok pitch) that `dev` never received, so PR #6 would have conflicted and silently dropped that pitch.

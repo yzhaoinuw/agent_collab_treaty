@@ -156,6 +156,9 @@ Read these documents only as needed. The map below names each file and when it i
 - `README.md`
   - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
 
+- Treaty badge (in README)
+  - `treaty init` offers (opt-in) a centrally-hosted "Agent Collab Treaty - adopted" badge (Codex teal / Claude amber / Grok dark tri-color SVG, or reliable single-color shields.io). It is a pure visibility signal that links back to this treaty repository. No asset files are added to your project; the image updates automatically if the design improves later. The badge is fully optional. The shields.io version is the dependable recommendation for GitHub READMEs.
+
 - `template/`
   - Use when changing what `treaty init` installs into downstream projects.
   - Keep template docs generic and project-agnostic; root docs should stay specific to this repo.

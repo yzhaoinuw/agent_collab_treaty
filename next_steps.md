@@ -6,7 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- No active threads right now. Add the next concrete follow-up here when it becomes actionable.
+- Centrally-hosted treaty badge on `treaty init` (grok-4.3) — PR #7 open against dev. Review feedback addressed: shields.io made primary recommendation for reliability, colors aligned to Codex #10A37F teal, real `treaty init` smoke tests performed, text tightened for 86.4px canvas, default changed to opt-in (false), docs refreshed. Ready for re-review / merge. (See work_log for details.)
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 
