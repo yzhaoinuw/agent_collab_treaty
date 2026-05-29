@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-29
 
+### Release v0.3.1 (adoption badge) (claude-opus-4-8)
+
+- Reviewed PR #7 (independently re-rendered the template both ways and rasterized the badge SVG to confirm fixes), squash-merged it into `dev`, then fast-forwarded `main` so `main` and `dev` stayed co-located.
+- Bumped version `0.3.0` → `0.3.1` in `pyproject.toml` and `__init__.py`, tagged `v0.3.1`, and pushed the tag to fire `release.yml` (PyPI publish + GitHub Release).
+- Verification:
+  - `treaty validate .` passed; `git diff --check` clean.
+  - `git rev-parse main dev origin/main origin/dev` all equal after the bump (no divergence).
+  - Release workflow run watched to completion (see `gh run list --workflow=release.yml`).
+
 ### Address PR #7 review feedback (grok-4.3)
 
 - Reviewed the detailed owner comment on PR #7 (5 actionable points + minor) against the current `branding` head.
