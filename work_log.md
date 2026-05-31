@@ -39,7 +39,17 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
-## 2026-05-29
+## 2026-05-31
+
+### Issue #8 + prompt wrapping + agent-role PR policy (claude-opus-4-8)
+
+- Validated issue #8: `include_treaty_badge` help said "Add the badge", implying `treaty init` inserts it, but the flag only gates a paste-it-yourself recommendation in `_message_after_copy` (and `template/` ships no README to inject into). Reworded the help to "Show paste-in instructions …" so it matches behavior.
+- Fixed terminal clipping + on-resize duplication of the `treaty init` questions: Copier passes each question's `help:` string to questionary/prompt_toolkit as the prompt message verbatim, and prompt_toolkit doesn't account for terminal soft-wrapping. Long single-line help → narrow terminals clip it, and SIGWINCH redraws leave duplicate copies. Rewrote every `help:` as short, manually wrapped lines (≤57 cols) via literal block scalars to eliminate soft-wrap for realistic widths.
+- Added an "Agent Roles and PR Policy" section to root `AGENTS.md`: the **boss agent** (the lead agent running the repo, currently Claude) commits to `dev` and pushes without opening PRs even for code; **contributing agents** open PRs. Noted the "PR Merge Strategy" section applies whenever a PR is used; boss-agent changes reach `main` via a plain `dev → main` merge.
+- Verification:
+  - `python -m pytest -q` → 15 passed, 1 skipped.
+  - `treaty init <tmp> --source . --defaults` rendered the core treaty files cleanly after the help-text rewrite.
+  - YAML re-parsed; confirmed all help strings ≤57 cols wide.
 
 ### Logo color/layout polish — Codex blue + text fit (grok-4.3 design, integrated by claude-opus-4-8)
 

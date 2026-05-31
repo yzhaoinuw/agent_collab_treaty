@@ -124,7 +124,18 @@ git log --oneline --left-right --cherry-pick main...HEAD
 git merge-base --is-ancestor main HEAD
 ```
 
+## Agent Roles and PR Policy
+
+This repo distinguishes the **boss agent** from **contributing agents**:
+
+- **Boss agent** — the lead agent running the project (currently Claude). The boss agent commits directly on `dev` and pushes; it does **not** open pull requests for its own work, even substantive code. The maintainer then merges `dev → main`.
+- **Contributing agents** — any other agent making changes. These work on a branch and **open a pull request** for review before anything reaches `dev` or `main`.
+
+Why: this is a single-maintainer repo with a lead agent. PR overhead does not pay for itself on the boss agent's own changes, but PRs remain the review gate for other agents' contributions. `dev` is the staging branch; `main` is the release/integration branch.
+
 ## PR Merge Strategy
+
+This applies whenever a PR is used (contributing-agent changes, or any change the maintainer chooses to route through a PR). Boss-agent changes reach `main` via a plain `dev → main` merge with no PR.
 
 When merging PRs from `dev` into `main`, prefer `gh pr merge --rebase` (or `--squash`) over the default `--merge`. The merge-commit option creates a commit on `main` that is not in `dev`'s history, so the two branches diverge on the DAG even when their working trees match. A follow-on commit on either branch (for example, a version bump made after the PR merges) then can't be fast-forwarded across — it has to be cherry-picked or merged manually.
 
