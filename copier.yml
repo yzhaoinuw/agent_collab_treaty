@@ -33,23 +33,33 @@ _message_after_copy: |
 
 integration_branch:
   type: str
-  help: "Your integration branch (the branch PRs merge into; usually main, master, or dev)"
+  help: |-
+    Integration branch (where PRs merge;
+    usually main, master, or dev).
   default: "main"
 
 env_activation:
   type: str
-  help: "Command to activate your dev environment (e.g. 'conda activate myenv' or 'source .venv/bin/activate'). Leave blank to fill in later."
+  help: |-
+    Command to activate your dev environment, e.g.
+    'conda activate myenv' or 'source .venv/bin/activate'.
+    Leave blank to fill in later.
   default: ""
 
 test_command:
   type: str
-  help: "Command to run the CI-equivalent test suite (e.g. 'pytest' or 'npm test'). Leave blank to fill in later."
+  help: |-
+    Command to run the CI-equivalent test suite,
+    e.g. 'pytest' or 'npm test'.
+    Leave blank to fill in later.
   default: ""
 
 agent_pointers:
   type: yaml
   multiselect: true
-  help: "Optional agent-specific pointer files to generate so tools that do not natively load AGENTS.md still follow the treaty."
+  help: |-
+    Optional agent-specific pointer files, so tools that
+    do not natively load AGENTS.md still follow the treaty.
   choices:
     "Claude Code / Cowork (CLAUDE.md)": "claude-code"
     "Cursor project rule (.cursor/rules/treaty.mdc)": "cursor"
@@ -60,4 +70,7 @@ agent_pointers:
 include_treaty_badge:
   type: bool
   default: false
-  help: "Show paste-in instructions for the 'Agent Collab Treaty - adopted' badge in the post-install message (you add it to your README yourself; zero files added to your repo). The image link points at this treaty repository so adopters get automatic updates if the badge design improves later."
+  help: |-
+    Show paste-in instructions for the 'Agent Collab Treaty -
+    adopted' badge in the post-install message. You add it to
+    your README yourself; zero files are added to your repo.
