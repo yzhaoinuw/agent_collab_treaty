@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-05-31
 
+### Release v0.3.2 (claude-opus-4-8)
+
+- Bumped version `0.3.1` → `0.3.2` in `pyproject.toml` and `__init__.py`.
+- Ships the badge polish (`83f3b2c`, landed after the 0.3.1 tag) plus the two `copier.yml` help-text fixes from this session (issue #8 reword + prompt wrapping). The AGENTS.md PR-policy change is repo-internal and not part of the installable product.
+- Patch release — fixes/polish only, no new features or breaking changes.
+- Flow: bump committed on `dev`, fast-forwarded `main`, tagged `v0.3.2` and pushed the tag to fire `release.yml` (PyPI publish + GitHub Release).
+- Verification:
+  - `git rev-parse` main/dev/origin all equal after the bump (no divergence).
+  - Release workflow run watched to completion.
+
 ### Issue #8 + prompt wrapping + agent-role PR policy (claude-opus-4-8)
 
 - Validated issue #8: `include_treaty_badge` help said "Add the badge", implying `treaty init` inserts it, but the flag only gates a paste-it-yourself recommendation in `_message_after_copy` (and `template/` ships no README to inject into). Reworded the help to "Show paste-in instructions …" so it matches behavior.
