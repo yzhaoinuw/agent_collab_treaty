@@ -124,6 +124,12 @@ git log --oneline --left-right --cherry-pick main...HEAD
 git merge-base --is-ancestor main HEAD
 ```
 
+### Automated commits on `main`
+
+The `update-adopters-badge` workflow (`.github/workflows/update-adopters-badge.yml`) runs weekly and, when the adopter count changes, pushes a `github-actions[bot]` commit **directly to `main`** (scheduled workflows run on the default branch). This means `main` can move ahead of your local clone and ahead of `dev` on its own.
+
+Before merging `dev → main`, always `git pull` (or `git fetch` then check) `main` first, so you merge onto the bot's latest commit instead of diverging from it. If `main` and `dev` have already diverged because of a bot commit, diagnose with the checks above and ask before any rebase/force-push/merge surgery — do not "fix then report."
+
 ## Agent Roles and PR Policy
 
 This repo distinguishes the **boss agent** from **contributing agents**:
@@ -168,7 +174,11 @@ Read these documents only as needed. The map below names each file and when it i
   - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
 
 - Treaty badge (in README)
-  - `treaty init` offers (opt-in) a centrally-hosted "Agent Collab Treaty - adopted" badge (Codex blue / Claude amber / Grok dark tri-color SVG, or reliable single-color shields.io). It is a pure visibility signal that links back to this treaty repository. No asset files are added to your project; the image updates automatically if the design improves later. The badge is fully optional. The shields.io version is the dependable recommendation for GitHub READMEs.
+  - `treaty init` offers (opt-in) a centrally-hosted "Agent Collab Treaty - adopted" badge. It is a pure visibility signal that links back to this treaty repository. No asset files are added to your project; the image updates automatically if the design improves later. The badge is fully optional. The tri-color SVG (Codex blue / Claude amber / Grok dark) is the primary recommendation — its text is outlined to vector paths, so it renders identically on GitHub across every platform. The single-color shields.io variant is a fallback only for READMEs that also render outside GitHub (e.g. PyPI/npm), where raw SVG may be blocked.
+
+- Adopter tracking (`scripts/count_adopters.sh` + adopters badge in README)
+  - `scripts/count_adopters.sh` counts public repos that reference the treaty via GitHub code search (using your `gh` auth), dedupes, and excludes the treaty repo itself and the `pydigger` crawler. Run it on demand; it has no servers and no cost. The count is a **floor** — code search only indexes a subset of public repos, with lag.
+  - The `adopters` badge near the top of `README.md` (between the `<!-- adopters-badge:start/end -->` markers) displays that count and links to the live code-search results. It is refreshed weekly by the `update-adopters-badge` workflow, which reuses the script and only rewrites the number when it is > 0.
 
 - `template/`
   - Use when changing what `treaty init` installs into downstream projects.
@@ -178,7 +188,7 @@ Read these documents only as needed. The map below names each file and when it i
   - Use when adding or changing questions, defaults, Copier configuration, or post-copy messaging.
 
 - `.github/workflows/`
-  - Use when changing release or TestPyPI publishing behavior.
+  - Use when changing release or TestPyPI publishing behavior, or the weekly `update-adopters-badge` workflow that refreshes the README adopters count.
 
 ## Git Ownership Note
 

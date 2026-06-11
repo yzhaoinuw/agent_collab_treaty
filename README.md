@@ -1,6 +1,9 @@
 # Agent Collab Treaty
 
 [![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
+<!-- adopters-badge:start -->
+[![Public adopters](https://img.shields.io/badge/adopters-2-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
+<!-- adopters-badge:end -->
 
 A drop-in documentation contract that helps future agent sessions pick up a repository where the last session left off, with less repeated reading, fewer lost decisions, and clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
 
@@ -114,21 +117,23 @@ The agent should inspect legacy docs, summarize active work into `next_steps.md`
 
 The exact markdown snippet is printed in the post-copy message when you run `treaty init` and opt into the badge question.
 
-**Recommended (reliable single-color via shields.io — works everywhere on GitHub):**
-
-```markdown
-[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
-```
-
-**Richer tri-color visual (centrally-hosted SVG — automatic updates on design changes):**
+**Recommended (tri-color SVG — the full visual design):**
 
 ```markdown
 [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
 ```
 
-> Note: the tri-color SVG is served from raw.githubusercontent.com and goes through GitHub's camo proxy when embedded in READMEs; it renders for many viewers but can be flaky for others. The shields.io version is the dependable default.
+The badge text is outlined to vector paths (no embedded or system font), so it renders **identically on GitHub across every platform** — no font-substitution or clipping. The image is hosted centrally, so it picks up any future design improvements automatically.
 
-This repo itself uses the locally-hosted version of the badge (relative path in our README) so the dogfood experience always shows the full tri-color design. All other adopters see the snippets above (shields.io as the primary recommendation).
+**Fallback (single-color via shields.io):**
+
+```markdown
+[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+```
+
+> Use the fallback only if your README also renders **outside GitHub** — e.g. on PyPI or npm — where raw SVG images may be sanitized or blocked.
+
+This repo's own README uses the tri-color badge via a relative path; adopters use the `raw.githubusercontent.com` URL above, which is the same image.
 
 ## Wiring Up Your Agent
 

@@ -17,17 +17,18 @@ _message_after_copy: |
        next_steps.md according to AGENTS.md.
   {% if include_treaty_badge %}
     4. (Recommended) Add the Agent Collab Treaty badge near the top of your README.md
-       to signal adoption. The reliable single-color version uses shields.io (no external
-       image hosting concerns on GitHub):
+       to signal adoption. The tri-color version is the primary recommendation — its
+       text is outlined to vector paths (no font dependency), so it renders identically
+       on GitHub across every platform:
 
-       ```markdown
-       [![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
-       ```
-
-       Richer tri-color visual variant (central SVG, may not render for all viewers due to
-       GitHub camo proxy limitations on raw SVGs):
        ```markdown
        [![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
+       ```
+
+       Fallback (single-color, via shields.io) only if your README also renders outside
+       GitHub — e.g. on PyPI or npm — where raw SVG images may be blocked:
+       ```markdown
+       [![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
        ```
   {% endif %}
 

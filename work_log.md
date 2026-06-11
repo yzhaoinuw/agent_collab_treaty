@@ -39,6 +39,28 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-06-10
+
+### Adopter tracking: count script + self-updating README badge (claude-opus-4-8)
+
+- Added `scripts/count_adopters.sh`: counts public repos that reference the treaty via GitHub code search (`gh` auth), dedupes, and excludes the treaty repo itself and the `szabgab/pydigger` crawler. Runs on demand, no servers, no cost. The count is a floor (code search indexes only a subset of public repos, with lag).
+- Added an `adopters` badge near the top of `README.md` (between `<!-- adopters-badge:start/end -->` markers) showing the count and linking to the live code-search results. Decision: count our own dogfood repos as adopters (only the treaty repo itself and crawlers are excluded), so the badge reflects real usage today rather than displaying 0 while external adopters wait to be indexed.
+- Added `.github/workflows/update-adopters-badge.yml`: weekly (Mon 06:17 UTC) + manual; reuses the script, rewrites the badge number, commits only on change. Safety nets: never overwrites the badge with 0 on an empty/failed search; falls back to an optional `ADOPTERS_TOKEN` secret if the default `GITHUB_TOKEN` cannot do code search.
+- Context for the choice: the badge is a static shields.io/raw image plus a repo link, so it can't phone home; GitHub's Camo proxy makes image-render counting unreliable, leaving code search as the right tool for "who adopted." A Pi/redirect would only measure clicks, not adoptions.
+- Documented in `AGENTS.md`: new "Automated commits on `main`" note (the bot pushes badge bumps directly to `main`, so `git pull main` before any `dev → main` merge to avoid divergence), plus adopter-tracking entries in the Documentation map.
+- Verification:
+  - `./scripts/count_adopters.sh` → `Total adopters: 2` (`yzhaoinuw/preprocess_sleep_data`, `yzhaoinuw/sleep_scoring`).
+  - Simulated the workflow's `sed` rewrite against `README.md` (count 5) → badge URL number updated cleanly between the markers.
+
+### Tri-color badge made self-contained + promoted to primary (claude-opus-4-8)
+
+- Root cause of the old "shields.io is primary" recommendation: `assets/treaty-adopted.svg` drew its label as a live `<text>` element with a system `font-family`. GitHub's Camo proxy doesn't rasterize SVGs, so the viewer's browser/OS font rendered it — on non-Mac systems the hard-coded width + clipPath could clip or misalign the text. "Looks fine on my repos" only proved the author's own environment.
+- Fix: outlined the label to vector `<path>`s (Helvetica Bold, font-size 8.8, letter-spacing -0.35, centered; text width 76.82px inside the 86.4px badge). The SVG now has zero font dependency and renders identically on GitHub across every platform. Added `<title>` + `aria-label` for accessibility. File ~6.2 KB.
+- Flipped the recommendation everywhere: tri-color SVG is now primary; shields.io single-color is demoted to a fallback only for READMEs that also render outside GitHub (PyPI/npm) where raw SVG may be blocked. Updated `copier.yml` post-copy message, `README.md` Badge section, root `AGENTS.md`, and `template/AGENTS.md.jinja`.
+- Verification:
+  - `grep -ciE '<text|font-family|@font-face' assets/treaty-adopted.svg` → 0 (no font refs remain).
+  - Rendered via macOS `qlmanage` → tri-color badge with crisp centered white label, no clipping.
+
 ## 2026-05-31
 
 ### Release v0.3.2 (claude-opus-4-8)
