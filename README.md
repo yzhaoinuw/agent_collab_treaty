@@ -2,7 +2,7 @@
 
 [![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
 <!-- adopters-badge:start -->
-[![Public adopters](https://img.shields.io/badge/adopters-2-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
+[![Public adopters](https://img.shields.io/badge/adopters-3-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
 <!-- adopters-badge:end -->
 
 A drop-in documentation contract that helps future agent sessions pick up a repository where the last session left off, with less repeated reading, fewer lost decisions, and clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
