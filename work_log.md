@@ -41,6 +41,14 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-07-01
 
+### Add "Update an installed treaty" README section (claude-opus-4-8, extended thinking)
+
+- Added a dedicated `### Update an installed treaty` section to `README.md` (between the install options and "Validate an installed treaty"): the `treaty update` flow, that it three-way-merges from the pinned version up to the latest release while preserving local edits, `--defaults`, the git-tracked prerequisite, and the caveat that manual-copy (Option 3) adopters have no `.copier-answers.yml` and must merge by hand.
+- Consolidated the previously scattered git-requirement note (it lived mid-init-flow) into this section to remove duplication.
+- Verified the update path end-to-end beforehand: a scratch project pinned at `v0.3.2` ran `treaty update` → advanced to `v0.3.3` and pulled in today's Release/Tag Checklist and dated-entry rule, prior answers preserved.
+- Verification:
+  - `git diff --check` clean; internal anchor `#option-3---just-copy-the-files` matches its heading.
+
 ### Release v0.3.3 (claude-opus-4-8, extended thinking)
 
 - Bumped version `0.3.2` → `0.3.3` in `pyproject.toml` and `__init__.py`. Ships today's `treaty validate` future-date check plus the release/tag-gate and dated-artifact guidance in root `AGENTS.md` and the shipped template, and the badge-adopters/tri-color changes from `c162439`. Patch release — no breaking changes.

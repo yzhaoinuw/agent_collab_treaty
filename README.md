@@ -54,8 +54,6 @@ In existing projects, `treaty init` first runs a non-destructive adoption prefli
 
 Case-mismatched treaty-looking paths are blocking because they can prevent canonical files from being created, especially on Windows. Rename or archive them, then rerun `treaty init`.
 
-> **Note**: `treaty update` requires a git-tracked project because Copier uses git for three-way merges. If needed, run `git init && git add . && git commit -m "treaty baseline"` once before the first update.
-
 By default, `treaty init` installs only vendor-neutral treaty docs. You can also opt into pointer files for tools that do not reliably load `AGENTS.md` directly:
 
 - `CLAUDE.md` for Claude Code / Cowork
@@ -86,6 +84,23 @@ pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
 Copy from [`template/`](template/) into your project, not from the repo root. The root files are this project's own dogfooded treaty docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files.
 
 Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
+
+### Update an installed treaty
+
+Once a project has the treaty installed via `treaty init` (or Copier), pull in later refinements without losing local edits:
+
+```bash
+# optional: get the latest CLI first
+pipx upgrade agent-collab-treaty      # or: pip install -U agent-collab-treaty
+
+git add -A && git commit -m "wip"     # commit local changes first
+treaty update                          # or: treaty update /path/to/project
+git diff                               # review the merge, then commit
+```
+
+`treaty update` reads the `.copier-answers.yml` recorded at install time and does a three-way merge from your pinned version up to the treaty's latest release, applying template changes while preserving your local edits and previously answered values. Add `--defaults` to reuse those answers non-interactively.
+
+> **Note**: the project must be git-tracked with a clean working tree — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't. Projects adopted by manually copying files ([Option 3](#option-3---just-copy-the-files)) have no `.copier-answers.yml`, so copy any new sections from [`template/`](template/) by hand instead.
 
 ### Validate an installed treaty
 
