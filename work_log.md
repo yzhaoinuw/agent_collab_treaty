@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-07-01
 
+### Release v0.3.3 (claude-opus-4-8, extended thinking)
+
+- Bumped version `0.3.2` → `0.3.3` in `pyproject.toml` and `__init__.py`. Ships today's `treaty validate` future-date check plus the release/tag-gate and dated-artifact guidance in root `AGENTS.md` and the shipped template, and the badge-adopters/tri-color changes from `c162439`. Patch release — no breaking changes.
+- Reconciled the bot divergence first: `origin/main` carried two `update-adopters-badge` bot commits (`f344526`, `b31bcd4`, README badge count) that `dev` lacked. Per the maintainer's call, merged `origin/main` into `dev` (single merge commit, README-only, no conflict) rather than rebasing/force-pushing, then fast-forwarded `main` to `dev` so both branches and the tag stay co-located.
+- Flow: merge + bump committed on `dev` and pushed; `main` fast-forwarded to `dev`; annotated tag `v0.3.3` created on that commit and pushed to fire `release.yml` (PyPI publish + GitHub Release).
+- Verification:
+  - `python -m unittest discover -s tests` → 18 OK (1 skipped); `treaty validate .` passed; `git diff --check` clean after the bump.
+  - `git rev-parse main dev origin/main origin/dev` all equal after the fast-forward (no divergence).
+  - Pushed tag/branch refs verified with `git ls-remote`; release workflow watched to completion.
+
 ### Machine-checked future-date gate in `treaty validate` (follow-up to issue #9) (claude-opus-4-8, extended thinking)
 
 - Added a `work-log-future-date` check to `treaty validate`: it fails when any `## YYYY-MM-DD` work-log heading is dated after the local date. This is the one piece of the release/tag gate worth machine-enforcing — objectively checkable, zero false positives, generic across all treaty projects, no git or project config required. Decision recorded for future agents: the *release gate itself* (version / changelog / docs updated before a tag) stays prose-only guidance because it is project-specific and false-positive-prone; if hard enforcement is ever wanted, its home is a project-owned pre-push or CI check on tag push, not the generic validator.
