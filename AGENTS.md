@@ -160,6 +160,7 @@ Read these documents only as needed. The map below names each file and when it i
     `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md work_log_archive/`
   - When prepending a dated entry, if today's calendar date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it. Do not start a second `## YYYY-MM-DD` header for the same date.
   - When prepending a new date would push the live log past 5 unique calendar dates, move the oldest 5 dates as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`.
+  - Before writing any dated entry, verify the workstation / repo-local date (`date +%F` on macOS/Linux, `Get-Date -Format yyyy-MM-dd` on Windows) and use that. When the model-context date and the local environment disagree — which happens across a UTC midnight boundary — trust the local date. Never write a future-dated entry.
 
 - `next_steps.md`
   - Use when planning or continuing unfinished work from previous sessions.
@@ -199,6 +200,26 @@ git config --global --add safe.directory C:/Users/yzhao/python_projects/agent_co
 ```
 
 This is the preferred fix unless repository ownership itself needs to be changed at the OS level.
+
+## Release / Tag Checklist
+
+Treat any request that combines **commit + push + tag** — or "cut a release" / "publish version X" — as a release. A release requires a documentation gate that must clear *before* the tag is created or pushed, not after. Run this checklist in status before creating an annotated tag:
+
+- Version metadata bumped (`pyproject.toml`) and consistent with the tag you are about to create.
+- Changelog / release notes updated if the repo has one. (This repo has no `change_log.txt`; its release history lives in `work_log.md` plus the GitHub Release body.)
+- User-facing docs (`README.md`, `project_overview.md`, template docs) updated when behavior changed.
+- `work_log.md` updated with the implementation summary, the verification commands actually run, and the release / branch / tag state.
+- Verification recorded — the focused or full checks from the pre-flight checklist passed and are noted in the work log.
+- Any dated artifact uses the verified local date, not an unverified model-context date (see the dated-entry rule under Documentation → `work_log.md`).
+
+Only after every applicable item is done: create the annotated tag and push. Then verify the pushed refs landed where you expect:
+
+```powershell
+git ls-remote --tags origin
+git ls-remote --heads origin <branch>
+```
+
+If a tag or branch ref is missing or points at the wrong commit after the push, fix it before treating the release as complete.
 
 ## Release Notes
 

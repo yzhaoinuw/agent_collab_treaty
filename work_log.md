@@ -39,6 +39,19 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-06-30
+
+### Release/tag documentation gate + dated-artifact rule (issue #9) (claude-opus-4-8, extended thinking)
+
+- Added a **Release / Tag Checklist** section to both the dogfood root `AGENTS.md` and the shipped `template/AGENTS.md.jinja`. It treats any `commit + push + tag` (or "cut a release" / "publish version X") request as a release requiring a docs gate that must clear *before* the tag is created or pushed: version metadata bumped, changelog/release notes (if the repo has one), user-facing docs, `work_log.md`, and verification all updated, then verify the pushed tag/branch refs with `git ls-remote`. Root version names `pyproject.toml` and notes this repo has no `change_log.txt`; the template version is generic/conditional with bracketed placeholders and a "delete if you never tag" note.
+- Added a **dated-artifact rule** under the `work_log.md` Documentation bullet in both files: verify the workstation/repo-local date (`date +%F` / `Get-Date -Format yyyy-MM-dd`) before writing any dated entry; when model-context and local dates disagree (UTC midnight boundary), trust the local date; never write a future-dated entry. This came up live: the model-context date was 2026-06-30 while UTC had rolled to 2026-07-01 — this entry uses the verified local `2026-06-30`.
+- Verification:
+  - `date +%F` → `2026-06-30` (local, EDT); `date -u` → `2026-07-01` (UTC) — confirmed the discrepancy the rule addresses.
+  - `git diff --check` → clean.
+  - `python -m unittest discover -s tests -v` → 16 tests OK (1 skipped: case-only duplicate paths unsupported on APFS).
+  - `treaty validate .` → "Treaty validation passed."
+  - Direct Jinja render of `template/AGENTS.md.jinja` with `StrictUndefined` (integration_branch=main) → new section renders, `{{ integration_branch }}` expands to `main`, no undefined vars. (`treaty init --source .` renders from the git ref, not the dirty working tree, so it can't smoke-test uncommitted template edits.)
+
 ## 2026-06-10
 
 ### Adopter tracking: count script + self-updating README badge (claude-opus-4-8)
