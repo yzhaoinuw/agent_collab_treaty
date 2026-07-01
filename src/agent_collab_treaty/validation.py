@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 import re
 from typing import Iterable
@@ -41,17 +42,23 @@ class RequiredPathState:
     case_insensitive_matches: tuple[Path, ...]
 
 
-def validate_project(root: Path) -> list[ValidationIssue]:
-    """Validate standard treaty files under root."""
+def validate_project(root: Path, today: date | None = None) -> list[ValidationIssue]:
+    """Validate standard treaty files under root.
+
+    ``today`` is the local reference date for the future-date check; it defaults
+    to ``date.today()`` and is injectable so tests stay deterministic.
+    """
 
     root = root.expanduser().resolve()
+    if today is None:
+        today = date.today()
     issues: list[ValidationIssue] = []
     required_paths = _inspect_required_paths(root)
     issues.extend(_validate_required_paths(required_paths))
 
     work_log = required_paths["work_log.md"].exact
     if work_log is not None:
-        issues.extend(_validate_work_log(work_log))
+        issues.extend(_validate_work_log(work_log, today))
 
     next_steps = required_paths["next_steps.md"].exact
     if next_steps is not None:
@@ -127,7 +134,7 @@ def _validate_required_paths(
             )
 
 
-def _validate_work_log(path: Path) -> Iterable[ValidationIssue]:
+def _validate_work_log(path: Path, today: date) -> Iterable[ValidationIssue]:
     lines = _read_lines(path)
     content = list(_without_html_comments(lines))
 
@@ -161,6 +168,21 @@ def _validate_work_log(path: Path) -> Iterable[ValidationIssue]:
                 message=f"Duplicate date heading {date_value}; add another session under the first date heading instead.",
             )
         seen_dates.add(date_value)
+
+        try:
+            parsed = date.fromisoformat(date_value)
+        except ValueError:
+            continue
+        if parsed > today:
+            yield ValidationIssue(
+                path=path,
+                line=line_number,
+                code="work-log-future-date",
+                message=(
+                    f"Work-log date {date_value} is in the future (local today is "
+                    f"{today.isoformat()}); verify the workstation date before dating an entry."
+                ),
+            )
 
     if len(date_headings) > 5:
         line_number, date_value = date_headings[5]

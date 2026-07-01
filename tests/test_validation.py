@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from agent_collab_treaty.validation import validate_project
@@ -126,6 +127,56 @@ class TreatyValidationTests(unittest.TestCase):
             issues = validate_project(root)
 
         self.assertIn("work-log-rotation-needed", {issue.code for issue in issues})
+
+    def test_work_log_reports_future_date(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "work_log.md").write_text(
+                "\n".join(
+                    [
+                        "# Work Log",
+                        "",
+                        "## 2026-07-02",
+                        "",
+                        "### Entry (gpt-5)",
+                        "",
+                        "- Did a thing.",
+                        "- Verification:",
+                        "  - checked",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_project(root, today=date(2026, 7, 1))
+
+        self.assertIn("work-log-future-date", {issue.code for issue in issues})
+
+    def test_work_log_todays_date_is_not_flagged_as_future(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "work_log.md").write_text(
+                "\n".join(
+                    [
+                        "# Work Log",
+                        "",
+                        "## 2026-07-01",
+                        "",
+                        "### Entry (gpt-5)",
+                        "",
+                        "- Did a thing.",
+                        "- Verification:",
+                        "  - checked",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_project(root, today=date(2026, 7, 1))
+
+        self.assertNotIn("work-log-future-date", {issue.code for issue in issues})
 
     def test_next_steps_reports_broken_currently_hot_anchor(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
