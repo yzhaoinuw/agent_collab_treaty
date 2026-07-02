@@ -109,6 +109,17 @@ git ls-remote --heads origin {{ integration_branch }}
 
 If a ref is missing or points at the wrong commit after the push, fix it before treating the release as complete.
 
+## Updating The Treaty
+
+This is about pulling upstream refinements to the treaty files into this project via `treaty update` — distinct from updating `work_log.md` / `next_steps.md` content (see "When To Update Treaty Docs" above). Pulling upstream changes is a maintainer's call; only do it when asked.
+
+If asked to update the treaty:
+
+- Commit or stash local changes first. `treaty update` requires a clean, git-tracked working tree and refuses to run on a dirty one.
+- Run `treaty update`. It performs a **three-way merge**, so edits that do not overlap upstream changes are kept automatically.
+- Where a local edit overlaps a changed region, the merge leaves conflict markers (`<<<<<<< before updating` / `=======` / `>>>>>>> after updating`) and an unmerged file — exactly like a `git merge`. Resolve each one, keeping your content and folding in the new template sections, then `git add` the file.
+- Review `git diff` and don't commit unresolved conflict markers. Then commit.
+
 ## Documentation
 
 Read these documents only as needed. The map below names each file and when it's worth opening.

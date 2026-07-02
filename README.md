@@ -87,18 +87,20 @@ Whichever path you pick, future agent sessions will read the files automatically
 
 ### Update an installed treaty
 
-Once a project has the treaty installed via `treaty init` (or Copier), pull in later refinements without losing local edits:
+Once a project has the treaty installed via `treaty init` (or Copier), pull in later refinements with `treaty update`:
 
 ```bash
 # optional: get the latest CLI first
 pipx upgrade agent-collab-treaty      # or: pip install -U agent-collab-treaty
 
-git add -A && git commit -m "wip"     # commit local changes first
+git add -A && git commit -m "wip"     # commit first — update refuses a dirty tree
 treaty update                          # or: treaty update /path/to/project
-git diff                               # review the merge, then commit
+git status                             # look for unmerged (UU) files
+# resolve any conflict markers, then:
+git add -A && git commit
 ```
 
-`treaty update` reads the `.copier-answers.yml` recorded at install time and does a three-way merge from your pinned version up to the treaty's latest release, applying template changes while preserving your local edits and previously answered values. Add `--defaults` to reuse those answers non-interactively.
+`treaty update` reads the `.copier-answers.yml` recorded at install time and does a **three-way merge** from your pinned version up to the treaty's latest release. Edits that don't overlap the upstream changes are kept automatically. Where your edits overlap a changed region, the merge leaves conflict markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file — resolve them like any `git merge`, keeping your content and folding in the new sections, and don't commit unresolved markers. Review `git diff` before committing. Add `--defaults` to reuse your previous answers non-interactively.
 
 > **Note**: the project must be git-tracked with a clean working tree — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't. Projects adopted by manually copying files ([Option 3](#option-3---just-copy-the-files)) have no `.copier-answers.yml`, so copy any new sections from [`template/`](template/) by hand instead.
 

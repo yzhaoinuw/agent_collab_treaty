@@ -41,6 +41,14 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-07-01
 
+### Document treaty-update conflict handling for agents (claude-opus-4-8, extended thinking)
+
+- Reproduced that `treaty update` is a Copier three-way merge (git merge under the hood): non-overlapping local edits are preserved, but edits overlapping an upstream change leave `<<<<<<< before updating` / `>>>>>>> after updating` conflict markers and a `UU` unmerged file — on both fresh-init and existing-adoption projects. Not silent data loss (content is recoverable between markers), but easy to mistake for an overwrite. My earlier "clean" verification only appended far from template changes, so it missed this — corrected here.
+- Added an **"Updating The Treaty"** section to the shipped `template/AGENTS.md.jinja` so a downstream agent asked to update the treaty has an explicit procedure: commit first (clean tree required), run `treaty update`, resolve conflict markers keeping local content, review `git diff`, don't commit unresolved markers. Framed as maintainer-initiated ("only when asked").
+- Fixed the README "Update an installed treaty" section: dropped the "preserving your local edits" overclaim and added the resolve-conflicts workflow.
+- Verification:
+  - `git diff --check` clean; `treaty validate .` passed; Jinja render of `template/AGENTS.md.jinja` with `StrictUndefined` succeeded (no new undefined vars).
+
 ### Add "Update an installed treaty" README section (claude-opus-4-8, extended thinking)
 
 - Added a dedicated `### Update an installed treaty` section to `README.md` (between the install options and "Validate an installed treaty"): the `treaty update` flow, that it three-way-merges from the pinned version up to the latest release while preserving local edits, `--defaults`, the git-tracked prerequisite, and the caveat that manual-copy (Option 3) adopters have no `.copier-answers.yml` and must merge by hand.
