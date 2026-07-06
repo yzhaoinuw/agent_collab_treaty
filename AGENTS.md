@@ -179,7 +179,7 @@ Read these documents only as needed. The map below names each file and when it i
 
 - Adopter tracking (`scripts/count_adopters.sh` + adopters badge in README)
   - `scripts/count_adopters.sh` counts public repos that reference the treaty via GitHub code search (using your `gh` auth), dedupes, and excludes the treaty repo itself and the `pydigger` crawler. Run it on demand; it has no servers and no cost. The count is a **floor** — code search only indexes a subset of public repos, with lag.
-  - The `adopters` badge near the top of `README.md` (between the `<!-- adopters-badge:start/end -->` markers) displays that count and links to the live code-search results. It is refreshed weekly by the `update-adopters-badge` workflow, which reuses the script and only rewrites the number when it is > 0.
+  - The `adopters` badge near the top of `README.md` (between the `<!-- adopters-badge:start/end -->` markers) displays that count and links to the live code-search results. It is refreshed weekly by the `update-adopters-badge` workflow, which reuses the script and only rewrites the number when the script exits cleanly **and** the count is a positive integer. The script hard-fails (non-zero exit, empty `ADOPTER_COUNT`) on any code-search error or rate limit, and filters results to valid `owner/repo` lines, so a throttled run (default `GITHUB_TOKEN` can hit HTTP 429 secondary rate limits) leaves the badge unchanged rather than writing a bogus low number. Set an `ADOPTERS_TOKEN` PAT secret to reduce throttling. Note: because the bot commits the badge directly to `main`, `main` can move ahead of `dev` — see the "Automated commits on `main`" note above.
 
 - `template/`
   - Use when changing what `treaty init` installs into downstream projects.

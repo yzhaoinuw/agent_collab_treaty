@@ -40,14 +40,37 @@ if ! gh auth status >/dev/null 2>&1; then
 fi
 
 tmp="$(mktemp)"
-trap 'rm -f "$tmp"' EXIT
+err="$(mktemp)"
+trap 'rm -f "$tmp" "$err"' EXIT
 
+# Shape of a valid GitHub "owner/repo" full name. Anything else that lands in
+# the results (e.g. a rate-limit error body that gh may print on stdout) is
+# discarded so it can never be miscounted as an adopter.
+REPO_REGEX='^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'
+
+# Keep repo names (stdout) and errors (stderr) separate. A non-zero exit or a
+# rate-limit response must NOT silently become "0 adopters" or, as happened
+# once, a bogus "1 adopter" from a 429 JSON body leaking onto stdout.
+search_failed=0
 for q in "${QUERIES[@]}"; do
-  gh api --paginate -X GET search/code -f q="$q" -f per_page=100 \
-    --jq '.items[].repository.full_name' 2>/dev/null >>"$tmp" || true
+  if ! gh api --paginate -X GET search/code -f q="$q" -f per_page=100 \
+        --jq '.items[].repository.full_name' >>"$tmp" 2>>"$err"; then
+    search_failed=1
+  fi
 done
 
-adopters="$(sort -u "$tmp" | grep -Ev "$EXCLUDE_REGEX" || true)"
+# Bail out on any failure or rate limit instead of reporting a number the badge
+# updater would trust. An empty ADOPTER_COUNT plus a non-zero exit tells the
+# caller to leave the displayed count unchanged.
+if [ "$search_failed" -ne 0 ] || grep -qiE 'rate limit|"status":"(403|429)"|secondary rate' "$err"; then
+  echo "error: GitHub code search failed or was rate-limited; not reporting a count." >&2
+  sed 's/^/  gh: /' "$err" >&2 || true
+  echo "ADOPTER_COUNT="
+  exit 1
+fi
+
+# Count only real "owner/repo" lines, then dedupe and drop excluded repos.
+adopters="$(grep -E "$REPO_REGEX" "$tmp" | sort -u | grep -Ev "$EXCLUDE_REGEX" || true)"
 count="$(printf '%s\n' "$adopters" | grep -c . || true)"
 
 echo "Agent Collab Treaty — public adopters"

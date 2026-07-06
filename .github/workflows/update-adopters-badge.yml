@@ -3,11 +3,13 @@ name: Update adopters badge
 # Refreshes the "adopters" badge in README.md from GitHub code search.
 # Runs weekly (and on demand). Reuses scripts/count_adopters.sh as the engine.
 #
-# Note: code search via the default GITHUB_TOKEN works for public code in most
-# cases. If it ever returns nothing here, set a repo secret ADOPTERS_TOKEN
-# (a PAT with public_repo scope) and the job will prefer it. As a safety net,
-# the badge is only rewritten when the count is > 0, so a failed/empty search
-# never clobbers the displayed number with a 0.
+# Note: code search via the default GITHUB_TOKEN has a low rate limit and shares
+# runner IPs, so scheduled runs can hit HTTP 429 secondary rate limits. Set a
+# repo secret ADOPTERS_TOKEN (a PAT with public_repo scope) to raise the limit;
+# the job prefers it when present. Safety net: count_adopters.sh exits non-zero
+# on any search failure/rate-limit, and this step only rewrites the badge when
+# the script succeeds AND the count is a positive integer. A throttled run
+# therefore leaves the displayed number unchanged instead of clobbering it.
 
 on:
   schedule:
@@ -28,12 +30,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ADOPTERS_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          out="$(./scripts/count_adopters.sh)"
+          set -uo pipefail
+          # Don't use `set -e` here: we want to inspect the script's exit code
+          # rather than abort the step, so a failed/rate-limited search simply
+          # leaves the badge unchanged.
+          out="$(./scripts/count_adopters.sh)"; rc=$?
           echo "$out"
+          if [ "$rc" -ne 0 ]; then
+            echo "count_adopters.sh failed (rc=$rc); leaving badge unchanged."
+            exit 0
+          fi
           count="$(printf '%s\n' "$out" | sed -n 's/^ADOPTER_COUNT=//p')"
-          if [ -z "${count:-}" ] || [ "$count" -le 0 ]; then
-            echo "Count is empty or 0; leaving badge unchanged."
+          if ! printf '%s' "${count:-}" | grep -qE '^[0-9]+$' || [ "$count" -le 0 ]; then
+            echo "Count missing, non-numeric, or 0; leaving badge unchanged."
             exit 0
           fi
           sed -i -E "s/adopters-[0-9]+-6d81f1/adopters-${count}-6d81f1/" README.md

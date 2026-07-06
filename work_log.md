@@ -39,6 +39,19 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-06
+
+### Fix adopters badge counting a rate-limit error as "1 adopter" (claude-opus-4-8, extended thinking)
+
+- Diagnosed why the badge dropped to 1 while 6 repos have adopted. The 2026-07-06 scheduled `update-adopters-badge` run hit GitHub code-search **HTTP 429 secondary rate limits** (default `GITHUB_TOKEN`, shared runner IPs). `count_adopters.sh` suppressed only stderr, so the 429 JSON error body leaked onto stdout, survived the exclude filter, and — being one concatenated line — was counted as `ADOPTER_COUNT=1`. The old ">0" guard passed, so the bot wrote `adopters-1` and pushed it directly to `main` (commit `4fce2ca`). The 2026-06-29 run returned the real 6, so it is intermittent. `dev` still correctly showed 6.
+- Reverted the bad bot commit via `dev`: fast-forwarded `dev` to include `4fce2ca`, then `git revert`ed it (dev now descends from `main`, so the maintainer's `dev → main` merge fast-forwards and restores `adopters-6`). Did **not** push to `main` — maintainer merges `dev → main`.
+- Hardened `scripts/count_adopters.sh`: keep stdout/stderr separate, detect per-query failure, **hard-fail** (non-zero exit + empty `ADOPTER_COUNT`) on any search error or rate limit, and filter results to valid `owner/repo` lines so an error body can never be miscounted.
+- Hardened `.github/workflows/update-adopters-badge.yml`: dropped `set -e` so a script failure leaves the badge unchanged, and only rewrite the badge when the script exits 0 **and** the count is a positive integer. Updated the workflow header note and AGENTS.md; recommended setting an `ADOPTERS_TOKEN` PAT to reduce throttling.
+- Verification:
+  - `bash -n scripts/count_adopters.sh` OK; live run returns `Total adopters: 6`, exit 0.
+  - Confirmed the shape filter drops the exact 429 JSON blob and the workflow guard skips empty/`0`/non-numeric counts (`UPDATE` only for positive integers).
+  - `git diff --check` clean; `python3 -m unittest discover -s tests` → 18 tests OK (1 skipped); `treaty validate .` passed.
+
 ## 2026-07-01
 
 ### Document treaty-update conflict handling for agents (claude-opus-4-8, extended thinking)
