@@ -30,10 +30,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ADOPTERS_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
+          # GitHub invokes this step as `bash -e {0}`. Clear that injected
+          # errexit so the failing command substitution below is inspected via
+          # its exit code instead of aborting the step: a failed/rate-limited
+          # search should leave the badge unchanged, not mark the run red.
+          set +e
           set -uo pipefail
-          # Don't use `set -e` here: we want to inspect the script's exit code
-          # rather than abort the step, so a failed/rate-limited search simply
-          # leaves the badge unchanged.
           out="$(./scripts/count_adopters.sh)"; rc=$?
           echo "$out"
           if [ "$rc" -ne 0 ]; then
