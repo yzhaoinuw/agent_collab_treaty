@@ -6,7 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- **Optional: add an `ADOPTERS_TOKEN` repo secret** (a PAT with `public_repo` scope) so the weekly `update-adopters-badge` workflow stops hitting GitHub code-search HTTP 429 secondary rate limits on the default `GITHUB_TOKEN`. As of 2026-07-06 the script hard-fails on a throttled run instead of writing a bogus count, so this is a reliability nice-to-have, not a correctness blocker. (The adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward.)
+- No active threads right now. Add the next concrete follow-up here when it becomes actionable. (The adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting.)
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 

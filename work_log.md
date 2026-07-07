@@ -53,6 +53,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Confirmed the shape filter drops the exact 429 JSON blob and the workflow guard skips empty/`0`/non-numeric counts (`UPDATE` only for positive integers).
   - Live Actions run `28838441565` (before the `set +e` fix) hit HTTP 429 and the script correctly refused to emit a count — the badge stayed at 6 (fix proven end-to-end); the step went red only due to the injected `-e`, now addressed.
   - `git diff --check` clean; `python3 -m unittest discover -s tests` → 18 tests OK (1 skipped); `treaty validate .` passed.
+  - `ADOPTERS_TOKEN` (user PAT) added as a repo secret; workflow run `28839889605` authenticated with it, code search succeeded with **no 429**, returned `Total adopters: 6`, and left the badge unchanged (green). Throttling resolved end-to-end.
 
 ## 2026-07-01
 
