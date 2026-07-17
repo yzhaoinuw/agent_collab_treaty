@@ -39,6 +39,21 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-16
+
+### Make `treaty update` conflict-aware (issue #10, items 1–4) (claude-opus-4-8, extended thinking)
+
+- Root cause of the issue: `update` called `copier.run_update(..., overwrite=True)` and returned without inspecting the result. Copier stages whole-file merge conflicts in git (leaving files `UU`) but does not raise, so a conflicted update exited 0 and looked identical to a clean one, even though `.copier-answers.yml` had already advanced to the new version.
+- `treaty update` now, after Copier returns, classifies `git status --porcelain` into updated vs. unmerged files, prints a summary (old → new template version, answer changes, updated files, conflicted files, exact next git commands), and **exits non-zero whenever any file is left unresolved**.
+- Added `treaty update --dry-run` to preview the diff without writing (Copier `pretend=True`).
+- Recorded answers are now reused by default; re-answering the template questions is the explicit `--interactive` opt-in. `--defaults` is kept as a hidden, deprecated no-op so existing invocations still work.
+- Updated the README "Update an installed treaty" section for the new default, `--interactive`, `--dry-run`, and the non-zero-exit-on-conflict behavior.
+- Items 5–7 (managed-section markers for heavily customized `AGENTS.md`, `treaty --version`, and a real Copier-run update test matrix) are deferred to a dedicated branch next session; recorded under "Conflict-safe treaty update: phase 2" in `next_steps.md`.
+- Verification:
+  - `PYTHONPATH=src python3 -m unittest discover -s tests` → 24 tests OK (1 skipped); 6 new update-focused tests added.
+  - End-to-end against a git-backed scratch adopter initialized at `v0.3.2` and customized: `--dry-run` wrote nothing and exited 0; a real update of the customized `AGENTS.md` left it `UU`, printed `v0.3.2 → v0.3.3` with the badge answer preserved, named `AGENTS.md`, and exited 1; a non-customized adopter updated cleanly and exited 0.
+  - `git diff --check` clean; `treaty validate .` passed; `import agent_collab_treaty.cli` OK; `treaty update --help` shows `--interactive`/`--dry-run` and hides `--defaults`.
+
 ## 2026-07-06
 
 ### Fix adopters badge counting a rate-limit error as "1 adopter" (claude-opus-4-8, extended thinking)

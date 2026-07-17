@@ -7,7 +7,11 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from agent_collab_treaty.cli import app
+from agent_collab_treaty.cli import (
+    _classify_status,
+    _format_update_summary,
+    app,
+)
 
 
 class TreatyCliTests(unittest.TestCase):
@@ -47,6 +51,77 @@ class TreatyCliTests(unittest.TestCase):
             kwargs = run_copy.call_args.kwargs
             self.assertIn("work_log.md", kwargs["skip_if_exists"])
             self.assertIn("AGENTS.md", kwargs["skip_if_exists"])
+
+    def test_update_exits_nonzero_and_names_conflicts(self) -> None:
+        old = {"_commit": "v0.3.2", "include_treaty_badge": True}
+        new = {"_commit": "v0.3.3", "include_treaty_badge": True}
+        with patch("copier.run_update") as run_update, patch(
+            "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+        ), patch(
+            "agent_collab_treaty.cli._git_output",
+            return_value="UU AGENTS.md\n M work_log.md\n",
+        ):
+            result = self.runner.invoke(app, ["update", "/some/dest"])
+
+        run_update.assert_called_once()
+        self.assertEqual(1, result.exit_code)
+        self.assertIn("Conflicts (unresolved):", result.output)
+        self.assertIn("AGENTS.md", result.output)
+        self.assertIn("did NOT complete cleanly", result.output)
+        self.assertIn("git add AGENTS.md", result.output)
+
+    def test_update_clean_reports_summary_and_exits_zero(self) -> None:
+        old = {"_commit": "v0.3.2", "include_treaty_badge": True}
+        new = {"_commit": "v0.3.3", "include_treaty_badge": True}
+        with patch("copier.run_update"), patch(
+            "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+        ), patch(
+            "agent_collab_treaty.cli._git_output",
+            return_value=" M AGENTS.md\n M .copier-answers.yml\n",
+        ):
+            result = self.runner.invoke(app, ["update", "/some/dest"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn("Template version: v0.3.2 → v0.3.3", result.output)
+        self.assertIn("Updated files:", result.output)
+        self.assertIn("git add -A && git commit", result.output)
+        self.assertNotIn("Conflicts", result.output)
+
+    def test_update_preserves_answers_by_default_and_reanswers_on_interactive(
+        self,
+    ) -> None:
+        answers = {"_commit": "v0.3.3"}
+        with patch("copier.run_update") as run_update, patch(
+            "agent_collab_treaty.cli._read_answers", return_value=answers
+        ), patch("agent_collab_treaty.cli._git_output", return_value=""):
+            self.runner.invoke(app, ["update", "/some/dest"])
+            self.assertTrue(run_update.call_args.kwargs["defaults"])
+
+            run_update.reset_mock()
+            self.runner.invoke(app, ["update", "/some/dest", "--interactive"])
+            self.assertFalse(run_update.call_args.kwargs["defaults"])
+
+    def test_update_dry_run_pretends_without_writing(self) -> None:
+        with patch("copier.run_update") as run_update:
+            result = self.runner.invoke(app, ["update", "/some/dest", "--dry-run"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(run_update.call_args.kwargs["pretend"])
+        self.assertIn("Preview only", result.output)
+
+    def test_classify_status_splits_changed_and_unmerged(self) -> None:
+        porcelain = "UU AGENTS.md\n M work_log.md\n?? new.txt\nAA both.md\n"
+        changed, unmerged = _classify_status(porcelain)
+        self.assertEqual(["new.txt", "work_log.md"], changed)
+        self.assertEqual(["AGENTS.md", "both.md"], unmerged)
+
+    def test_format_update_summary_reports_answer_changes(self) -> None:
+        old = {"_commit": "v0.3.2", "include_treaty_badge": False}
+        new = {"_commit": "v0.3.3", "include_treaty_badge": True}
+        lines = "\n".join(_format_update_summary(old, new, ["AGENTS.md"], []))
+        self.assertIn("Template version: v0.3.2 → v0.3.3", lines)
+        self.assertIn("Answer changes:", lines)
+        self.assertIn("include_treaty_badge: False → True", lines)
 
     def test_validate_migration_hints_reports_overlapping_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -6,11 +6,29 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- No active threads right now. Add the next concrete follow-up here when it becomes actionable. (The adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting.)
+- **Conflict-safe treaty update: phase 2** — issue #10 items 5–7 are deferred to a dedicated branch next session. Items 1–4 (conflict detection + non-zero exit, post-update summary, `--dry-run`, answer preservation by default) shipped on `dev` on 2026-07-16. See [Conflict-safe treaty update: phase 2](#conflict-safe-treaty-update-phase-2-claude-opus-48).
+- Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting.
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 
 Other sections below are background or paused; treat them as reference unless a new request reopens them.
+
+## Conflict-safe treaty update: phase 2 (claude-opus-4.8)
+
+Status: items 1–4 implemented on `dev` (2026-07-16); items 5–7 deferred to a dedicated branch.
+
+Issue #10 asked for a conflict-aware, safer `treaty update`. Shipped now (items 1–4, in `src/agent_collab_treaty/cli.py`):
+
+- Detect unmerged files after Copier returns and exit non-zero when any remain.
+- Print a post-update summary: old → new template version, answer changes, updated files, conflicted files, and the exact next git commands.
+- `treaty update --dry-run` previews the diff without writing (Copier `pretend=True`).
+- Recorded answers are reused by default; re-answering is now the explicit `--interactive` opt-in. `--defaults` is kept as a hidden deprecated no-op for back-compat.
+
+Deferred to a dedicated branch next session (items 5–7). The maintainer asked to keep these off `dev` until then — branch off `dev` when starting:
+
+- **#5 Managed-section markers / migration proposal.** For heavily customized `AGENTS.md`, replace whole-file conflicts with stable managed-section markers (or an adjacent migration proposal) so adopters' concise custom docs survive updates. This is a template-authoring redesign in `template/AGENTS.md.jinja`, not just a CLI change — the largest of the three and the one worth designing before coding.
+- **#6 `treaty --version`.** Add a top-level Typer callback printing the CLI version and, when run inside an installed project, the recorded template version from `.copier-answers.yml`.
+- **#7 End-to-end update tests.** Add real Copier-run update tests (git-backed scratch projects) covering clean updates, customized-file conflicts, answer preservation, and exit status. Phase-1 tests mock Copier/git; this matrix exercises the real three-way merge, as verified manually this session against a v0.3.2 → v0.3.3 adopter.
 
 ## Background / Paused
 

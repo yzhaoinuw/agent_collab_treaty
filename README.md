@@ -94,13 +94,16 @@ Once a project has the treaty installed via `treaty init` (or Copier), pull in l
 pipx upgrade agent-collab-treaty      # or: pip install -U agent-collab-treaty
 
 git add -A && git commit -m "wip"     # commit first — update refuses a dirty tree
-treaty update                          # or: treaty update /path/to/project
-git status                             # look for unmerged (UU) files
-# resolve any conflict markers, then:
+treaty update --dry-run                # preview the changes without writing anything
+treaty update                          # apply; or: treaty update /path/to/project
+# treaty prints a summary and, if any file is left conflicted, exits non-zero.
+# resolve the conflict markers it lists, then:
 git add -A && git commit
 ```
 
-`treaty update` reads the `.copier-answers.yml` recorded at install time and does a **three-way merge** from your pinned version up to the treaty's latest release. Edits that don't overlap the upstream changes are kept automatically. Where your edits overlap a changed region, the merge leaves conflict markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file — resolve them like any `git merge`, keeping your content and folding in the new sections, and don't commit unresolved markers. Review `git diff` before committing. Add `--defaults` to reuse your previous answers non-interactively.
+`treaty update` reads the `.copier-answers.yml` recorded at install time and does a **three-way merge** from your pinned version up to the treaty's latest release. Edits that don't overlap the upstream changes are kept automatically. Where your edits overlap a changed region, the merge leaves conflict markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file — resolve them like any `git merge`, keeping your content and folding in the new sections, and don't commit unresolved markers.
+
+After merging, `treaty update` prints a summary (old → new template version, any answer changes, updated files, conflicted files). **If any file is left unresolved, the command names it, tells you how to continue, and exits non-zero** — a conflicted update is never reported as a success. Use `treaty update --dry-run` to preview the diff without touching your project. Your previously recorded answers are reused by default; pass `--interactive` only when you want to re-answer the template questions.
 
 > **Note**: the project must be git-tracked with a clean working tree — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't. Projects adopted by manually copying files ([Option 3](#option-3---just-copy-the-files)) have no `.copier-answers.yml`, so copy any new sections from [`template/`](template/) by hand instead.
 
