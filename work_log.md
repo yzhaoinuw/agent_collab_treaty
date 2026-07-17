@@ -39,6 +39,16 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-17
+
+### Release v0.4.0 (claude-opus-4-8, extended thinking)
+
+- Bumped the package version `0.3.3 → 0.4.0` in `pyproject.toml` and `src/agent_collab_treaty/__init__.py`. Minor bump: `treaty update` gained `--dry-run` and `--interactive` and now changes its exit-code contract (non-zero when a merge is left with conflicts), so a patch bump would understate the behavior change.
+- Merged `dev → main` as a fast-forward (`main` had not moved; no badge-bot divergence) and pushed `main`, then created and pushed the annotated tag `v0.4.0` on that commit. The `release.yml` workflow (triggered by the `v*` tag) builds the sdist/wheel, publishes to PyPI via trusted publishing, and creates the GitHub Release with auto-generated notes.
+- Verification:
+  - `PYTHONPATH=src python3 -m unittest discover -s tests` → 24 tests OK (1 skipped); `git diff --check` clean; `treaty validate .` passed; `python3 -c "import agent_collab_treaty; print(agent_collab_treaty.__version__)"` → `0.4.0`.
+  - After push: `git ls-remote --tags origin` shows `v0.4.0`; `main` and `dev` both point at the release commit; release workflow run confirmed on Actions.
+
 ## 2026-07-16
 
 ### Make `treaty update` conflict-aware (issue #10, items 1–4) (claude-opus-4-8, extended thinking)
