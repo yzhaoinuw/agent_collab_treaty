@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-07-21
 
+### Release v0.4.1 (claude-opus-4-8, extended thinking)
+
+- Bumped the package version `0.4.0 → 0.4.1` in `pyproject.toml` and `src/agent_collab_treaty/__init__.py` to ship the issue #11 change (docs/template-only: the lean-file guideline added to `template/AGENTS.md.jinja`). Patch bump — no code or CLI behavior change.
+- Merged `dev → main` as a fast-forward (`main` had not moved; no badge-bot divergence) and pushed `main`, then created and pushed the annotated tag `v0.4.1`. The `release.yml` workflow (triggered by the `v*` tag) builds, publishes to PyPI via trusted publishing, and creates the GitHub Release.
+- Closed issue #11 with a summary comment (trim + guidance-only limit; validate-enforcement deliberately deferred).
+- Verification:
+  - `python3 -c "import agent_collab_treaty; print(agent_collab_treaty.__version__)"` → `0.4.1`; `git diff --check` clean; `treaty validate .` passed; 24 tests OK.
+  - After push: `git ls-remote --tags origin` shows `v0.4.1`; `main` and `dev` both at the release commit; release workflow run confirmed green; PyPI shows `0.4.1`.
+
 ### Trim root AGENTS.md and add a lean-file guideline (issue #11) (claude-opus-4-8, extended thinking)
 
 - Trimmed the dogfooded root `AGENTS.md` from 248 lines (2307 words) to 98 by condensing every section and merging related ones (Agent Roles + PR Merge Strategy; Branch Handoff + Automated-commits-on-`main`; Release Checklist + Release Notes; Git Ownership folded into Project-Specific Reminders). Preserved all load-bearing rules — root/template boundary, boss-agent-commits-to-`dev`/no-PR, bot-can-push-to-`main`/pull-before-merge, the release doc gate (now noting both `pyproject.toml` and `__init__.py` version bumps), work-log 5-date rotation, and the verified-local-date rule.
