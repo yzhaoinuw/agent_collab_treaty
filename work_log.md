@@ -39,6 +39,17 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-21
+
+### Trim root AGENTS.md and add a lean-file guideline (issue #11) (claude-opus-4-8, extended thinking)
+
+- Trimmed the dogfooded root `AGENTS.md` from 248 lines (2307 words) to 98 by condensing every section and merging related ones (Agent Roles + PR Merge Strategy; Branch Handoff + Automated-commits-on-`main`; Release Checklist + Release Notes; Git Ownership folded into Project-Specific Reminders). Preserved all load-bearing rules — root/template boundary, boss-agent-commits-to-`dev`/no-PR, bot-can-push-to-`main`/pull-before-merge, the release doc gate (now noting both `pyproject.toml` and `__init__.py` version bumps), work-log 5-date rotation, and the verified-local-date rule.
+- Added a "Keep this file lean — aim for under 150 lines" note to both root `AGENTS.md` and `template/AGENTS.md.jinja` (the template's old "Keep it short and current." line), so downstream projects inherit the guidance.
+- Scope decision: kept this **guidance-only** at the maintainer's direction. Considered enforcing the limit as a `treaty validate` check, but the validator has no per-check warn level, so a check would hard-fail every adopter's `treaty validate` (and force trimming the shipped template under the cap) — deferred as not worth the downstream friction.
+- Verification:
+  - `wc -l AGENTS.md` → 98 (< 150); `git diff --check` clean; `PYTHONPATH=src python3 -m unittest discover -s tests` → 24 OK (1 skipped); `treaty validate .` passed.
+  - Rendered `template/AGENTS.md.jinja` from a non-git working-tree copy (Copier reads a local git source from HEAD, so a dirty `--source .` renders the committed template, not the edit) and confirmed the new lean note appears in the rendered `AGENTS.md`.
+
 ## 2026-07-17
 
 ### Release v0.4.0 (claude-opus-4-8, extended thinking)

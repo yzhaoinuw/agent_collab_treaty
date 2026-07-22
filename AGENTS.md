@@ -1,248 +1,98 @@
 # Guidelines and Tips for Agents
 
-This file is the first thing any agent (Claude, Codex, or other) should read when joining a session on this repo. It defines the runtime, common tasks, conventions, and project-specific reminders for maintaining the Agent Collab Treaty package itself.
+The first file to read when joining a session on this repo. It defines the runtime, common tasks, conventions, and project-specific reminders for maintaining the Agent Collab Treaty package.
+
+**Keep this file lean — aim for under 150 lines.** It is a quick-reference map, not a manual: when a topic needs more than a few tight lines, put the detail in the doc it points to (`README.md`, `project_overview.md`, `work_log.md`) and link there instead of growing this file.
 
 ## Startup Rule
 
-At the beginning of a new chat or agent session for this project, read this file first and do not automatically read every markdown file in the repository. Use the [Documentation](#documentation) map below to decide which other files are relevant to the current task.
+At the start of a new session, read this file first; do not auto-read every markdown file. Use the [Documentation](#documentation) map to pick what else is relevant.
 
 ## What This Repo Maintains
 
-This repository publishes `agent-collab-treaty`, a small Python package exposing the `treaty` CLI. The CLI installs and updates a Copier template containing the standard collaboration docs:
+This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`).
 
-- `AGENTS.md`
-- `project_overview.md`
-- `next_steps.md`
-- `work_log.md`
-- `work_log_archive/`
-
-Important boundary: the repo root dogfoods the treaty for this project, while `template/` is the product shipped into user projects. Do not copy root-level `AGENTS.md`, `next_steps.md`, `work_log.md`, or `project_overview.md` into the template unless the change is intentionally part of the installable treaty.
+**Root-vs-template boundary:** the repo root dogfoods the treaty for this project; `template/` is the product shipped into user projects. Do not copy root-level treaty docs into `template/` unless the change is intentionally part of the installable treaty. Keep root docs specific to this repo and template docs generic.
 
 ## Runtime Environment
 
-There is no dedicated conda environment for this repo yet. For local work on Windows, use the base Miniconda Python unless you create a project venv:
+Python 3.10+; depends on `copier>=9.0` and `typer>=0.12`. There is no dedicated conda env. For isolated dev:
 
-```powershell
-C:\Users\yzhao\miniconda3\python.exe --version
+```bash
+python -m venv .venv && .venv/bin/python -m pip install -e .
 ```
 
-For isolated development:
-
-```powershell
-C:\Users\yzhao\miniconda3\python.exe -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -e .
-```
-
-The package requires Python 3.10+ and depends on:
-
-- `copier>=9.0`
-- `typer>=0.12`
+On Windows use the base Miniconda Python (`C:\Users\yzhao\miniconda3\python.exe`) and `.\.venv\Scripts\`.
 
 ## Common Tasks
 
-Install the package locally in editable mode:
+See `README.md` for full command examples. The CI-equivalent pre-flight checks:
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -e .
-```
-
-Show the CLI:
-
-```powershell
-.\.venv\Scripts\treaty.exe --help
-.\.venv\Scripts\treaty.exe init --help
-.\.venv\Scripts\treaty.exe update --help
-.\.venv\Scripts\treaty.exe validate --help
-```
-
-Smoke-test rendering the template into a scratch directory:
-
-```powershell
-$scratch = Join-Path $env:TEMP "treaty-smoke"
-if (Test-Path $scratch) { Remove-Item -LiteralPath $scratch -Recurse -Force }
-.\.venv\Scripts\treaty.exe init $scratch --source . --defaults --data integration_branch=main --data env_activation="conda activate example" --data test_command="pytest"
-Get-ChildItem $scratch
-```
-
-Build distribution artifacts:
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install --upgrade build
-.\.venv\Scripts\python.exe -m build
-```
-
-Run the CI-equivalent checks:
-
-```powershell
+```bash
 git diff --check
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\treaty.exe --help
-.\.venv\Scripts\treaty.exe validate .
-.\.venv\Scripts\python.exe -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"
+python -m unittest discover -s tests -v
+treaty --help && treaty validate .
+python -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"
 ```
 
-There is now a small `unittest` suite focused on validation behavior. For CLI/template changes, still use focused smoke tests for the paths you touch and record the exact commands in `work_log.md`.
+Smoke-test template rendering by `treaty init`-ing into a scratch dir; build with `python -m build`.
 
 Pre-flight checklist before committing:
 
-- `git diff --check` is clean.
-- Unit tests and CLI/import smoke tests relevant to the change pass.
-- `treaty validate .` passes for the repo's own dogfooded treaty docs.
-- Template changes were tested by rendering into a scratch directory.
-- User-facing docs (`README.md`, `project_overview.md`, and template docs as applicable) match the behavior.
-- A new entry has been prepended to `work_log.md` describing what was done, including model/version metadata when available and the verification commands actually run.
+- `git diff --check` clean.
+- Unit tests and CLI/import smoke tests for the change pass.
+- `treaty validate .` passes for the dogfooded docs.
+- Template changes tested by rendering into a scratch dir.
+- User-facing docs (`README.md`, `project_overview.md`, template docs) match the behavior.
+- A new `work_log.md` entry describes the work, model/version metadata, and the verification commands actually run.
 
 ## When To Update Treaty Docs
 
-At the end of any substantive work session, update `work_log.md` unless the user explicitly asks not to document it, says it is off the book, or the exchange was clearly trivial.
+At the end of any substantive session, prepend a `work_log.md` entry unless the user says not to or the exchange was trivial. Substantive = file edits, meaningful validation/debugging, a decision or reversal, discovered evidence, branch/PR/release/env state changes, or unfinished follow-up. Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate.
 
-A session is substantive when it includes any of:
+## Agent Roles, PR Policy, and Merges
 
-- file edits
-- meaningful validation, debugging, profiling, or artifact inspection
-- a technical decision or reversal
-- discovered evidence future agents should not have to rediscover
-- branch, PR, release, deployment, or environment state changes
-- unfinished follow-up that belongs in `next_steps.md`
+- **Boss agent** (currently Claude): commits directly on `dev` and pushes; opens **no** PRs for its own work, even substantive code. The maintainer merges `dev → main`.
+- **Contributing agents** (any other): work on a branch and open a **PR** for review before anything reaches `dev`/`main`.
 
-No work-log entry is usually needed for casual Q&A, explanation-only exchanges with no lasting project state, or tiny one-off commands with no future coordination value.
+`dev` is staging; `main` is release/integration. Boss-agent changes reach `main` via a plain `dev → main` merge (fast-forward), no PR. When a PR *is* used, prefer `gh pr merge --rebase` (or `--squash`) over `--merge`: a merge commit puts a commit on `main` that is not in `dev`, so the branches diverge on the DAG even when their trees match.
 
-Log experiments when they produce reusable evidence, a decision, or a warning for future agents, even if the code change is reverted. Skip pure scratch work when it has no future coordination value or the user wants it omitted.
+## Branch Handoff & Automated Commits on `main`
 
-When a session creates or changes future work, update `next_steps.md` in the same pass: add concrete follow-ups, remove completed items, and keep "Currently Hot" accurate.
+Before switching away from a feature/experimental branch, resolve its work: confirm changes are committed and whether the user wants them merged, pushed, or parked.
 
-## Branch Handoff Discipline
-
-The integration branch for this single-maintainer repo is `main`. Before switching away from an experimental or feature branch, fully resolve the work on that branch. Confirm whether the branch contains all intended changes, whether those changes are committed, and whether the user expects them merged, pushed, or intentionally left parked.
-
-Useful checks before switching or merging:
-
-```powershell
-git status --short --branch
-git log --oneline --left-right --cherry-pick main...HEAD
-git merge-base --is-ancestor main HEAD
-```
-
-### Automated commits on `main`
-
-The `update-adopters-badge` workflow (`.github/workflows/update-adopters-badge.yml`) runs weekly and, when the adopter count changes, pushes a `github-actions[bot]` commit **directly to `main`** (scheduled workflows run on the default branch). This means `main` can move ahead of your local clone and ahead of `dev` on its own.
-
-Before merging `dev → main`, always `git pull` (or `git fetch` then check) `main` first, so you merge onto the bot's latest commit instead of diverging from it. If `main` and `dev` have already diverged because of a bot commit, diagnose with the checks above and ask before any rebase/force-push/merge surgery — do not "fix then report."
-
-## Agent Roles and PR Policy
-
-This repo distinguishes the **boss agent** from **contributing agents**:
-
-- **Boss agent** — the lead agent running the project (currently Claude). The boss agent commits directly on `dev` and pushes; it does **not** open pull requests for its own work, even substantive code. The maintainer then merges `dev → main`.
-- **Contributing agents** — any other agent making changes. These work on a branch and **open a pull request** for review before anything reaches `dev` or `main`.
-
-Why: this is a single-maintainer repo with a lead agent. PR overhead does not pay for itself on the boss agent's own changes, but PRs remain the review gate for other agents' contributions. `dev` is the staging branch; `main` is the release/integration branch.
-
-## PR Merge Strategy
-
-This applies whenever a PR is used (contributing-agent changes, or any change the maintainer chooses to route through a PR). Boss-agent changes reach `main` via a plain `dev → main` merge with no PR.
-
-When merging PRs from `dev` into `main`, prefer `gh pr merge --rebase` (or `--squash`) over the default `--merge`. The merge-commit option creates a commit on `main` that is not in `dev`'s history, so the two branches diverge on the DAG even when their working trees match. A follow-on commit on either branch (for example, a version bump made after the PR merges) then can't be fast-forwarded across — it has to be cherry-picked or merged manually.
-
-`--rebase` keeps `main` and `dev` pointing at the same commit after the merge, so post-merge follow-ups stay linear.
-
-## Documentation
-
-Read these documents only as needed. The map below names each file and when it is worth opening.
-
-- `work_log.md` and `work_log_archive/`
-  - Use when the task needs recent implementation history, experiment outcomes, or verification breadcrumbs.
-  - The live `work_log.md` holds at most the 5 most recent unique calendar dates. Default to reading only the two most recent dated entries.
-  - Find date anchors with ripgrep and read only the slice you need:
-    `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md`
-  - When older context is needed, open the matching file under `work_log_archive/`, or grep across both:
-    `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md work_log_archive/`
-  - When prepending a dated entry, if today's calendar date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it. Do not start a second `## YYYY-MM-DD` header for the same date.
-  - When prepending a new date would push the live log past 5 unique calendar dates, move the oldest 5 dates as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`.
-  - Before writing any dated entry, verify the workstation / repo-local date (`date +%F` on macOS/Linux, `Get-Date -Format yyyy-MM-dd` on Windows) and use that. When the model-context date and the local environment disagree — which happens across a UTC midnight boundary — trust the local date. Never write a future-dated entry. `treaty validate` enforces this: it fails with `work-log-future-date` when any entry is dated after the local date.
-
-- `next_steps.md`
-  - Use when planning or continuing unfinished work from previous sessions.
-  - The "Currently Hot" pointer at the top names active threads; read it first.
-  - Remove items after they are completed. Add concrete follow-ups when they become actionable.
-
-- `project_overview.md`
-  - Use when onboarding to the codebase structure or when a task touches an unfamiliar area.
-  - The "What Looks Active vs. Legacy" section is the most important map before editing.
-
-- `README.md`
-  - Use when changing user-facing setup, installation, release flow, packaging, or input-file expectations.
-
-- Treaty badge (in README)
-  - `treaty init` offers (opt-in) a centrally-hosted "Agent Collab Treaty - adopted" badge. It is a pure visibility signal that links back to this treaty repository. No asset files are added to your project; the image updates automatically if the design improves later. The badge is fully optional. The tri-color SVG (Codex blue / Claude amber / Grok dark) is the primary recommendation — its text is outlined to vector paths, so it renders identically on GitHub across every platform. The single-color shields.io variant is a fallback only for READMEs that also render outside GitHub (e.g. PyPI/npm), where raw SVG may be blocked.
-
-- Adopter tracking (`scripts/count_adopters.sh` + adopters badge in README)
-  - `scripts/count_adopters.sh` counts public repos that reference the treaty via GitHub code search (using your `gh` auth), dedupes, and excludes the treaty repo itself and the `pydigger` crawler. Run it on demand; it has no servers and no cost. The count is a **floor** — code search only indexes a subset of public repos, with lag.
-  - The `adopters` badge near the top of `README.md` (between the `<!-- adopters-badge:start/end -->` markers) displays that count and links to the live code-search results. It is refreshed weekly by the `update-adopters-badge` workflow, which reuses the script and only rewrites the number when the script exits cleanly **and** the count is a positive integer. The script hard-fails (non-zero exit, empty `ADOPTER_COUNT`) on any code-search error or rate limit, and filters results to valid `owner/repo` lines, so a throttled run (default `GITHUB_TOKEN` can hit HTTP 429 secondary rate limits) leaves the badge unchanged rather than writing a bogus low number. Set an `ADOPTERS_TOKEN` PAT secret to reduce throttling. Note: because the bot commits the badge directly to `main`, `main` can move ahead of `dev` — see the "Automated commits on `main`" note above.
-
-- `template/`
-  - Use when changing what `treaty init` installs into downstream projects.
-  - Keep template docs generic and project-agnostic; root docs should stay specific to this repo.
-
-- `copier.yml`
-  - Use when adding or changing questions, defaults, Copier configuration, or post-copy messaging.
-
-- `.github/workflows/`
-  - Use when changing release or TestPyPI publishing behavior, or the weekly `update-adopters-badge` workflow that refreshes the README adopters count.
-
-## Git Ownership Note
-
-If Git reports a "detected dubious ownership" warning for this repo, mark this repository as safe:
-
-```powershell
-git config --global --add safe.directory C:/Users/yzhao/python_projects/agent_collab_treaty
-```
-
-This is the preferred fix unless repository ownership itself needs to be changed at the OS level.
+The `update-adopters-badge` workflow runs weekly and, when the count changes, pushes a `github-actions[bot]` commit **directly to `main`**, so `main` can move ahead of your local clone and of `dev` on its own. **Always `git fetch`/pull `main` before merging `dev → main`.** If they have already diverged from a bot commit, diagnose (`git status -sb`, `git log --left-right --cherry-pick main...HEAD`) and ask before any rebase/force-push/merge surgery — do not "fix then report."
 
 ## Release / Tag Checklist
 
-Treat any request that combines **commit + push + tag** — or "cut a release" / "publish version X" — as a release. A release requires a documentation gate that must clear *before* the tag is created or pushed, not after. Run this checklist in status before creating an annotated tag:
+Treat commit + push + tag (or "cut a release" / "publish version X") as a release. Clear this doc gate **before** creating or pushing the tag:
 
-- Version metadata bumped (`pyproject.toml`) and consistent with the tag you are about to create.
-- Changelog / release notes updated if the repo has one. (This repo has no `change_log.txt`; its release history lives in `work_log.md` plus the GitHub Release body.)
-- User-facing docs (`README.md`, `project_overview.md`, template docs) updated when behavior changed.
-- `work_log.md` updated with the implementation summary, the verification commands actually run, and the release / branch / tag state.
-- Verification recorded — the focused or full checks from the pre-flight checklist passed and are noted in the work log.
-- Any dated artifact uses the verified local date, not an unverified model-context date (see the dated-entry rule under Documentation → `work_log.md`).
+- Version bumped in `pyproject.toml` **and** `src/agent_collab_treaty/__init__.py`, consistent with the tag.
+- User-facing docs updated when behavior changed. (No changelog file; release history lives in `work_log.md` plus the GitHub Release body.)
+- `work_log.md` updated with the summary, verification commands run, and release/branch/tag state, using the verified local date.
 
-Only after every applicable item is done: create the annotated tag and push. Then verify the pushed refs landed where you expect:
-
-```powershell
-git ls-remote --tags origin
-git ls-remote --heads origin <branch>
-```
-
-If a tag or branch ref is missing or points at the wrong commit after the push, fix it before treating the release as complete.
-
-## Release Notes
-
-The package is published as `agent-collab-treaty` on PyPI. Release automation lives in:
-
-- `.github/workflows/test-publish.yml` for manual TestPyPI dry-runs.
-- `.github/workflows/release.yml` for `v*` tag pushes to PyPI plus GitHub Release creation.
-
-Both workflows use PyPI Trusted Publishing (OIDC). See the README "Releasing to PyPI" section before changing release behavior.
+Then create the annotated tag and push. Pushing a `v*` tag triggers `.github/workflows/release.yml` (PyPI trusted publishing + GitHub Release). Afterward verify refs with `git ls-remote --tags origin` and `git ls-remote --heads origin <branch>`. `test-publish.yml` is a manual TestPyPI dry-run.
 
 ## Commit Message Guidelines
 
-Commit messages should use:
+Short title line; a short body with flat bullets when a commit bundles several requested changes. Bullets describe high-level user-facing behavior added or changed, not implementation, tests, docs, or memory — unless that internal work is the commit's main purpose.
 
-- a short title line
-- a short body with flat bullet points for additional requested changes when a commit contains multiple user-requested updates
+## Documentation
 
-Commit message bullets should describe high-level added or changed behavior, not implementation details. For feature commits, mention only the user-facing behavior that was added or changed. Do not mention tests, docs, project memory updates, or behind-the-scenes implementation details unless that internal work is itself the main purpose of the commit.
+Read these only as needed:
+
+- **`work_log.md`** / **`work_log_archive/`** — recent implementation history, experiments, verification breadcrumbs. The live log holds at most the **5 most recent unique dates**; default to reading the two most recent. Find anchors with `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md`. When prepending: if today already has a `## YYYY-MM-DD` header, add a `###` session under it; when a new date would exceed 5 dates, move the oldest 5 as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`. Verify the local date first (`date +%F`); never write a future-dated entry (`treaty validate` fails with `work-log-future-date`).
+- **`next_steps.md`** — unfinished work; read the "Currently Hot" pointer first and remove items when done.
+- **`project_overview.md`** — codebase structure; "What Looks Active vs. Legacy" is the key map.
+- **`README.md`** — user-facing setup, install, release flow, packaging.
+- **`template/`** — what `treaty init` installs (keep it generic). **`copier.yml`** — questions, defaults, post-copy messaging. **`.github/workflows/`** — release and adopters-badge automation.
+- **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters via GitHub code search (a floor); the `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
 
 ## Project-Specific Reminders
 
-- Keep the root-vs-template boundary explicit. Root docs are this repo's dogfood state; `template/` is the installable treaty.
-- When changing `template/AGENTS.md.jinja`, also consider whether `README.md`, root `AGENTS.md`, and `project_overview.md` need matching guidance.
-- `treaty update` depends on Copier's answers file in rendered projects. Do not remove or rename `template/.copier-answers.yml.jinja` without testing update behavior.
-- Keep validation checks grounded in the documented treaty shape. If you tighten `treaty validate`, update tests and dogfooded docs in the same change.
-- Local agent pointer files such as `CLAUDE.md`, `CODEX.md`, and `GEMINI.md` are ignored in this repo to keep the package repo vendor-neutral. Downstream pointer files generated by the template are opt-in through the `agent_pointers` Copier question.
+- Keep the root-vs-template boundary explicit (see above).
+- When changing `template/AGENTS.md.jinja`, check whether `README.md`, root `AGENTS.md`, and `project_overview.md` need matching updates.
+- Do not remove or rename `template/.copier-answers.yml.jinja` without testing `treaty update`.
+- Keep `treaty validate` grounded in the documented treaty shape; update tests and dogfooded docs in the same change when you tighten it.
+- Local pointer files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) are gitignored to keep the repo vendor-neutral; downstream pointers are opt-in via the `agent_pointers` Copier question.
+- If Git warns about "dubious ownership," mark the repo safe: `git config --global --add safe.directory <path>`.
