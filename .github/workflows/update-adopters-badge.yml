@@ -3,11 +3,16 @@ name: Update adopters badge
 # Refreshes the "adopters" badge in README.md from GitHub code search.
 # Runs weekly (and on demand). Reuses scripts/count_adopters.sh as the engine.
 #
+# The script reads our own repos directly (repos API, generous 5000/hr core
+# limit) and uses code search only to discover third-party adopters, because
+# code search does not index most of our newer repos -- see the header of
+# scripts/count_adopters.sh.
+#
 # Note: code search via the default GITHUB_TOKEN has a low rate limit and shares
 # runner IPs, so scheduled runs can hit HTTP 429 secondary rate limits. Set a
 # repo secret ADOPTERS_TOKEN (a PAT with public_repo scope) to raise the limit;
 # the job prefers it when present. Safety net: count_adopters.sh exits non-zero
-# on any search failure/rate-limit, and this step only rewrites the badge when
+# on any lookup failure/rate-limit, and this step only rewrites the badge when
 # the script succeeds AND the count is a positive integer. A throttled run
 # therefore leaves the displayed number unchanged instead of clobbering it.
 

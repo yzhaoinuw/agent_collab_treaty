@@ -7,7 +7,8 @@ Use this checklist alongside `work_log.md`.
 Active threads — read these first to know what work is in flight:
 
 - **Conflict-safe treaty update: phase 2** — issue #10 items 5–7 are deferred to a dedicated branch next session. Items 1–4 (conflict detection + non-zero exit, post-update summary, `--dry-run`, answer preservation by default) shipped in **v0.4.0** (released 2026-07-17). See [Conflict-safe treaty update: phase 2](#conflict-safe-treaty-update-phase-2-claude-opus-48).
-- Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting.
+- Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting. On 2026-07-26 the counter was fixed to read `yzhaoinuw/*` repos directly (code search indexes only 6 of our 13 adopting repos); the badge went 6 -> 13.
+- **Adopters badge links to a search that disagrees with it** (open, small). The badge now reads 13, but its link goes to the GitHub code-search results page, which shows only the ~6 indexed repos. Options: point the link at a maintained `ADOPTERS.md` list, at the README badge section, or leave it and accept the mismatch. Needs a decision before anyone treats the link as authoritative.
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 

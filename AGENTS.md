@@ -86,7 +86,7 @@ Read these only as needed:
 - **`project_overview.md`** — codebase structure; "What Looks Active vs. Legacy" is the key map.
 - **`README.md`** — user-facing setup, install, release flow, packaging.
 - **`template/`** — what `treaty init` installs (keep it generic). **`copier.yml`** — questions, defaults, post-copy messaging. **`.github/workflows/`** — release and adopters-badge automation.
-- **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters via GitHub code search (a floor); the `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
+- **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters from two sources: `yzhaoinuw/*` repos are listed and read **directly** via the repos API, and code search covers third parties. Do not go back to code-search-only — it does not index most of our newer repos and undercounted 13 adopters as 6 (see `work_log.md`, 2026-07-26); the third-party half remains a floor for the same reason. The `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
 
 ## Project-Specific Reminders
 
