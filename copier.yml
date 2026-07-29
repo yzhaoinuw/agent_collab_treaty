@@ -10,7 +10,9 @@ _exclude:
 _message_after_copy: |
   Treaty installed. Next steps:
     1. Open AGENTS.md and fill in any remaining bracket-placeholders (env name,
-       test/lint commands, project-specific reminders).
+       verification/lint commands, project-specific reminders). Leave
+       treaty_conventions.md alone — upstream maintains it, and `treaty update`
+       keeps it current.
     2. If you selected optional agent pointer files, commit them with the treaty
        docs so those tools can find AGENTS.md automatically.
     3. At the end of substantive work sessions, update work_log.md and
@@ -44,16 +46,42 @@ env_activation:
   help: |-
     Command to activate your dev environment, e.g.
     'conda activate myenv' or 'source .venv/bin/activate'.
-    Leave blank to fill in later.
+    Answer 'none' if this project deliberately has no
+    managed environment. Leave blank to fill in later.
   default: ""
 
-test_command:
+verification_command:
   type: str
   help: |-
-    Command to run the CI-equivalent test suite,
-    e.g. 'pytest' or 'npm test'.
-    Leave blank to fill in later.
-  default: ""
+    Command that verifies the repo is in good shape - the
+    CI-equivalent check. A test runner ('pytest', 'npm test'),
+    a linter, a link checker, or 'treaty validate .' all fit
+    this slot. Leave blank to fill in later.
+  default: "{{ test_command | default('', true) }}"
+
+has_releases:
+  type: bool
+  default: true
+  help: |-
+    Does this project cut releases or push version tags?
+    Answering no drops the Release / Tag Checklist from
+    AGENTS.md instead of leaving you to delete it.
+
+uses_precommit:
+  type: bool
+  default: true
+  help: |-
+    Might this project run pre-commit (or a comparable
+    formatter/linter hook)? Answering no drops the
+    Pre-commit Note from AGENTS.md.
+
+include_git_ownership_note:
+  type: bool
+  default: true
+  help: |-
+    Keep the 'dubious ownership' Git troubleshooting note in
+    AGENTS.md? Mostly useful on Windows or shared machines;
+    answer no to drop it.
 
 agent_pointers:
   type: yaml
@@ -75,3 +103,14 @@ include_treaty_badge:
     Show paste-in instructions for the 'Agent Collab Treaty -
     adopted' badge in the post-install message. You add it to
     your README yourself; zero files are added to your repo.
+
+# Legacy alias for verification_command, kept so projects initialized before
+# v0.5.0 carry their recorded answer forward. Never prompted (`when: false`),
+# and dropped from .copier-answers.yml on the next update. It must stay
+# declared *after* verification_command: Copier renders each question's default
+# in declaration order, so verification_command has to read the recorded value
+# before this entry clears it.
+test_command:
+  type: str
+  when: false
+  default: ""

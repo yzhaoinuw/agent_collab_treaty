@@ -10,7 +10,9 @@ At the start of a new session, read this file first; do not auto-read every mark
 
 ## What This Repo Maintains
 
-This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`).
+This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md`, `treaty_conventions.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`).
+
+**Template split (since v0.5.0):** `template/AGENTS.md.jinja` holds what adopters customize; `template/treaty_conventions.md.jinja` holds the mechanics we maintain. New generic guidance goes in conventions, not AGENTS — that's what keeps `treaty update` close to conflict-free downstream. The root repo does not install a `treaty_conventions.md` of its own: its `AGENTS.md` already links straight to the docs below.
 
 **Root-vs-template boundary:** the repo root dogfoods the treaty for this project; `template/` is the product shipped into user projects. Do not copy root-level treaty docs into `template/` unless the change is intentionally part of the installable treaty. Keep root docs specific to this repo and template docs generic.
 
@@ -48,7 +50,7 @@ Pre-flight checklist before committing:
 
 ## When To Update Treaty Docs
 
-At the end of any substantive session, prepend a `work_log.md` entry unless the user says not to or the exchange was trivial. Substantive = file edits, meaningful validation/debugging, a decision or reversal, discovered evidence, branch/PR/release/env state changes, or unfinished follow-up. Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate.
+At the end of any substantive session, prepend a `work_log.md` entry unless the user says not to or the exchange was trivial. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed, so log the decision, the reversal, the approach tried and discarded and why, evidence future agents shouldn't have to rediscover, and shared-state changes (branch/PR/release/env). Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate.
 
 ## Agent Roles, PR Policy, and Merges
 
@@ -83,7 +85,7 @@ Read these only as needed:
 
 - **`work_log.md`** / **`work_log_archive/`** — recent implementation history, experiments, verification breadcrumbs. The live log holds at most the **5 most recent unique dates**; default to reading the two most recent. Find anchors with `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md`. When prepending: if today already has a `## YYYY-MM-DD` header, add a `###` session under it; when a new date would exceed 5 dates, move the oldest 5 as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`. Verify the local date first (`date +%F`); never write a future-dated entry (`treaty validate` fails with `work-log-future-date`).
 - **`next_steps.md`** — unfinished work; read the "Currently Hot" pointer first and remove items when done.
-- **`project_overview.md`** — codebase structure; "What Looks Active vs. Legacy" is the key map.
+- **`project_overview.md`** — codebase structure; "What Looks Active vs. Legacy" and "Authored vs. Derived" are the key maps.
 - **`README.md`** — user-facing setup, install, release flow, packaging.
 - **`template/`** — what `treaty init` installs (keep it generic). **`copier.yml`** — questions, defaults, post-copy messaging. **`.github/workflows/`** — release and adopters-badge automation.
 - **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters from two sources: `yzhaoinuw/*` repos are listed and read **directly** via the repos API, and code search covers third parties. Do not go back to code-search-only — it does not index most of our newer repos and undercounted 13 adopters as 6 (see `work_log.md`, 2026-07-26); the third-party half remains a floor for the same reason. The `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
@@ -91,7 +93,10 @@ Read these only as needed:
 ## Project-Specific Reminders
 
 - Keep the root-vs-template boundary explicit (see above).
-- When changing `template/AGENTS.md.jinja`, check whether `README.md`, root `AGENTS.md`, and `project_overview.md` need matching updates.
+- When changing `template/AGENTS.md.jinja` or `template/treaty_conventions.md.jinja`, check whether `README.md`, root `AGENTS.md`, and `project_overview.md` need matching updates.
+- **Never rename a `##` heading in the template docs.** A three-way merge reads a rename as a delete plus an unrelated add, so every downstream adopter gets a conflict that cannot be auto-resolved. Change the body and leave the heading.
+- Rendering a *local* template source uses the source repo's git HEAD commit, not your working tree. Pass `--ref HEAD` (`treaty init … --ref HEAD`) to smoke-test uncommitted template edits, or you will silently test the last commit.
+- `copier.yml` declares `test_command` with `when: false` as a legacy alias, and it must stay declared **after** `verification_command`. Copier renders defaults in declaration order and clears a `when: false` answer as it passes it, so reordering silently drops the migration.
 - Do not remove or rename `template/.copier-answers.yml.jinja` without testing `treaty update`.
 - Keep `treaty validate` grounded in the documented treaty shape; update tests and dogfooded docs in the same change when you tighten it.
 - Local pointer files (`CLAUDE.md`, `CODEX.md`, `GEMINI.md`) are gitignored to keep the repo vendor-neutral; downstream pointers are opt-in via the `agent_pointers` Copier question.

@@ -6,7 +6,7 @@ This document orients a new agent or human collaborator to the Agent Collab Trea
 
 `agent-collab-treaty` is a small Python package that publishes the `treaty` CLI. The CLI installs and updates a Copier template containing a shared documentation contract for human + multi-agent collaboration on any codebase.
 
-The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/`.
+The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md`, `treaty_conventions.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/`.
 
 ## Active Runtime Path
 
@@ -23,11 +23,21 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py)
 
-- Defines the Typer app and the `treaty init`, `treaty update`, and `treaty validate` commands.
+- Defines the Typer app and the `treaty init`, `treaty update`, `treaty diff`, and `treaty validate` commands.
 - `treaty init` prints non-destructive adoption preflight notices for existing treaty files, case-mismatched treaty-looking files, and common overlapping project/agent docs before calling `copier.run_copy(...)` with the official template source by default: `gh:yzhaoinuw/agent_collab_treaty`; matching treaty template paths are passed through Copier's `skip_if_exists`, and noncanonical treaty-looking paths block init until the user resolves them.
 - `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject.
+- `treaty diff` renders the pinned template into a temp dir via `_render_pristine(...)` and reports section-level drift; read-only, and it needs no clean tree.
 - `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default; `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
+
+### 2b. Drift module
+
+[`src/agent_collab_treaty/diff.py`](src/agent_collab_treaty/diff.py)
+
+- Splits Markdown on `##` headings and classifies each section as untouched, modified, removed, added, or renamed.
+- Rename detection pairs a removed heading with an added one when their bodies are at least `RENAME_SIMILARITY` similar, because a rename is the one drift a three-way merge cannot auto-resolve.
+- `ADOPTER_OWNED` exempts `work_log.md` and `next_steps.md` from the risk total — their drift is the point of the treaty, not a hazard.
+- Pure functions throughout; the Copier render lives in `cli._render_pristine` so tests never need the network.
 
 ### 3. Adoption preflight module
 
@@ -52,7 +62,8 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - Points Copier at the `template/` subdirectory.
 - Requires Copier 9.0+.
-- Defines the current template questions: `integration_branch`, `env_activation`, `test_command`, and `agent_pointers`.
+- Defines the current template questions: `integration_branch`, `env_activation`, `verification_command`, `has_releases`, `uses_precommit`, `include_git_ownership_note`, `agent_pointers`, and `include_treaty_badge`.
+- Carries `test_command` as a `when: false` legacy alias so pre-v0.5.0 answers migrate to `verification_command`. It must stay declared last — see the reminder in `AGENTS.md`.
 - Prints post-copy guidance about filling placeholders and wiring agent pointer files.
 
 ### 6. Installable treaty template
@@ -60,7 +71,8 @@ The product is not an agent runtime. It is the coordination layer agents read be
 [`template/`](template/)
 
 - Contains the files installed into downstream projects.
-- `template/AGENTS.md.jinja` is rendered with the Copier answers.
+- `template/AGENTS.md.jinja` is rendered with the Copier answers. It holds what adopters customize; upstream keeps its bodies short.
+- `template/treaty_conventions.md.jinja` holds the mechanics we maintain (work-log criteria, rotation/dating, branch handoff, release gate, update procedure). Adopters are told not to edit it, which is what keeps `treaty update` close to conflict-free.
 - `template/.copier-answers.yml.jinja` records the source, commit, and answers so `treaty update` can work later.
 - Optional pointer templates render `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` when selected.
 - Other template docs are plain Markdown starting points for project-specific context.
@@ -88,6 +100,7 @@ project_root/
 |- template/
 |  |- .copier-answers.yml.jinja
 |  |- AGENTS.md.jinja
+|  |- treaty_conventions.md.jinja
 |  |- next_steps.md
 |  |- project_overview.md
 |  |- work_log.md
@@ -120,11 +133,28 @@ project_root/
 - [`work_log_archive/`](work_log_archive/) is historical context, not active code.
 - Local pointer files such as `CLAUDE.md`, `CODEX.md`, and `GEMINI.md` are intentionally ignored if created locally.
 
+## Authored vs. Derived
+
+Which files are written by hand here, and which are produced by something else.
+
+### Authored — hand-edit these
+
+- Everything under [`src/`](src/), [`tests/`](tests/), [`template/`](template/), [`copier.yml`](copier.yml), and the root treaty docs.
+- [`assets/`](assets/) badge SVGs, including the `adopters` badge's static parts.
+
+### Derived — never hand-edit
+
+- The `adopters` count inside the badge SVG. [`scripts/count_adopters.sh`](scripts/count_adopters.sh) computes it and the weekly `update-adopters-badge` workflow rewrites it directly on `main`. Editing it by hand is reverted on the next run — change the script instead.
+- A downstream project's `.copier-answers.yml`. Copier owns it; it is regenerated on every `treaty init` / `treaty update`.
+- `__pycache__/` and build output under `dist/`.
+
 ## Tests And Fixtures
 
-The committed test suite currently focuses on validation behavior:
+The committed test suite currently focuses on validation and drift behavior:
 
 - [`tests/test_validation.py`](tests/test_validation.py) - temporary project fixtures for valid docs, missing metadata/verification, work-log rotation, and broken Currently Hot anchors.
+- [`tests/test_diff.py`](tests/test_diff.py) - section splitting, classification, rename detection, and report formatting; all pure, no Copier or network.
+- [`tests/test_cli.py`](tests/test_cli.py) - Typer runner tests with Copier and git mocked out.
 
 Broader CLI/template verification is still smoke-test based:
 
@@ -132,8 +162,8 @@ Broader CLI/template verification is still smoke-test based:
 - Run `treaty --help`, `treaty init --help`, and `treaty update --help`.
 - Run `python -m unittest discover -s tests -v`.
 - Run `treaty validate .`.
-- Render `treaty init` into a scratch directory using `--source . --defaults --data ...`.
-- For update behavior, use a git-tracked scratch project because Copier requires git for three-way updates.
+- Render `treaty init` into a scratch directory using `--source . --ref HEAD --defaults --data ...`. **`--ref HEAD` is required** to render uncommitted template edits; without it Copier renders the source repo's last commit.
+- For update behavior, use a git-tracked scratch project because Copier requires git for three-way updates. To test uncommitted template edits, call `copier.run_update(dst_path=..., vcs_ref="HEAD", defaults=True, overwrite=True)` directly — `treaty update` has no ref override.
 - Run `git diff --check` before committing.
 
 The most important future test fixtures will be temporary downstream projects rendered from `template/` and then updated across template revisions.
@@ -159,9 +189,10 @@ If you only want to understand the current product, read files in this order:
 2. [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py)
 3. [`copier.yml`](copier.yml)
 4. [`template/AGENTS.md.jinja`](template/AGENTS.md.jinja)
-5. [`template/project_overview.md`](template/project_overview.md)
-6. [`next_steps.md`](next_steps.md)
-7. [`work_log.md`](work_log.md)
+5. [`template/treaty_conventions.md.jinja`](template/treaty_conventions.md.jinja)
+6. [`template/project_overview.md`](template/project_overview.md)
+7. [`next_steps.md`](next_steps.md)
+8. [`work_log.md`](work_log.md)
 
 The key idea: `treaty init` copies the template into a target repo, and `treaty update` later applies upstream template changes using Copier metadata. Everything else is documentation quality, update safety, and agent-discovery ergonomics.
 

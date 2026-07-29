@@ -19,14 +19,17 @@ Agent Collab Treaty installs a small, opinionated set of root-level Markdown fil
 - what was done in recent sessions,
 - and what conventions to follow for commits and code style.
 
-The template is language- and framework-agnostic. You fill in the project details once; future sessions follow the same map.
+The template is language- and framework-agnostic — it is used by code repos, but also by prose, research, and ops repos. You fill in the project details once; future sessions follow the same map.
+
+The two files split along how they are maintained: `AGENTS.md` holds your project's answers and upstream never revises them, while `treaty_conventions.md` holds the shared mechanics and you never revise those. That's what keeps `treaty update` close to conflict-free.
 
 ## What's In The Template
 
 | File | Purpose |
 |---|---|
-| `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. |
-| `project_overview.md` | Orientation map: active vs. legacy code, repo structure, and where to look first. |
+| `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. This is the file you customize. |
+| `treaty_conventions.md` | The generic treaty mechanics `AGENTS.md` links to: work-log criteria, dated-entry and rotation rules, branch handoff, release gate, update procedure. Maintained upstream — leave it alone and `treaty update` keeps it current. |
+| `project_overview.md` | Orientation map: active vs. legacy code, authored vs. derived files, repo structure, and where to look first. |
 | `next_steps.md` | Active roadmap. The "Currently Hot" section points agents to the threads that matter now. |
 | `work_log.md` | Recent session journal, newest first. Agents prepend substantive work before handoff. |
 | `work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
@@ -61,13 +64,29 @@ By default, `treaty init` installs only vendor-neutral treaty docs. You can also
 - `.windsurf/rules/treaty.md` for Windsurf
 - `.aider.conf.yml` for Aider
 
+Three questions let you drop sections that don't apply, rather than deleting them by hand. All default to yes, so code repos see no change:
+
+| Question | Answering no drops |
+|---|---|
+| `has_releases` | The "Release / Tag Checklist" section (and the release gate in `treaty_conventions.md`) |
+| `uses_precommit` | The "Pre-commit Note" section |
+| `include_git_ownership_note` | The "Git Ownership Note" section |
+
+Opting out is better than deleting: a section you never rendered can never conflict, while a section you deleted collects a conflict every time upstream revises it.
+
+Two more answers are worth knowing about:
+
+- `env_activation` accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
+- `verification_command` is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaces the old `test_command`; projects installed before v0.5.0 carry their recorded answer over automatically on `treaty update`.
+
 Non-interactive use:
 
 ```bash
 treaty init . --defaults \
   --data integration_branch=main \
   --data env_activation='conda activate myenv' \
-  --data test_command='pytest -v -m "not slow"' \
+  --data verification_command='pytest -v -m "not slow"' \
+  --data has_releases=false \
   --data 'agent_pointers=["claude-code", "cursor"]'
 ```
 
@@ -85,6 +104,27 @@ Copy from [`template/`](template/) into your project, not from the repo root. Th
 
 Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 
+### See your drift before updating
+
+`treaty diff` renders the template version your project is pinned to into a temporary directory and compares it section by section with what's on disk. It writes nothing.
+
+```bash
+treaty diff                            # or: treaty diff /path/to/project
+```
+
+```text
+AGENTS.md
+  untouched 9   modified 1   removed 3   added 1
+  ! removed: '## Release / Tag Checklist' — upstream edits arrive with nothing local to merge into
+  ~ modified: '## Runtime Environment'
+
+Conflict exposure: 4 section(s) across 1 file(s) would conflict if upstream revises them.
+```
+
+The classification is the point. Sections you **added** always merge cleanly. Sections you **removed** collect a conflict every time upstream touches them. And a **renamed** heading is the costliest thing you can do — a three-way merge reads it as a delete plus an unrelated add, so the conflict can't be auto-resolved. `treaty diff` calls renames out by name so you can restore the upstream heading and keep your body.
+
+`work_log.md` and `next_steps.md` are yours by design, so their drift is reported but never counted as risk.
+
 ### Update an installed treaty
 
 Once a project has the treaty installed via `treaty init` (or Copier), pull in later refinements with `treaty update`:
@@ -93,6 +133,7 @@ Once a project has the treaty installed via `treaty init` (or Copier), pull in l
 # optional: get the latest CLI first
 pipx upgrade agent-collab-treaty      # or: pip install -U agent-collab-treaty
 
+treaty diff                            # see which sections are exposed to conflicts
 git add -A && git commit -m "wip"     # commit first — update refuses a dirty tree
 treaty update --dry-run                # preview the changes without writing anything
 treaty update                          # apply; or: treaty update /path/to/project
@@ -182,6 +223,8 @@ When a new agent session opens:
 5. Do the work, following the conventions in `AGENTS.md`.
 6. At the end of substantive work: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, prepend a structured entry to `work_log.md`, and update `next_steps.md` if follow-up changed. Skip the log only for trivial exchanges or when the user explicitly says not to document the session.
 
+The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach that was tried and discarded and why, and evidence a future agent would otherwise have to rediscover. `treaty_conventions.md` states the full criteria.
+
 ## Rotation Policy
 
 `work_log.md` stays small by rotating older dates into archive files:
@@ -253,8 +296,20 @@ git push origin v0.1.0
 
 Treat this as a starting point, not a fixed standard. Common per-project additions:
 
-- A "Pre-commit Note" or "CI Note" section in `AGENTS.md` with the specific commands your stack uses (e.g., Black + pytest for Python, Prettier + Jest for JS).
+- A "CI Note" section in `AGENTS.md` with the specific commands your stack uses (e.g., Black + pytest for Python, Prettier + Jest for JS).
 - A "Domain Reminders" section in `AGENTS.md` for non-obvious gotchas (e.g., "don't blow away debug breadcrumbs during pipeline iteration").
 - Subsections of `project_overview.md` for the architecture diagrams or data schemas that matter most.
 
 Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
+
+How much an edit costs you at update time depends on what you edit, not how much:
+
+| Edit | Cost on `treaty update` |
+|---|---|
+| Filling in a bracket placeholder | None. Upstream never ships a revision to `[path/to/entrypoint]`. |
+| Adding a section | None. Additions always merge cleanly. |
+| Rewriting a maintained body | A conflict whenever upstream revises the same region. |
+| Deleting a section | A conflict every time upstream touches it, with nothing local to merge into. Prefer the `has_releases` / `uses_precommit` / `include_git_ownership_note` answers, which stop it from rendering at all. |
+| Renaming a heading | The worst case. The merge reads it as a delete plus an unrelated add, so it conflicts *and* can't be auto-resolved. Change the body, keep the heading. |
+
+`treaty diff` reports exactly this breakdown for your project.

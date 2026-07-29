@@ -283,6 +283,81 @@ def update(
         typer.echo("    git add -A && git commit")
 
 
+def _render_pristine(
+    source: str,
+    ref: Optional[str],
+    answers: dict,
+    target: Path,
+) -> None:
+    """Render the template into ``target`` using a project's recorded answers."""
+    import copier
+
+    copier.run_copy(
+        src_path=source,
+        dst_path=str(target),
+        vcs_ref=ref,
+        data=_user_answers(answers),
+        defaults=True,
+        quiet=True,
+        overwrite=True,
+    )
+
+
+@app.command()
+def diff(
+    destination: Path = typer.Argument(
+        Path("."),
+        help="Project directory to compare (defaults to the current directory).",
+    ),
+    source: Optional[str] = typer.Option(
+        None,
+        "--source",
+        help="Override the template source. Defaults to the one recorded at init.",
+    ),
+    ref: Optional[str] = typer.Option(
+        None,
+        "--ref",
+        help="Compare against a specific template ref. Defaults to the pinned one.",
+    ),
+) -> None:
+    """Show how far this project has drifted from the template version it is pinned to.
+
+    Renders the pinned template into a temporary directory and compares it
+    section by section, so you can see your conflict exposure before running
+    `treaty update`. Nothing is written to the project.
+    """
+    import tempfile
+
+    from .diff import compare_trees, format_report
+
+    destination = destination.expanduser().resolve()
+    answers = _read_answers(destination)
+    if not answers:
+        typer.echo(
+            f"No {ANSWERS_FILE} found in {destination}. "
+            "treaty diff only works in a project installed with treaty init.",
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    template_source = source or answers.get("_src_path")
+    if not template_source:
+        typer.echo(
+            f"{ANSWERS_FILE} records no template source; pass --source explicitly.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    template_ref = ref or answers.get("_commit")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        pristine = Path(tmp)
+        _render_pristine(template_source, template_ref, answers, pristine)
+        diffs = compare_trees(pristine, destination)
+
+    for line in format_report(diffs, template_ref):
+        typer.echo(line)
+
+
 @app.command()
 def validate(
     path: Path = typer.Argument(

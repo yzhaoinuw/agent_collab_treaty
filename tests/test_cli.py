@@ -10,6 +10,7 @@ from typer.testing import CliRunner
 from agent_collab_treaty.cli import (
     _classify_status,
     _format_update_summary,
+    _render_pristine,
     app,
 )
 
@@ -122,6 +123,62 @@ class TreatyCliTests(unittest.TestCase):
         self.assertIn("Template version: v0.3.2 → v0.3.3", lines)
         self.assertIn("Answer changes:", lines)
         self.assertIn("include_treaty_badge: False → True", lines)
+
+    def test_diff_reports_drift_against_the_pinned_template_version(self) -> None:
+        def fake_render(source, ref, answers, target) -> None:
+            (target / "AGENTS.md").write_text(
+                "## Startup Rule\n\nRead this first.\n\n## Release / Tag Checklist\n\nGate the tag.\n",
+                encoding="utf-8",
+            )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "AGENTS.md").write_text(
+                "## Startup Rule\n\nRead this first.\n\n## Story Bible\n\nOurs.\n",
+                encoding="utf-8",
+            )
+            answers = {
+                "_commit": "v0.4.1",
+                "_src_path": "gh:yzhaoinuw/agent_collab_treaty",
+                "integration_branch": "main",
+            }
+            with patch(
+                "agent_collab_treaty.cli._read_answers", return_value=answers
+            ), patch(
+                "agent_collab_treaty.cli._render_pristine", side_effect=fake_render
+            ) as render:
+                result = self.runner.invoke(app, ["diff", str(root)])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("gh:yzhaoinuw/agent_collab_treaty", render.call_args.args[0])
+        self.assertEqual("v0.4.1", render.call_args.args[1])
+        self.assertIn("template version v0.4.1", result.output)
+        self.assertIn("! removed: '## Release / Tag Checklist'", result.output)
+        self.assertIn("Conflict exposure: 1 section(s)", result.output)
+        self.assertIn("Nothing was written.", result.output)
+
+    def test_render_pristine_replays_answers_without_copier_bookkeeping(self) -> None:
+        answers = {
+            "_commit": "v0.4.1",
+            "_src_path": "gh:yzhaoinuw/agent_collab_treaty",
+            "integration_branch": "dev",
+        }
+        with patch("copier.run_copy") as run_copy:
+            _render_pristine("gh:yzhaoinuw/agent_collab_treaty", "v0.4.1", answers, Path("/tmp/x"))
+
+        kwargs = run_copy.call_args.kwargs
+        self.assertEqual({"integration_branch": "dev"}, kwargs["data"])
+        self.assertEqual("v0.4.1", kwargs["vcs_ref"])
+        self.assertTrue(kwargs["defaults"])
+
+    def test_diff_requires_an_installed_project(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("agent_collab_treaty.cli._render_pristine") as render:
+                result = self.runner.invoke(app, ["diff", tmp])
+
+        self.assertEqual(1, result.exit_code)
+        self.assertIn("treaty init", result.output)
+        render.assert_not_called()
 
     def test_validate_migration_hints_reports_overlapping_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

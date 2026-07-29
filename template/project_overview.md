@@ -45,7 +45,9 @@ project_root/
 
 ## What Looks Active vs. Legacy
 
-This is the single most important section for agents. Many repos accumulate parallel implementations during refactors; without an explicit map, an agent will frequently edit the wrong file.
+This section and the next are the two maps that keep an agent from editing the wrong file. Use whichever fits this repo — most benefit from both.
+
+Many repos accumulate parallel implementations during refactors; without an explicit map, an agent will frequently edit the superseded copy.
 
 ### Active / relevant now
 
@@ -56,6 +58,21 @@ This is the single most important section for agents. Many repos accumulate para
 
 - [`path/to/legacy_file_1`](path/to/legacy_file_1) — [why it's still in-tree]
 - [`path/to/legacy_file_2`](path/to/legacy_file_2) — [reason]
+
+## Authored vs. Derived
+
+The other axis: which files are written by hand, and which are regenerated from something else. Editing a derived file is worse than editing a legacy one — the change looks like it worked, then silently disappears the next time the generator runs.
+
+Applies to any repo with codegen, migrations, lockfiles, compiled assets, extracted state, or build output.
+
+### Authored — hand-edit these
+
+- [`path/to/source_of_truth`](path/to/source_of_truth) — [what it generates]
+
+### Derived — never hand-edit; regenerate instead
+
+- [`path/to/generated_file`](path/to/generated_file) — regenerate with `[command]`; source of truth is [`path/to/source_of_truth`](path/to/source_of_truth)
+- [`path/to/lockfile`](path/to/lockfile) — [the command that updates it]
 
 ## Tests And Fixtures
 

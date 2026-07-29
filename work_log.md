@@ -39,6 +39,46 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-29
+
+### Issue #12: split the template by maintenance ownership, add `treaty diff` (claude-opus-5, plan mode then execute)
+
+Issue #12 came from adopting the treaty into a **non-code repo** (a novel), where 11 of 12 `AGENTS.md` sections had to be rewritten or deleted. The measured finding that drove the design: **conflict risk tracks whether a section's body is maintained upstream, not how much the adopter edited it.** `project_overview.md` changed 135 lines against an 89-line original with almost no merge risk, because its body is all bracket placeholders upstream will never revise.
+
+So the template is now split by who maintains what:
+
+- **`AGENTS.md`** keeps the project's own answers — runtime, tasks, doc map, reminders — with short bodies. Upstream does not revise these.
+- **`treaty_conventions.md`** (new) holds the mechanics we do revise: work-log criteria, dated-entry and rotation rules, branch handoff, the release gate, and the `treaty update` procedure. Adopters are told not to edit it. This is #10 item 5, arrived at without managed-section markers.
+
+Every `##` heading survived the split — only bodies shrank. A rename would have handed every existing adopter an unresolvable conflict.
+
+Also landed:
+
+- **Three opt-out questions** (`has_releases`, `uses_precommit`, `include_git_ownership_note`), all defaulting to true so code repos see no change. Answering no is strictly better than deleting: a section that never renders can never conflict.
+- **`treaty diff`** — renders the pinned template to a temp dir and reports per-section untouched/modified/removed/added, flagging **renamed headings** specifically. `work_log.md` and `next_steps.md` are exempt from the risk total; their drift is the point of the treaty.
+- **`verification_command`** replaces `test_command` (a test runner, a linter, a link checker, and `treaty validate` are all the same slot). `env_activation` now accepts `none` for repos that deliberately have no environment.
+- Work-log criteria restated around **decisions, not the content of the work produced** — "implemented function X" and "drafted chapter 4" are noise for the same reason.
+- `project_overview.md` gained an **Authored vs. Derived** axis alongside Active vs. Legacy. Getting that one wrong is destructive in a way active/legacy usually isn't.
+
+Deliberately **not** done: the full `project_kind` question from P3. Jinja conditionals across a doc template get unmaintainable fast, and the split above removes most of its motivation.
+
+Two things worth not rediscovering:
+
+- Rendering a **local** template source uses that repo's git HEAD, not the working tree. The first smoke test silently rendered the old template and reported 219 lines. `--ref HEAD` is required.
+- `copier.yml` declares `test_command` with `when: false` as the legacy alias, and it **must stay declared after `verification_command`**. Copier renders question defaults in declaration order and *deletes* a `when: false` question's recorded answer as it passes it, so reordering would silently drop every adopter's migration. Confirmed by reading `copier/_main.py::_ask`, then by an end-to-end update.
+
+Line counts, all measured on a real render: default `AGENTS.md` **219 → 132** lines (the template's own stated target is under 150, which #11 flagged it for missing); with the three sections opted out, **91**, plus a 77–98 line `treaty_conventions.md` that nobody has to read at session start.
+
+- Verification:
+  - `python -m unittest discover -s tests -v` — 38 tests, 1 skipped, pass (11 new in `tests/test_diff.py`, 3 new in `tests/test_cli.py`).
+  - `treaty init` renders with `--ref HEAD`: full defaults (132 lines), all three sections opted out plus `env_activation=none` (91 lines), `treaty validate` passes on both.
+  - **Migration**: v0.4.1 project with `test_command: pytest -q` → update to HEAD. Result: `verification_command: pytest -q`, `test_command` gone from `.copier-answers.yml`, the value wired into the rendered `AGENTS.md`, `treaty_conventions.md` added, **zero conflicts**.
+  - **Customized adopter**: v0.4.1 project with the three sections deleted and two bodies rewritten → `treaty diff` predicted 4 at-risk sections beforehand; the update then produced exactly 3 conflict hunks in `AGENTS.md`. The one-time cost of the split is real, is confined to `AGENTS.md`, and is now visible before you run the update.
+  - `treaty diff` end-to-end on a clean render (0 exposure) and on one with a renamed + deleted heading (flagged both).
+  - `git diff --check` clean; `python -c "import agent_collab_treaty, agent_collab_treaty.cli"` ok.
+
+Version bumped to **0.5.0** in `pyproject.toml` and `__init__.py`. Not tagged — release is the maintainer's call.
+
 ## 2026-07-26
 
 ### Adopter count fixed: read our own repos directly instead of trusting code search (claude-opus-5)
