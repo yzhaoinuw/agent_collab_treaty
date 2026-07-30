@@ -7,7 +7,7 @@ Use this checklist alongside `work_log.md`.
 Active threads — read these first to know what work is in flight:
 
 - **v0.5.0 released 2026-07-30.** Issue #12: the template is split into `AGENTS.md` (adopter-owned) and `treaty_conventions.md` (upstream-maintained), plus three opt-out questions, `treaty diff`, `verification_command`, and the decisions-not-content work-log rule. Watch for adopter reports of the one-time `AGENTS.md` conflict this update causes — that feedback is what should decide whether full P3 is ever worth doing. See [Issue #12 follow-ups](#issue-12-follow-ups-claude-opus-5).
-- **Conflict-safe treaty update: phase 2** — issue #10 item 5 is now answered by the `treaty_conventions.md` split (no managed-section markers needed). Items 6–7 remain open. Items 1–4 shipped in **v0.4.0** (released 2026-07-17). See [Conflict-safe treaty update: phase 2](#conflict-safe-treaty-update-phase-2-claude-opus-48).
+- **Issue #10 is closed;** its remainder is now [#13](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) (`treaty --version`) and [#14](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) (real Copier-merge tests). Of the two, **#14 is the one that matters** — every update test still mocks `copier.run_update`, so the three-way merge this project exists to get right is unexercised in CI. See [Conflict-safe treaty update: closed](#conflict-safe-treaty-update-closed-claude-opus-48).
 - Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting. On 2026-07-26 the counter was fixed to read `yzhaoinuw/*` repos directly (code search indexes only 6 of our 13 adopting repos); the badge went 6 -> 13.
 - **Adopters badge links to a search that disagrees with it** (open, small). The badge now reads 13, but its link goes to the GitHub code-search results page, which shows only the ~6 indexed repos. Options: point the link at a maintained `ADOPTERS.md` list, at the README badge section, or leave it and accept the mismatch. Needs a decision before anyone treats the link as authoritative.
 
@@ -26,22 +26,18 @@ Open follow-ups:
 - **`treaty diff` could gain `--json`** for scripting, and could report *which lines* within a modified section drifted. Neither is needed yet.
 - **The 150-line guidance is now met by default (132 lines)** but is not enforced. A `treaty validate` check for it would close #11 mechanically; unclear whether that is welcome or annoying, since adopters legitimately add sections.
 
-## Conflict-safe treaty update: phase 2 (claude-opus-4.8)
+## Conflict-safe treaty update: closed (claude-opus-4.8)
 
-Status: items 1–4 implemented on `dev` (2026-07-16); items 5–7 deferred to a dedicated branch.
+Status: **issue #10 closed 2026-07-30.** Kept here as the record of how it was resolved.
 
-Issue #10 asked for a conflict-aware, safer `treaty update`. Shipped now (items 1–4, in `src/agent_collab_treaty/cli.py`):
+Items 1–4 shipped in **v0.4.0** (`src/agent_collab_treaty/cli.py`): unmerged-file detection with a non-zero exit, the post-update summary, `treaty update --dry-run`, and answer preservation by default with `--interactive` as the opt-in.
 
-- Detect unmerged files after Copier returns and exit non-zero when any remain.
-- Print a post-update summary: old → new template version, answer changes, updated files, conflicted files, and the exact next git commands.
-- `treaty update --dry-run` previews the diff without writing (Copier `pretend=True`).
-- Recorded answers are reused by default; re-answering is now the explicit `--interactive` opt-in. `--defaults` is kept as a hidden deprecated no-op for back-compat.
+Item 5 shipped in **v0.5.0**, but not as specified. It asked for managed-section markers in `template/AGENTS.md.jinja`; what landed instead splits the template by *maintenance ownership* — `AGENTS.md` for adopter answers, `treaty_conventions.md` for upstream-maintained mechanics. Markers would have carved one file into regions and asked the merge to respect them; the split removes the collision instead. Worth remembering if marker-style solutions come up again for another file.
 
-Deferred to a dedicated branch next session (items 5–7). The maintainer asked to keep these off `dev` until then — branch off `dev` when starting:
+Items 6 and 7 became standalone issues on 2026-07-30:
 
-- **#5 Managed-section markers / migration proposal.** For heavily customized `AGENTS.md`, replace whole-file conflicts with stable managed-section markers (or an adjacent migration proposal) so adopters' concise custom docs survive updates. This is a template-authoring redesign in `template/AGENTS.md.jinja`, not just a CLI change — the largest of the three and the one worth designing before coding.
-- **#6 `treaty --version`.** Add a top-level Typer callback printing the CLI version and, when run inside an installed project, the recorded template version from `.copier-answers.yml`.
-- **#7 End-to-end update tests.** Add real Copier-run update tests (git-backed scratch projects) covering clean updates, customized-file conflicts, answer preservation, and exit status. Phase-1 tests mock Copier/git; this matrix exercises the real three-way merge, as verified manually this session against a v0.3.2 → v0.3.3 adopter.
+- [**#13 `treaty --version`**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) — small. A top-level Typer callback printing the CLI version plus, inside an installed project, the `_commit` from `.copier-answers.yml`. `_read_answers(...)` already exists to reuse.
+- [**#14 real Copier-merge tests**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) — the substantive one. All 7 update tests patch `copier.run_update`, so clean updates, customized-file conflicts, answer migration, and exit status are verified only by hand. The v0.5.0 answer migration is the most fragile case: it depends on `test_command` staying declared *after* `verification_command` in `copier.yml`, and nothing catches a reordering.
 
 ## Background / Paused
 
