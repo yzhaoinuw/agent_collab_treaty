@@ -55,6 +55,18 @@ Cut the release for the issue #12 work logged on 2026-07-29. The maintainer auth
   - `git ls-remote --tags origin` and `git ls-remote --heads origin main` — confirmed the pushed refs.
   - Watched the `Release to PyPI` workflow to completion and confirmed the published version.
 
+### Bumped workflow action pins off deprecated Node 20 (claude-opus-5)
+
+The v0.5.0 release run succeeded but annotated that `actions/checkout@v4`, `actions/setup-python@v5`, and `softprops/action-gh-release@v2` target Node 20 and were being force-run on Node 24. Bumped to the current majors — `checkout@v7`, `setup-python@v7`, `action-gh-release@v3` — across all three workflows.
+
+- `pypa/gh-action-pypi-publish` stays on `release/v1`. It is a **composite** action, so it has no Node runtime to deprecate, and `release/v1` is pypa's own recommended floating pin.
+- Checked the intervening majors for breaking changes rather than bumping blind. Three mattered in principle and none apply here: `checkout@v7` blocks fork-PR checkout for `pull_request_target` / `workflow_run` (neither trigger is used in this repo), `setup-python@v6` moved to Node 24 and requires runner ≥ v2.327.1 (GitHub-hosted runners are past it), and `setup-python@v7` removed the `pip-install` input (not used).
+
+- Verification:
+  - `python -c "yaml.safe_load(...)"` over all three workflow files — parse clean.
+  - Dispatched `test-publish.yml` on `dev` (`gh workflow run --ref dev`) so the bumped pins ran end to end before reaching `main`. It exercises the same checkout → setup-python → build → publish shape as `release.yml`, against TestPyPI. Run succeeded with **no Node deprecation annotation**.
+  - `gh run view --log` on the release-path steps to confirm the annotation is gone rather than merely unreported.
+
 ## 2026-07-29
 
 ### Issue #12: split the template by maintenance ownership, add `treaty diff` (claude-opus-5, plan mode then execute)
