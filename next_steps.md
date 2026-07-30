@@ -6,7 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- **v0.5.0 is staged on `dev`, unreleased.** Issue #12 landed 2026-07-29: the template is split into `AGENTS.md` (adopter-owned) and `treaty_conventions.md` (upstream-maintained), three opt-out questions, `treaty diff`, `verification_command`, and the decisions-not-content work-log rule. Version bumped in `pyproject.toml` and `__init__.py`; **no tag pushed** — cutting the release is the maintainer's call. See [Issue #12 follow-ups](#issue-12-follow-ups-claude-opus-5).
+- **v0.5.0 released 2026-07-30.** Issue #12: the template is split into `AGENTS.md` (adopter-owned) and `treaty_conventions.md` (upstream-maintained), plus three opt-out questions, `treaty diff`, `verification_command`, and the decisions-not-content work-log rule. Watch for adopter reports of the one-time `AGENTS.md` conflict this update causes — that feedback is what should decide whether full P3 is ever worth doing. See [Issue #12 follow-ups](#issue-12-follow-ups-claude-opus-5).
 - **Conflict-safe treaty update: phase 2** — issue #10 item 5 is now answered by the `treaty_conventions.md` split (no managed-section markers needed). Items 6–7 remain open. Items 1–4 shipped in **v0.4.0** (released 2026-07-17). See [Conflict-safe treaty update: phase 2](#conflict-safe-treaty-update-phase-2-claude-opus-48).
 - Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting. On 2026-07-26 the counter was fixed to read `yzhaoinuw/*` repos directly (code search indexes only 6 of our 13 adopting repos); the badge went 6 -> 13.
 - **Adopters badge links to a search that disagrees with it** (open, small). The badge now reads 13, but its link goes to the GitHub code-search results page, which shows only the ~6 indexed repos. Options: point the link at a maintained `ADOPTERS.md` list, at the README badge section, or leave it and accept the mismatch. Needs a decision before anyone treats the link as authoritative.
@@ -17,11 +17,11 @@ Other sections below are background or paused; treat them as reference unless a 
 
 ## Issue #12 follow-ups (claude-opus-5)
 
-Status: P1, P2, P4, P5, P6, and the two P3-lite items implemented on `dev` (2026-07-29), unreleased.
+Status: P1, P2, P4, P5, P6, and the two P3-lite items shipped in **v0.5.0** (released 2026-07-30).
 
 Open follow-ups:
 
-- **Announce the `AGENTS.md` → `treaty_conventions.md` split in the v0.5.0 release notes.** Adopters who customized `AGENTS.md` get a one-time conflict on this update — measured at 3 hunks for a heavily customized project. Tell them to run `treaty diff` first; after resolving once, their exposure drops because the mechanics moved to a file they don't edit.
+- **Update the adopting repos.** Every `yzhaoinuw/*` repo carrying the treaty is now a v0.4.1 adopter facing the one-time `AGENTS.md` conflict. Running `treaty diff` then `treaty update` across them is both the migration and the first real-world test of whether the split behaves as measured.
 - **Full P3 (`project_kind`) is deliberately deferred**, per the issue's own recommendation. Revisit only if adopters still report vocabulary mismatch now that the split and the opt-out questions have landed. The two cheap parts (`env_activation=none`, `verification_command`) are already in.
 - **`treaty diff` could gain `--json`** for scripting, and could report *which lines* within a modified section drifted. Neither is needed yet.
 - **The 150-line guidance is now met by default (132 lines)** but is not enforced. A `treaty validate` check for it would close #11 mechanically; unclear whether that is welcome or annoying, since adopters legitimately add sections.

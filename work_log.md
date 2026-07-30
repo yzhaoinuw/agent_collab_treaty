@@ -39,6 +39,22 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-07-30
+
+### Released v0.5.0 (claude-opus-5)
+
+Cut the release for the issue #12 work logged on 2026-07-29. The maintainer authorized the full sequence — merge, tag, and publish — in this session rather than doing the `dev → main` merge themselves.
+
+- `dev` was exactly one commit ahead of `main` with no divergence, so the merge was a plain fast-forward. No adopters-badge bot commit had landed since v0.4.1.
+- Tagged `v0.5.0` on `main` and pushed, firing `release.yml` (PyPI trusted publishing + GitHub Release).
+- The auto-generated release notes were replaced with a body that leads on adopter impact: the `treaty_conventions.md` split costs anyone who customized `AGENTS.md` a **one-time** merge conflict, and they should run `treaty diff` before updating. `generate_release_notes: true` alone would not have said this, and it is the one thing an adopter needs to know before running `treaty update`.
+
+- Verification:
+  - `git fetch --all --tags`, `git log --left-right --cherry-pick origin/main...dev` — confirmed a single commit ahead, no divergence, before touching `main`.
+  - `python -m unittest discover -s tests` (38 pass, 1 skipped), `treaty validate .`, `git diff --check` — all clean at the tagged commit.
+  - `git ls-remote --tags origin` and `git ls-remote --heads origin main` — confirmed the pushed refs.
+  - Watched the `Release to PyPI` workflow to completion and confirmed the published version.
+
 ## 2026-07-29
 
 ### Issue #12: split the template by maintenance ownership, add `treaty diff` (claude-opus-5, plan mode then execute)
@@ -77,7 +93,7 @@ Line counts, all measured on a real render: default `AGENTS.md` **219 → 132** 
   - `treaty diff` end-to-end on a clean render (0 exposure) and on one with a renamed + deleted heading (flagged both).
   - `git diff --check` clean; `python -c "import agent_collab_treaty, agent_collab_treaty.cli"` ok.
 
-Version bumped to **0.5.0** in `pyproject.toml` and `__init__.py`. Not tagged — release is the maintainer's call.
+Version bumped to **0.5.0** in `pyproject.toml` and `__init__.py`. Not tagged in this session — released the next day, see 2026-07-30.
 
 ## 2026-07-26
 
