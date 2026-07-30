@@ -67,6 +67,17 @@ The v0.5.0 release run succeeded but annotated that `actions/checkout@v4`, `acti
   - Dispatched `test-publish.yml` on `dev` (`gh workflow run --ref dev`) so the bumped pins ran end to end before reaching `main`. It exercises the same checkout → setup-python → build → publish shape as `release.yml`, against TestPyPI. Run succeeded with **no Node deprecation annotation**.
   - `gh run view --log` on the release-path steps to confirm the annotation is gone rather than merely unreported.
 
+### Issue triage after the release (claude-opus-5)
+
+- **#12 closed** as completed, with a comment mapping each proposal to what shipped and naming the trigger for revisiting full P3: adopter reports that the vocabulary still doesn't fit *now that the split has landed*, not a schedule.
+- **#10 stays open, scoped down to items 6–7.** Item 5 is answered by the `treaty_conventions.md` split rather than by the managed-section markers it proposed — splitting by maintenance ownership removes the collision instead of asking a merge to respect marker regions. Its stated minimum acceptance criteria were already met in v0.4.0, so offered to split 6–7 into their own issues and close it; awaiting the maintainer's call.
+- Item 7 is worth being precise about: every update test in `tests/test_cli.py` mocks `copier.run_update`, so the real three-way merge is still unexercised in CI. The v0.5.0 migration and conflict paths were validated against git-backed scratch projects **manually** — recorded in the 2026-07-29 entry, not committed as tests. That gap is the whole of item 7.
+- The maintainer is migrating the other adopting repos themselves and will file issues if anything surfaces.
+
+- Verification:
+  - `gh issue view 10/12` — confirmed #12 CLOSED (COMPLETED) and #10 OPEN with the comment posted.
+  - `treaty --version` errors and `rg 'patch\("copier' tests/test_cli.py` returns 7 hits — confirmed items 6 and 7 are genuinely open before reporting them as such.
+
 ## 2026-07-29
 
 ### Issue #12: split the template by maintenance ownership, add `treaty diff` (claude-opus-5, plan mode then execute)
