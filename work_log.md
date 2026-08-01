@@ -41,6 +41,22 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-01
 
+### Released v0.6.0 (claude-opus-5)
+
+Cut the release covering everything logged under this date plus 2026-07-30's issue work. Ran a pre-release audit rather than assuming the tree was ready, which turned up two gaps worth fixing first:
+
+- The **post-install message contradicted the README**. It still told users to open `AGENTS.md` and fill placeholders by hand, with no mention of the agent prompt that had just become the documented path. That message reaches people who install via Copier directly and never read the README, so it mattered more than the README line did.
+- **`treaty --version` was effectively invisible** — the whole deliverable of #13 appeared once, inside a collapsible.
+
+The release body leads on the `template/work_log.md` fix, because it is the only change that makes an existing adopter's docs *wrong* rather than merely dated: every v0.5.0 adopter is carrying work-log criteria that contradict their own `treaty_conventions.md`. Updating is what corrects it. That is also the counterexample to the update-notification idea parked earlier the same day — being behind is usually harmless, which is why it was parked, but this release is the exception, so it is worth saying loudly in the notes rather than relying on adopters noticing.
+
+- Verification:
+  - Pre-release audit: version consistency, stale version references (two hits, both correct history), leftover TODO/FIXME (none — the hits are `adoption.py` detecting `TODO.md`, which is intended), and the post-copy message rendered from a real `treaty init`.
+  - Full suite **51 tests, ~13s** including real Copier merges; `treaty validate .`; `git diff --check`; import check.
+  - README: 15 external links 200, no dead anchors, ToC parity, PyPI render, adopters-badge `sed` pattern intact.
+  - Fresh render: `AGENTS.md` 132 lines, `treaty_conventions.md` 98, `treaty validate` passes, and the new `work_log.md` → `treaty_conventions.md#work-log-discipline` link resolves against a real heading.
+  - `git fetch` + divergence check before touching `main`; refs confirmed with `git ls-remote` after pushing; release workflow watched to completion; published wheel installed from PyPI in a clean venv.
+
 ### Restructured the README around install → usage → update (claude-opus-5)
 
 The maintainer found the README dragging and branching instead of getting to the point. Reordered it so the value proposition is followed immediately by Install, Quick Start, Update, and Validate, with caveats pushed into `<details>` and maintainer material moved last under **Developer Notes**. Added a top-level table of contents.
