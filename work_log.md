@@ -72,6 +72,24 @@ Worth keeping in mind for future doc work here: a positioning claim added to the
   - Confirmed "five Markdown files and an archive folder" against an actual `treaty init` render rather than counting from memory — `AGENTS.md`, `treaty_conventions.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, plus `work_log_archive/`.
   - Re-ran the full check set after the edit: `readme_renderer[md]` render (collapsibles intact), the badge workflow's `sed` pattern, and the anchor audit. All clean. Final size 315 → 276 lines.
 
+### Added a "See It In A Real Project" section to the README (claude-opus-5)
+
+The README described a work log without ever showing one. Added a short section after "What's In The Template" linking to live treaty docs in two long-running adopters, plus this repo.
+
+**Selected on evidence, not recall.** Surveyed all 27 public non-fork `yzhaoinuw` repos via the GitHub API, filtered to the 11 carrying `work_log.md`, and ranked by archive depth, session count, `next_steps.md` size, and recency. `sleep_scoring` (deepest history, most stars, published research software) and `fp_analysis` (longest span, richest live log, and a proper Copier-managed install) won, and they are complementary rather than redundant.
+
+Two decisions worth keeping:
+
+- **Linked `work_log.md` and `next_steps.md` only — deliberately not `AGENTS.md`.** Both adopters are pinned to pre-v0.5.0 templates (`fp_analysis` at `v0.3.2`; `sleep_scoring` was hand-copied and has no `.copier-answers.yml`), so their `AGENTS.md` shows the old undivided layout. Linking it would show a newcomer a structure the current release no longer produces. The log and roadmap formats are stable across versions, so they demonstrate the treaty without misrepresenting it.
+- **Used absolute GitHub URLs for this repo's own two links**, not relative paths. Relative links break on PyPI, where this README is the package description, and these sit beside two absolute links in the same list.
+
+The entry counts will drift as those repos grow. They only ever undercount, so staleness is safe — but a future session refreshing this section should re-measure rather than trust the numbers.
+
+- Verification:
+  - Counted archive chunks and dated entries by fetching and parsing each file, after a first pass **overcounted `sleep_scoring` as 9 chunks / ~45 dates** — the listing included `work_log_archive/README.md`, and the hand-adopted repo does not follow the exactly-5-dates-per-chunk rule. Corrected to 8 chunks / 39 dated entries before it reached the README.
+  - `curl` over all 13 external links in the README — every one returns 200.
+  - Anchor audit, ToC/section parity, `readme_renderer[md]` render, and the badge `sed` pattern — all clean.
+
 ## 2026-07-30
 
 ### Released v0.5.0 (claude-opus-5)

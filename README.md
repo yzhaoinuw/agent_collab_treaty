@@ -15,6 +15,7 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 ## Contents
 
 - [What's In The Template](#whats-in-the-template)
+- [See It In A Real Project](#see-it-in-a-real-project)
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Update](#update)
@@ -37,6 +38,16 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 | `work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
 
 Those first two files split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
+
+## See It In A Real Project
+
+Not samples — living docs, filled in by months of real sessions:
+
+- **[sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)** — sleep-staging app; 39 dated entries since April 2026, rotated across 8 archive chunks: [work_log.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/next_steps.md)
+- **[fp_analysis](https://github.com/yzhaoinuw/fp_analysis)** — fiber-photometry app; 20 dated entries since March 2026, 21 sessions in the live log alone: [work_log.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/next_steps.md)
+- **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/next_steps.md)
+
+Open any `work_log.md` and read one entry. It says *why* something was decided, not which files changed — that's what makes it worth reading months later, by an agent or by you.
 
 ## Install
 
