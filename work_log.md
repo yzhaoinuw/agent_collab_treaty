@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-01
 
+### Added CITATION.cff for Zenodo/DOI archiving (claude-fable-5)
+
+Decision: archive the repo on Zenodo for a DOI. The reasoning that settled it — the value is citability (methods sections in the maintainer's research papers, software output on a CV) and archival permanence, not prestige; a DOI alone is not an academic contribution. A JOSS submission was considered and deliberately not pursued: a workflow/documentation tool is likely out of their research-software scope, and a paper about the workflow pattern itself would be the real route to credit if ever wanted.
+
+- Added `CITATION.cff` (pinned to v0.6.0, released this date). GitHub now shows "Cite this repository", and Zenodo reads it as metadata. No DOI in the file yet — see below.
+- Timing gotcha worth remembering: the maintainer enabled the Zenodo–GitHub integration *after* the v0.6.0 GitHub Release was created, and the webhook only fires on releases created after enabling. So no archive exists yet; the first DOI comes with the next `v*` release or a manual upload. Tracked in `next_steps.md`.
+- `CITATION.cff` adds a third place the version lives. The release checklist in `AGENTS.md` now says to bump `version:` and `date-released:` there alongside `pyproject.toml` and `__init__.py`.
+- Verification:
+  - `cffconvert --validate -i CITATION.cff` (schema-valid CFF 1.2.0; pipx is absent on this machine, cffconvert was pip-installed into the base env).
+  - `git diff --check`; full `python -m unittest discover -s tests -v` including the Copier-merge integration tests; `treaty validate .`; `treaty --help` / `--version` and import smoke checks.
+
 ### Released v0.6.0 (claude-opus-5)
 
 Cut the release covering everything logged under this date plus 2026-07-30's issue work. Ran a pre-release audit rather than assuming the tree was ready, which turned up two gaps worth fixing first:

@@ -71,7 +71,7 @@ The `update-adopters-badge` workflow runs weekly and, when the count changes, pu
 
 Treat commit + push + tag (or "cut a release" / "publish version X") as a release. Clear this doc gate **before** creating or pushing the tag:
 
-- Version bumped in `pyproject.toml` **and** `src/agent_collab_treaty/__init__.py`, consistent with the tag.
+- Version bumped in `pyproject.toml` **and** `src/agent_collab_treaty/__init__.py`, consistent with the tag. Update `version:` and `date-released:` in `CITATION.cff` in the same pass.
 - User-facing docs updated when behavior changed. (No changelog file; release history lives in `work_log.md` plus the GitHub Release body.)
 - `work_log.md` updated with the summary, verification commands run, and release/branch/tag state, using the verified local date.
 

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+title: Agent Collab Treaty
+abstract: >-
+  A drop-in documentation contract for repositories worked on by AI agents,
+  humans, or both. Five Markdown files and an archive folder give every agent
+  session a startup contract, a decision-centric work log, and a living
+  roadmap; the treaty CLI installs them as a Copier template and updates them
+  in place with a three-way merge.
+authors:
+  - family-names: Zhao
+    given-names: Yue
+    email: yzhaoinuw@gmail.com
+license: MIT
+repository-code: "https://github.com/yzhaoinuw/agent_collab_treaty"
+url: "https://github.com/yzhaoinuw/agent_collab_treaty"
+keywords:
+  - AI agents
+  - human-AI collaboration
+  - agent handoff
+  - documentation
+  - copier template
+  - research software
+version: 0.6.0
+date-released: "2026-08-01"
