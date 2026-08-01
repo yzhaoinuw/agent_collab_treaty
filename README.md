@@ -10,7 +10,7 @@ A drop-in documentation contract for repositories worked on by agents, humans, o
 - **Agent handoff.** The next session picks up where the last one left off — less repeated reading, fewer lost decisions — whether it's the same agent, a different model, or a different machine.
 - **Planning and work log, for you.** The same files are a running record of what's in flight, what shipped, and what was decided and why. Plain Markdown in git: nothing to log into, diffable, and ready to lift straight into a status update.
 
-Language- and framework-agnostic — code repos, but also prose, research, and ops. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
+Language- and framework-agnostic — code repos, but also prose, research, and ops. Your agent can set it up in two prompts and maintain it unsupervised from there. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
 ## Contents
 
@@ -51,6 +51,10 @@ Open any `work_log.md` and read one entry. It says *why* something was decided, 
 
 ## Install
 
+**Hand this to your agent.** That's the intended path — the treaty is a contract agents follow on their own, so setting it up is work they can do too. Every section below leads with the prompt, then shows the command it runs, for when you'd rather drive it yourself.
+
+> Install the Agent Collab Treaty in this repo and run `treaty init`.
+
 ```bash
 pipx install agent-collab-treaty     # isolated (recommended)
 pip install agent-collab-treaty      # or in a regular venv
@@ -78,7 +82,13 @@ cd your-project
 treaty init
 ```
 
-`treaty init` asks a few short questions and writes the treaty files into the current directory. That's it — future agent sessions read them automatically. As work progresses, agents prepend to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
+`treaty init` asks a few short questions and writes the treaty files into the current directory. It leaves bracket placeholders — `[app launch command]`, `[path/to/entrypoint]` — for the project-specific parts. Filling those in is the step that makes the treaty useful, and it's the one an agent is genuinely better at than you are, because it can read the whole repo first:
+
+> Fill out the docs in the treaty. Read the codebase to replace the placeholders in `AGENTS.md` and `project_overview.md`, put whatever is actually in flight into `next_steps.md`, then run `treaty validate .`.
+
+Leave `work_log.md` empty — it starts accumulating from the next session. Backfilling it from git history would produce exactly the "implemented function X" noise the log exists to avoid.
+
+From there it's self-sustaining. Future sessions read `AGENTS.md` at startup, prepend to `work_log.md` before handoff, and keep `next_steps.md` honest — no prompting needed. The only recurring ask is the occasional [update](#update).
 
 Non-interactive:
 
@@ -128,7 +138,9 @@ The agent should summarize active work into `next_steps.md`, preserve useful his
 
 ## Update
 
-Pull upstream refinements into a project that already has the treaty:
+Pull upstream refinements into a project that already has the treaty. This is the step most worth handing over: the merge can leave conflicts, and resolving them is judgment work — deciding which side of each hunk is your project's content and which is the new upstream guidance.
+
+> Update the treaty in this repo. Check `treaty diff` first, then run `treaty update` and resolve any conflicts — keep our project-specific content and fold in the new upstream sections.
 
 ```bash
 pipx upgrade agent-collab-treaty      # get the latest CLI first

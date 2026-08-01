@@ -90,6 +90,20 @@ The entry counts will drift as those repos grow. They only ever undercount, so s
   - `curl` over all 13 external links in the README — every one returns 200.
   - Anchor audit, ToC/section parity, `readme_renderer[md]` render, and the badge `sed` pattern — all clean.
 
+### Led the README's setup path with agent prompts (claude-opus-5)
+
+The maintainer pointed out an inconsistency: a package whose selling point is agent autonomy had a README assuming you type everything by hand, when in practice he sets these up by asking an agent. Install, Quick Start, and Update now lead with the prompt, then show the command underneath.
+
+**Pushed back on replacing the commands entirely**, which was offered as an option. The prompts only work *because* the commands are documented — an agent landing on the PyPI page reads the README to learn what `treaty init` does, so a prompt-only README is circular. A Python package with no `pip install` line also reads as broken to anyone evaluating it, and conflict recovery needs the exit-code and `git add` semantics. Adjacent, prompt first, is the version that serves both.
+
+- The onboarding prompt fills a **genuine content hole**: the README never explained how the bracket placeholders get filled. That is the step that makes the treaty useful and the one an agent does better than a human, since it can read the whole repo first.
+- **Caught myself teaching the anti-pattern.** The first draft of that prompt said to seed `work_log.md` from recent git history — which is exactly the "implemented function X" noise the log exists to avoid, since git history *is* the diff. Rewrote it to seed only `next_steps.md`, and added an explicit line telling adopters to leave `work_log.md` empty until the next session. Worth remembering: the treaty's own rules apply to the instructions we write about it.
+- The description claimed "two prompts" while the draft had three. Merged install and `treaty init` into one ask, matching how the maintainer actually drives it, rather than weakening the claim to a vague count.
+
+- Verification:
+  - Rendered through `readme_renderer[md]`: 4 blockquotes render, and markdown **inside** `<details>` is fully processed on PyPI — checked the emitted HTML directly rather than assuming, since a collapsible that renders as raw markdown text on the package page would have been a silent regression from the earlier restructure.
+  - All 15 external links 200; anchors and ToC parity clean; badge `sed` pattern still matches. 300 lines.
+
 ### Closed out #13 and #14: `treaty --version`, and real merge tests (claude-opus-5)
 
 **#13 — `treaty --version`.** Eager top-level Typer callback printing the CLI version, plus the pinned `_commit` and `_src_path` when run inside an installed project. Reuses `_read_answers(...)`. Confirmed `no_args_is_help` still behaves: bare `treaty` prints help and exits 2, checked against the **published v0.5.0 wheel** in a scratch venv rather than assumed, since that is the pre-change build.
