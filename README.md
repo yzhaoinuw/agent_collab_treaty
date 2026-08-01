@@ -5,81 +5,70 @@
 [![Public adopters](https://img.shields.io/badge/adopters-13-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
 <!-- adopters-badge:end -->
 
-A drop-in documentation contract that helps future agent sessions pick up a repository where the last session left off, with less repeated reading, fewer lost decisions, and clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
+A drop-in documentation contract that helps future agent sessions pick up a repository where the last one left off — less repeated reading, fewer lost decisions, clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
 
-Battle-tested on real projects with collaboration between Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
+`treaty init` installs a small set of root-level Markdown files that any coding agent reads at the start of a session to learn what environment to run in, what's active code versus legacy, what work is in flight, what recent sessions did, and what conventions to follow. Language- and framework-agnostic: used by code repos, but also prose, research, and ops repos.
 
-## What This Is
+Battle-tested on real projects across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
-Agent Collab Treaty installs a small, opinionated set of root-level Markdown files that any coding agent reads at the start of a session to learn:
+## Contents
 
-- what environment to run in,
-- what's active code versus legacy,
-- what work is currently in flight,
-- what was done in recent sessions,
-- and what conventions to follow for commits and code style.
-
-The template is language- and framework-agnostic — it is used by code repos, but also by prose, research, and ops repos. You fill in the project details once; future sessions follow the same map.
-
-The two files split along how they are maintained: `AGENTS.md` holds your project's answers and upstream never revises them, while `treaty_conventions.md` holds the shared mechanics and you never revise those. That's what keeps `treaty update` close to conflict-free.
+- [What's In The Template](#whats-in-the-template)
+- [Install](#install)
+- [Quick Start](#quick-start)
+- [Update](#update)
+- [Validate](#validate)
+- [Wiring Up Your Agent](#wiring-up-your-agent)
+- [The Workflow In Practice](#the-workflow-in-practice)
+- [Badge](#badge)
+- [Why "Treaty"](#why-treaty)
+- [Developer Notes](#developer-notes)
 
 ## What's In The Template
 
 | File | Purpose |
 |---|---|
-| `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. This is the file you customize. |
-| `treaty_conventions.md` | The generic treaty mechanics `AGENTS.md` links to: work-log criteria, dated-entry and rotation rules, branch handoff, release gate, update procedure. Maintained upstream — leave it alone and `treaty update` keeps it current. |
-| `project_overview.md` | Orientation map: active vs. legacy code, authored vs. derived files, repo structure, and where to look first. |
-| `next_steps.md` | Active roadmap. The "Currently Hot" section points agents to the threads that matter now. |
-| `work_log.md` | Recent session journal, newest first. Agents prepend substantive work before handoff. |
+| `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. **This is the file you customize.** |
+| `treaty_conventions.md` | The generic mechanics `AGENTS.md` links to: work-log criteria, rotation and dating rules, branch handoff, release gate, update procedure. **Maintained upstream — leave it alone** and `treaty update` keeps it current. |
+| `project_overview.md` | Orientation map: active vs. legacy code, authored vs. derived files, repo structure, where to look first. |
+| `next_steps.md` | Active roadmap. "Currently Hot" points agents at the threads that matter now. |
+| `work_log.md` | Session journal, newest first. Agents prepend substantive work before handoff. |
 | `work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
 
-## How To Use
+Those first two files split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
 
-The fastest path is the `treaty` CLI. It installs and later updates the treaty files in new or existing projects.
-
-### Option 1 - install the CLI, then run `treaty init`
+## Install
 
 ```bash
-# isolated install (recommended; requires pipx)
-pipx install agent-collab-treaty
+pipx install agent-collab-treaty     # isolated (recommended)
+pip install agent-collab-treaty      # or in a regular venv
+```
 
-# or in a regular venv
-pip install agent-collab-treaty
+<details>
+<summary>Other ways to install the treaty</summary>
 
-# then, from inside the project you want to add the treaty to:
+The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/), so you can skip it:
+
+```bash
+pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
+```
+
+Or copy the files by hand from [`template/`](template/) — not from this repo's root, which holds our own dogfooded docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files.
+
+Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `treaty diff` won't work on them — you'd copy new sections from [`template/`](template/) by hand instead.
+
+</details>
+
+## Quick Start
+
+```bash
+cd your-project
 treaty init
 ```
 
-`treaty init` asks a few short questions and writes the treaty files into the current directory. Re-run later with `treaty update` to pull in upstream refinements without losing local edits.
+`treaty init` asks a few short questions and writes the treaty files into the current directory. That's it — future agent sessions read them automatically. As work progresses, agents prepend to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
 
-In existing projects, `treaty init` first runs a non-destructive adoption preflight. It warns about existing treaty files, case-mismatched treaty-looking files such as `Work_Log.md`, and common planning/agent docs such as `TODO.md`, `ROADMAP.md`, `NOTES.md`, or `CLAUDE.md`. It does not move, archive, rewrite, or delete existing docs. Matching treaty template paths are skipped instead of overwritten.
-
-Case-mismatched treaty-looking paths are blocking because they can prevent canonical files from being created, especially on Windows. Rename or archive them, then rerun `treaty init`.
-
-By default, `treaty init` installs only vendor-neutral treaty docs. You can also opt into pointer files for tools that do not reliably load `AGENTS.md` directly:
-
-- `CLAUDE.md` for Claude Code / Cowork
-- `.cursor/rules/treaty.mdc` for Cursor
-- `.windsurf/rules/treaty.md` for Windsurf
-- `.aider.conf.yml` for Aider
-
-Three questions let you drop sections that don't apply, rather than deleting them by hand. All default to yes, so code repos see no change:
-
-| Question | Answering no drops |
-|---|---|
-| `has_releases` | The "Release / Tag Checklist" section (and the release gate in `treaty_conventions.md`) |
-| `uses_precommit` | The "Pre-commit Note" section |
-| `include_git_ownership_note` | The "Git Ownership Note" section |
-
-Opting out is better than deleting: a section you never rendered can never conflict, while a section you deleted collects a conflict every time upstream revises it.
-
-Two more answers are worth knowing about:
-
-- `env_activation` accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
-- `verification_command` is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaces the old `test_command`; projects installed before v0.5.0 carry their recorded answer over automatically on `treaty update`.
-
-Non-interactive use:
+Non-interactive:
 
 ```bash
 treaty init . --defaults \
@@ -90,27 +79,57 @@ treaty init . --defaults \
   --data 'agent_pointers=["claude-code", "cursor"]'
 ```
 
-### Option 2 - use Copier directly
+<details>
+<summary>The questions it asks</summary>
 
-The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/):
+Three questions drop sections that don't apply to your project. All default to yes, so code repos see no change:
+
+| Question | Answering no drops |
+|---|---|
+| `has_releases` | The "Release / Tag Checklist" section (and the release gate in `treaty_conventions.md`) |
+| `uses_precommit` | The "Pre-commit Note" section |
+| `include_git_ownership_note` | The "Git Ownership Note" section |
+
+Opting out beats deleting: a section that never rendered can never conflict, while a section you deleted collects a conflict every time upstream revises it.
+
+Two more worth knowing:
+
+- **`env_activation`** accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
+- **`verification_command`** is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaced `test_command` in v0.5.0; older projects carry their recorded answer over automatically.
+
+</details>
+
+<details>
+<summary>Adding the treaty to a project that already has docs</summary>
+
+`treaty init` runs a non-destructive preflight first. It warns about existing treaty files, case-mismatched ones such as `Work_Log.md`, and common planning docs such as `TODO.md`, `ROADMAP.md`, `NOTES.md`, or `CLAUDE.md`. It never moves, archives, rewrites, or deletes anything, and matching treaty paths are skipped rather than overwritten.
+
+Case-mismatched treaty-looking paths **block** the install, because they can prevent canonical files from being created — especially on Windows. Rename or archive them, then rerun.
+
+To fold existing docs into the treaty, ask an agent, and be explicit that migration is authorized:
+
+> Please migrate this repo's existing planning and logging docs into the Agent Collab Treaty. Preserve originals unless you explain and get approval before moving or rewriting them.
+
+The agent should summarize active work into `next_steps.md`, preserve useful history in `work_log.md` or `work_log_archive/`, run `treaty validate . --migration-hints`, and record what changed in `work_log.md`.
+
+</details>
+
+## Update
+
+Pull upstream refinements into a project that already has the treaty:
 
 ```bash
-pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
+pipx upgrade agent-collab-treaty      # get the latest CLI first
+
+treaty diff                           # which sections would conflict?
+git add -A && git commit -m "wip"     # update refuses a dirty tree
+treaty update --dry-run               # preview without writing
+treaty update                         # apply
 ```
 
-### Option 3 - just copy the files
+`treaty update` does a **three-way merge** from your pinned version up to the latest release, so edits that don't overlap upstream changes are kept automatically. If any file is left conflicted, the command names it and **exits non-zero** — a conflicted update is never reported as a success.
 
-Copy from [`template/`](template/) into your project, not from the repo root. The root files are this project's own dogfooded treaty docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files.
-
-Whichever path you pick, future agent sessions will read the files automatically. As work progresses, prepend new entries to `work_log.md` and keep `next_steps.md` honest about what's currently hot.
-
-### See your drift before updating
-
-`treaty diff` renders the template version your project is pinned to into a temporary directory and compares it section by section with what's on disk. It writes nothing.
-
-```bash
-treaty diff                            # or: treaty diff /path/to/project
-```
+`treaty diff` writes nothing. It renders the template version you're pinned to into a temp directory and compares section by section:
 
 ```text
 AGENTS.md
@@ -121,96 +140,61 @@ AGENTS.md
 Conflict exposure: 4 section(s) across 1 file(s) would conflict if upstream revises them.
 ```
 
-The classification is the point. Sections you **added** always merge cleanly. Sections you **removed** collect a conflict every time upstream touches them. And a **renamed** heading is the costliest thing you can do — a three-way merge reads it as a delete plus an unrelated add, so the conflict can't be auto-resolved. `treaty diff` calls renames out by name so you can restore the upstream heading and keep your body.
+<details>
+<summary>What your edits cost at update time</summary>
 
-`work_log.md` and `next_steps.md` are yours by design, so their drift is reported but never counted as risk.
+Cost depends on *what* you edit, not how much:
 
-### Update an installed treaty
+| Edit | Cost on `treaty update` |
+|---|---|
+| Filling in a bracket placeholder | None. Upstream never ships a revision to `[path/to/entrypoint]`. |
+| Adding a section | None. Additions always merge cleanly. |
+| Rewriting a maintained body | A conflict whenever upstream revises the same region. |
+| Deleting a section | A conflict every time upstream touches it, with nothing local to merge into. Prefer the `has_releases` / `uses_precommit` / `include_git_ownership_note` answers, which stop it rendering at all. |
+| Renaming a heading | The worst case. The merge reads it as a delete plus an unrelated add, so it conflicts *and* can't be auto-resolved. Change the body, keep the heading. |
 
-Once a project has the treaty installed via `treaty init` (or Copier), pull in later refinements with `treaty update`:
+`treaty diff` reports this breakdown for your project, and calls out renamed headings by name so you can restore the upstream heading and keep your body. `work_log.md` and `next_steps.md` are yours by design, so their drift is reported but never counted as risk.
+
+</details>
+
+<details>
+<summary>Resolving conflicts, and the git requirement</summary>
+
+Where your edits overlap a changed region, the merge leaves standard markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file. Resolve them like any `git merge` — keep your content, fold in the new sections — and don't commit unresolved markers:
 
 ```bash
-# optional: get the latest CLI first
-pipx upgrade agent-collab-treaty      # or: pip install -U agent-collab-treaty
-
-treaty diff                            # see which sections are exposed to conflicts
-git add -A && git commit -m "wip"     # commit first — update refuses a dirty tree
-treaty update --dry-run                # preview the changes without writing anything
-treaty update                          # apply; or: treaty update /path/to/project
-# treaty prints a summary and, if any file is left conflicted, exits non-zero.
-# resolve the conflict markers it lists, then:
+# after resolving what treaty update listed:
 git add -A && git commit
 ```
 
-`treaty update` reads the `.copier-answers.yml` recorded at install time and does a **three-way merge** from your pinned version up to the treaty's latest release. Edits that don't overlap the upstream changes are kept automatically. Where your edits overlap a changed region, the merge leaves conflict markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file — resolve them like any `git merge`, keeping your content and folding in the new sections, and don't commit unresolved markers.
+After merging, `treaty update` prints a summary: old → new template version, answer changes, updated files, conflicted files. Your recorded answers are reused by default; pass `--interactive` only to re-answer the template questions.
 
-After merging, `treaty update` prints a summary (old → new template version, any answer changes, updated files, conflicted files). **If any file is left unresolved, the command names it, tells you how to continue, and exits non-zero** — a conflicted update is never reported as a success. Use `treaty update --dry-run` to preview the diff without touching your project. Your previously recorded answers are reused by default; pass `--interactive` only when you want to re-answer the template questions.
+The project must be **git-tracked with a clean working tree** — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't.
 
-> **Note**: the project must be git-tracked with a clean working tree — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't. Projects adopted by manually copying files ([Option 3](#option-3---just-copy-the-files)) have no `.copier-answers.yml`, so copy any new sections from [`template/`](template/) by hand instead.
+</details>
 
-### Validate an installed treaty
-
-Run `treaty validate` from any project using the treaty:
+## Validate
 
 ```bash
-treaty validate
+treaty validate                       # in any project using the treaty
+treaty validate --migration-hints     # plus overlap hints for legacy docs
 ```
 
-It checks canonical treaty filenames, `work_log.md` structure, live-log rotation, session verification sections, and `next_steps.md` Currently Hot links. Validation exits non-zero when issues are found; use `--warn-only` for advisory runs.
-
-For existing projects that already have planning or agent docs, add `--migration-hints` to print concise, non-destructive overlap hints without changing files:
-
-```bash
-treaty validate --migration-hints
-```
-
-### Migrate existing docs with an agent
-
-If a repo already has planning or logging docs, you can ask an agent to adopt them into the treaty. Be explicit that migration is authorized. For example:
-
-> Please migrate this repo's existing planning and logging docs into the Agent Collab Treaty. Preserve originals unless you explain and get approval before moving or rewriting them.
-
-The agent should inspect legacy docs, summarize active work into `next_steps.md`, preserve useful history in `work_log.md` or `work_log_archive/`, add bridge notes where helpful, run `treaty validate . --migration-hints`, and document what changed in `work_log.md`.
-
-## Badge
-
-`treaty init` offers to add the Agent Collab Treaty "adopted" badge to your README (opt-in). The badge options are hosted centrally by this repository — your project receives **no extra files**, and the image URLs continue to serve the latest design if we improve the badge later.
-
-The exact markdown snippet is printed in the post-copy message when you run `treaty init` and opt into the badge question.
-
-**Recommended (tri-color SVG — the full visual design):**
-
-```markdown
-[![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
-```
-
-The badge text is outlined to vector paths (no embedded or system font), so it renders **identically on GitHub across every platform** — no font-substitution or clipping. The image is hosted centrally, so it picks up any future design improvements automatically.
-
-**Fallback (single-color via shields.io):**
-
-```markdown
-[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
-```
-
-> Use the fallback only if your README also renders **outside GitHub** — e.g. on PyPI or npm — where raw SVG images may be sanitized or blocked.
-
-This repo's own README uses the tri-color badge via a relative path; adopters use the `raw.githubusercontent.com` URL above, which is the same image.
+It checks canonical filenames, `work_log.md` structure, live-log rotation, session verification sections, and `next_steps.md` "Currently Hot" links. Exits non-zero when issues are found; `--warn-only` keeps it advisory.
 
 ## Wiring Up Your Agent
 
-`AGENTS.md` is the one file every agent should read at the start of a session. Some tools load it directly; others work better with a small pointer file.
+`AGENTS.md` is the one file every agent should read at session start. Some tools load it directly; others want a small pointer file, which `treaty init` can generate:
 
-`treaty init` keeps the default install vendor-neutral, but it can generate pointer files when you select them during setup:
-
-| Tool | Pointer generated by `treaty init` | Notes |
+| Tool | Pointer | Notes |
 |---|---|---|
-| Codex | none | Codex reads `AGENTS.md` natively. |
+| Codex | none | Reads `AGENTS.md` natively. |
 | Claude Code / Cowork | `CLAUDE.md` | Imports `AGENTS.md` with Claude's `@AGENTS.md` syntax. |
-| Cursor | `.cursor/rules/treaty.mdc` | Always-applied project rule that points Cursor back to `AGENTS.md`. Cursor also supports root `AGENTS.md` directly. |
-| Windsurf | `.windsurf/rules/treaty.md` | Always-on workspace rule that points Cascade back to `AGENTS.md`. Windsurf also processes root `AGENTS.md` directly. |
+| Cursor | `.cursor/rules/treaty.mdc` | Always-applied project rule pointing back to `AGENTS.md`. Cursor also supports root `AGENTS.md` directly. |
+| Windsurf | `.windsurf/rules/treaty.md` | Always-on workspace rule pointing Cascade back to `AGENTS.md`. Windsurf also processes root `AGENTS.md` directly. |
 | Aider | `.aider.conf.yml` | Configures Aider to always read `AGENTS.md` as read-only context. |
 
-For any other tool, add a one-line default instruction such as: *"At the start of every new chat or session in this repository, read `AGENTS.md` first and follow the documentation map there."*
+For any other tool, add a one-line default instruction: *"At the start of every new chat or session in this repository, read `AGENTS.md` first and follow the documentation map there."*
 
 ## The Workflow In Practice
 
@@ -219,97 +203,71 @@ When a new agent session opens:
 1. Read `AGENTS.md` first.
 2. Use its documentation map to open only the relevant docs.
 3. Read the top of `work_log.md` for recent context.
-4. Check `next_steps.md` -> "Currently Hot" for active priorities.
+4. Check `next_steps.md` → "Currently Hot" for active priorities.
 5. Do the work, following the conventions in `AGENTS.md`.
-6. At the end of substantive work: run the pre-flight checklist from `AGENTS.md`, run `treaty validate`, prepend a structured entry to `work_log.md`, and update `next_steps.md` if follow-up changed. Skip the log only for trivial exchanges or when the user explicitly says not to document the session.
+6. At the end of substantive work: run the pre-flight checklist, run `treaty validate`, prepend an entry to `work_log.md`, and update `next_steps.md` if follow-up changed.
 
-The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach that was tried and discarded and why, and evidence a future agent would otherwise have to rediscover. `treaty_conventions.md` states the full criteria.
+The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach tried and discarded and why, and evidence a future agent would otherwise have to rediscover.
 
-## Rotation Policy
+`treaty_conventions.md` carries the full criteria, plus the log rotation policy that keeps `work_log.md` cheap to read.
 
-`work_log.md` stays small by rotating older dates into archive files:
+## Badge
 
-- The live `work_log.md` holds at most the **5 most recent unique calendar dates**.
-- When prepending a new date would push the live log past 5 unique dates, move the oldest 5 dates as a chunk into a new file at `work_log_archive/work_log_<earliest>_to_<latest>.md`. Each archive file holds exactly 5 dates.
-- All files (live and archive) use the same `## YYYY-MM-DD` header convention, so the anchor-grep recipe in `AGENTS.md` works across both with one command:
+`treaty init` offers an opt-in "adopted" badge. It's hosted centrally by this repository, so your project receives **no extra files** and picks up any future design improvements automatically.
 
-  ```
-  rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' work_log.md work_log_archive/
-  ```
+```markdown
+[![Agent Collab Treaty](https://raw.githubusercontent.com/yzhaoinuw/agent_collab_treaty/main/assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
+```
+
+<details>
+<summary>Why this one, and the fallback for non-GitHub renders</summary>
+
+The tri-color SVG above is the primary recommendation: its text is outlined to vector paths, with no embedded or system font, so it renders **identically on GitHub across every platform** — no font substitution, no clipping.
+
+Use the single-color shields.io fallback only if your README also renders **outside GitHub** — e.g. on PyPI or npm — where raw SVG images may be sanitized or blocked:
+
+```markdown
+[![Agent Collab Treaty](https://img.shields.io/badge/Agent_Collab_Treaty-adopted-6d81f1?style=flat-square)](https://github.com/yzhaoinuw/agent_collab_treaty)
+```
+
+This repo's own README uses the tri-color badge via a relative path; adopters use the `raw.githubusercontent.com` URL, which is the same image.
+
+</details>
 
 ## Why "Treaty"
 
-Because it is a small agreement about where project context lives, what agents read first, and what they write back before leaving.
+Because it's a small agreement about where project context lives, what agents read first, and what they write back before leaving.
 
-## Releasing to PyPI
+Treat it as a starting point, not a fixed standard. Add a "CI Note" section for your stack's commands, a "Domain Reminders" section for non-obvious gotchas, extra `project_overview.md` subsections for the diagrams or schemas that matter. Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
 
-(This section is for maintainers of this repo. End users should follow [How To Use](#how-to-use) instead.)
+## Developer Notes
 
-Two GitHub Actions workflows handle publishing:
+*For maintainers of this repository. If you're using the treaty, you want [Quick Start](#quick-start) instead.*
 
-- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, and creates a GitHub Release.
-- `.github/workflows/test-publish.yml` — `workflow_dispatch` (manual) trigger, publishes to TestPyPI for dry-runs.
+Two GitHub Actions workflows handle publishing, both via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo:
 
-Both use [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo.
+- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release.
+- `.github/workflows/test-publish.yml` — manual `workflow_dispatch`, publishes to TestPyPI for dry-runs.
 
-### One-time setup (per maintainer)
-
-1. **PyPI account**: create one at https://pypi.org if you don't have one.
-2. **TestPyPI account**: create a *separate* one at https://test.pypi.org. (TestPyPI is fully independent and uses different credentials.)
-3. **Register the project as a Pending Publisher on PyPI**:
-   - Go to https://pypi.org/manage/account/publishing/
-   - Click "Add a new pending publisher"
-   - Fill in: PyPI project name `agent-collab-treaty`, owner `yzhaoinuw`, repo `agent_collab_treaty`, workflow filename `release.yml`, environment name `pypi`.
-4. **Register on TestPyPI the same way**:
-   - Go to https://test.pypi.org/manage/account/publishing/
-   - Same values, except workflow filename `test-publish.yml` and environment name `testpypi`.
-5. **Create the two GitHub environments**: in repo Settings → Environments, create `pypi` and `testpypi`. No secrets needed (OIDC handles auth). Optionally add protection rules (e.g., require manual approval for `pypi`).
-
-### Cutting a release
-
-Dry-run first:
+Cutting a release:
 
 ```bash
-# in the GitHub Actions tab → "Publish to TestPyPI (manual dry-run)" → Run workflow
-# (or via CLI:)
-gh workflow run test-publish.yml
-```
+gh workflow run test-publish.yml      # dry-run to TestPyPI first
 
-After the TestPyPI publish succeeds, install from TestPyPI to smoke-test:
-
-```bash
+# smoke-test the dry-run:
 pipx install --index-url https://test.pypi.org/simple/ \
-  --pip-args="--extra-index-url https://pypi.org/simple/" \
-  agent-collab-treaty
+  --pip-args="--extra-index-url https://pypi.org/simple/" agent-collab-treaty
+
+# then bump the version in pyproject.toml and __init__.py, and:
+git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
 ```
 
-When the dry-run looks good, cut the real release:
+<details>
+<summary>One-time trusted-publisher setup (per maintainer)</summary>
 
-```bash
-# bump pyproject.toml version if needed, then:
-git tag v0.1.0
-git push origin v0.1.0
-# release.yml will fire, publish to PyPI, and create a GitHub Release
-```
+1. **PyPI account** at https://pypi.org, and a *separate* **TestPyPI account** at https://test.pypi.org — they're fully independent services with different credentials.
+2. **Register as a Pending Publisher on PyPI**: https://pypi.org/manage/account/publishing/ → "Add a new pending publisher" → project `agent-collab-treaty`, owner `yzhaoinuw`, repo `agent_collab_treaty`, workflow `release.yml`, environment `pypi`.
+3. **Register on TestPyPI the same way**, except workflow `test-publish.yml` and environment `testpypi`.
+4. **Create both GitHub environments**: repo Settings → Environments → `pypi` and `testpypi`. No secrets needed, since OIDC handles auth. Optionally add protection rules, e.g. require manual approval for `pypi`.
 
-## Customization
-
-Treat this as a starting point, not a fixed standard. Common per-project additions:
-
-- A "CI Note" section in `AGENTS.md` with the specific commands your stack uses (e.g., Black + pytest for Python, Prettier + Jest for JS).
-- A "Domain Reminders" section in `AGENTS.md` for non-obvious gotchas (e.g., "don't blow away debug breadcrumbs during pipeline iteration").
-- Subsections of `project_overview.md` for the architecture diagrams or data schemas that matter most.
-
-Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
-
-How much an edit costs you at update time depends on what you edit, not how much:
-
-| Edit | Cost on `treaty update` |
-|---|---|
-| Filling in a bracket placeholder | None. Upstream never ships a revision to `[path/to/entrypoint]`. |
-| Adding a section | None. Additions always merge cleanly. |
-| Rewriting a maintained body | A conflict whenever upstream revises the same region. |
-| Deleting a section | A conflict every time upstream touches it, with nothing local to merge into. Prefer the `has_releases` / `uses_precommit` / `include_git_ownership_note` answers, which stop it from rendering at all. |
-| Renaming a heading | The worst case. The merge reads it as a delete plus an unrelated add, so it conflicts *and* can't be auto-resolved. Change the body, keep the heading. |
-
-`treaty diff` reports exactly this breakdown for your project.
+</details>

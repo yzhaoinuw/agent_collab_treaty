@@ -39,6 +39,25 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-08-01
+
+### Restructured the README around install → usage → update (claude-opus-5)
+
+The maintainer found the README dragging and branching instead of getting to the point. Reordered it so the value proposition is followed immediately by Install, Quick Start, Update, and Validate, with caveats pushed into `<details>` and maintainer material moved last under **Developer Notes**. Added a top-level table of contents.
+
+Two judgment calls worth recording:
+
+- **The problem was partly duplication, not just ordering.** The "Rotation Policy" section restated what `treaty_conventions.md` has owned since v0.5.0, and the maintenance-ownership split was explained twice in the intro. Reordering alone would have relocated the sprawl, so both were cut down to pointers. This is the README's half of the same principle the template now follows: say it in one place, link from the others.
+- **A hand-maintained ToC is a rot risk** and GitHub already auto-generates one in its header menu — but that menu does not exist on PyPI, where this README is the package long description. Kept it, restricted to top-level headings so there is less to go stale.
+
+Deliberately **not** done: moving Developer Notes into `CONTRIBUTING.md`. That is the conventional home and the treaty's own doc map already references it, but the maintainer asked to avoid a new doc, and the section is small enough that a README tail is fine. Revisit if it grows.
+
+- Verification:
+  - `readme_renderer[md]` render of the file — confirms it renders for PyPI and that `<details>`, `<summary>`, and `<table>` all survive PyPI's HTML sanitizer. This was the real risk of the collapsible approach and it needed checking rather than assuming.
+  - Ran the adopters-badge workflow's exact `sed -E "s/adopters-[0-9]+-6d81f1/.../"` against the rewritten file — still matches, so the weekly badge refresh will not silently stop updating.
+  - Anchor audit: every `](#...)` link resolves against a real heading; ToC entries and `##` sections match exactly in both directions; no other file links to a README anchor.
+  - 315 → 273 lines, of which 101 sit inside 7 collapsibles, so 172 lines are visible on load — roughly half the original weight.
+
 ## 2026-07-30
 
 ### Released v0.5.0 (claude-opus-5)
