@@ -135,6 +135,42 @@ app = typer.Typer(
 DEFAULT_TEMPLATE_SOURCE = "gh:yzhaoinuw/agent_collab_treaty"
 
 
+def _version_lines(cwd: Path) -> list[str]:
+    """Report the CLI version, plus the pinned template version when in a project."""
+    from . import __version__
+
+    lines = [f"treaty {__version__}"]
+
+    answers = _read_answers(cwd)
+    commit = answers.get("_commit")
+    if commit:
+        source = answers.get("_src_path")
+        suffix = f" ({source})" if source else ""
+        lines.append(f"template {commit}{suffix}")
+    return lines
+
+
+def _version_callback(value: bool) -> None:
+    if not value:
+        return
+    for line in _version_lines(Path.cwd()):
+        typer.echo(line)
+    raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        help="Show the CLI version, and the pinned template version when run inside a project.",
+        callback=_version_callback,
+        is_eager=True,
+    ),
+) -> None:
+    """Install and maintain the Agent Collab Treaty in any project."""
+
+
 @app.command()
 def init(
     destination: Path = typer.Argument(

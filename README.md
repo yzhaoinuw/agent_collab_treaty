@@ -133,6 +133,7 @@ Pull upstream refinements into a project that already has the treaty:
 ```bash
 pipx upgrade agent-collab-treaty      # get the latest CLI first
 
+treaty --version                      # CLI version, and the template you're pinned to
 treaty diff                           # which sections would conflict?
 git add -A && git commit -m "wip"     # update refuses a dirty tree
 treaty update --dry-run               # preview without writing

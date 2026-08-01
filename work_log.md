@@ -90,6 +90,27 @@ The entry counts will drift as those repos grow. They only ever undercount, so s
   - `curl` over all 13 external links in the README — every one returns 200.
   - Anchor audit, ToC/section parity, `readme_renderer[md]` render, and the badge `sed` pattern — all clean.
 
+### Closed out #13 and #14: `treaty --version`, and real merge tests (claude-opus-5)
+
+**#13 — `treaty --version`.** Eager top-level Typer callback printing the CLI version, plus the pinned `_commit` and `_src_path` when run inside an installed project. Reuses `_read_answers(...)`. Confirmed `no_args_is_help` still behaves: bare `treaty` prints help and exits 2, checked against the **published v0.5.0 wheel** in a scratch venv rather than assumed, since that is the pre-change build.
+
+**#14 — real Copier merge tests.** `tests/test_update_integration.py`, 10 tests, closing the gap where every update test mocked `copier.run_update`.
+
+- **Synthetic throwaway template, not this repo's own.** Testing against our real template would couple the tests to release history and to tags surviving a shallow CI checkout. A two-commit template built in a temp dir drives the identical Copier code path with none of that fragility.
+- Covers: clean update, local edits outside the changed region surviving, overlapping edits conflicting with a non-zero exit and named file, upstream file additions landing in an older project, answer reuse without reprompting, and the hidden-alias migration.
+- `CopierConfigContractTests` asserts the properties of our **real** `copier.yml` that adopters depend on: `test_command` hidden, declared after `verification_command`, and inherited by its default. Pure YAML parsing, so it runs even in fast mode.
+- Added `test_alias_declared_before_its_replacement_loses_the_answer`, which pins the *failure* mode — Copier clearing a hidden question's answer as it walks past it. If a future Copier release stops doing that, this test tells us the declaration-order constraint can be dropped, instead of us carrying a cargo-culted rule forever.
+
+Two things worth keeping:
+
+- **The first migration test failed for a fixture reason, not a product one**, and the output proved it: the answers migrated correctly (`test_command: 'pytest -q' → None`, `verification_command: None → 'pytest -q'`) while `AGENTS.md` conflicted. The cause was a hand-written baseline `AGENTS.md` that never matched what template v1 would render, so the three-way merge had no sane common ancestor. Rebuilt as a genuine two-version template. **Lesson: an update fixture's baseline must come from an actual render of the old template, never from hand-written content.**
+- **Mutation-tested the guard rather than trusting a green run.** Reordered `copier.yml` to put `test_command` first and confirmed `CopierConfigContractTests` fails with the explanatory message, then restored the file and verified it byte-identical via `git diff --stat`. A guard test that passes but would not fail is worse than none.
+
+- Verification:
+  - Full suite **51 tests, ~13s, all pass**; `TREATY_SKIP_INTEGRATION=1` → 0.14s with 8 skipped (7 integration + the pre-existing case-collision skip), contract tests still running.
+  - `treaty --version` checked in three states: inside an installed project (prints both lines), in this repo which has no `.copier-answers.yml` (CLI line only), and bare `treaty` (help, exit 2, unchanged from the published build).
+  - `treaty --help` reviewed for duplicate help text after adding the callback — clean.
+
 ## 2026-07-30
 
 ### Released v0.5.0 (claude-opus-5)

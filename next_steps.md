@@ -7,7 +7,8 @@ Use this checklist alongside `work_log.md`.
 Active threads — read these first to know what work is in flight:
 
 - **v0.5.0 released 2026-07-30.** Issue #12: the template is split into `AGENTS.md` (adopter-owned) and `treaty_conventions.md` (upstream-maintained), plus three opt-out questions, `treaty diff`, `verification_command`, and the decisions-not-content work-log rule. Watch for adopter reports of the one-time `AGENTS.md` conflict this update causes — that feedback is what should decide whether full P3 is ever worth doing. See [Issue #12 follow-ups](#issue-12-follow-ups-claude-opus-5).
-- **Issue #10 is closed;** its remainder is now [#13](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) (`treaty --version`) and [#14](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) (real Copier-merge tests). Of the two, **#14 is the one that matters** — every update test still mocks `copier.run_update`, so the three-way merge this project exists to get right is unexercised in CI. See [Conflict-safe treaty update: closed](#conflict-safe-treaty-update-closed-claude-opus-48).
+- **#13 and #14 are done and unreleased** (2026-08-01): `treaty --version`, and `tests/test_update_integration.py` covering the real Copier three-way merge. **No open issues remain.** A version bump is the next decision — see below.
+- **Release decision pending.** `main` now carries new CLI surface (`treaty --version`), the first real merge coverage, and a substantially rewritten README — none of which is on PyPI, since the package page renders the description baked into the last uploaded artifact. **v0.6.0** is warranted whenever the maintainer wants it; nothing is blocking.
 - Background: the adoption-badge feature shipped in v0.3.1; a follow-up logo color/layout polish landed afterward. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting. On 2026-07-26 the counter was fixed to read `yzhaoinuw/*` repos directly (code search indexes only 6 of our 13 adopting repos); the badge went 6 -> 13.
 - **Adopters badge links to a search that disagrees with it** (open, small). The badge now reads 13, but its link goes to the GitHub code-search results page, which shows only the ~6 indexed repos. Options: point the link at a maintained `ADOPTERS.md` list, at the README badge section, or leave it and accept the mismatch. Needs a decision before anyone treats the link as authoritative.
 
@@ -34,10 +35,10 @@ Items 1–4 shipped in **v0.4.0** (`src/agent_collab_treaty/cli.py`): unmerged-f
 
 Item 5 shipped in **v0.5.0**, but not as specified. It asked for managed-section markers in `template/AGENTS.md.jinja`; what landed instead splits the template by *maintenance ownership* — `AGENTS.md` for adopter answers, `treaty_conventions.md` for upstream-maintained mechanics. Markers would have carved one file into regions and asked the merge to respect them; the split removes the collision instead. Worth remembering if marker-style solutions come up again for another file.
 
-Items 6 and 7 became standalone issues on 2026-07-30:
+Items 6 and 7 became standalone issues on 2026-07-30, and both closed on 2026-08-01:
 
-- [**#13 `treaty --version`**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) — small. A top-level Typer callback printing the CLI version plus, inside an installed project, the `_commit` from `.copier-answers.yml`. `_read_answers(...)` already exists to reuse.
-- [**#14 real Copier-merge tests**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) — the substantive one. All 7 update tests patch `copier.run_update`, so clean updates, customized-file conflicts, answer migration, and exit status are verified only by hand. The v0.5.0 answer migration is the most fragile case: it depends on `test_command` staying declared *after* `verification_command` in `copier.yml`, and nothing catches a reordering.
+- [**#13 `treaty --version`**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) — done. Eager top-level callback printing the CLI version plus, inside an installed project, the pinned `_commit` and `_src_path`.
+- [**#14 real Copier-merge tests**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) — done. `tests/test_update_integration.py` runs genuine three-way merges over git-backed scratch projects, and `CopierConfigContractTests` guards the `copier.yml` declaration order the answer migration depends on. That guard was mutation-tested rather than just observed green.
 
 ## Background / Paused
 

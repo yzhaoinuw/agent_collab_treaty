@@ -32,10 +32,12 @@ See `README.md` for full command examples. The CI-equivalent pre-flight checks:
 
 ```bash
 git diff --check
-python -m unittest discover -s tests -v
-treaty --help && treaty validate .
+python -m unittest discover -s tests -v          # ~13s; TREATY_SKIP_INTEGRATION=1 for ~0.2s
+treaty --help && treaty --version && treaty validate .
 python -c "import agent_collab_treaty, agent_collab_treaty.cli; print('import ok')"
 ```
+
+`tests/test_update_integration.py` runs real git + Copier merges. Skipping it is fine mid-loop, but never skip it in the run you commit on — it is the only coverage of the three-way merge.
 
 Smoke-test template rendering by `treaty init`-ing into a scratch dir; build with `python -m build`.
 

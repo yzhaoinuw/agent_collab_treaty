@@ -124,6 +124,38 @@ class TreatyCliTests(unittest.TestCase):
         self.assertIn("Answer changes:", lines)
         self.assertIn("include_treaty_badge: False → True", lines)
 
+    def test_version_reports_cli_and_pinned_template_versions(self) -> None:
+        from agent_collab_treaty import __version__
+
+        answers = {
+            "_commit": "v0.4.1",
+            "_src_path": "gh:yzhaoinuw/agent_collab_treaty",
+            "integration_branch": "main",
+        }
+        with patch("agent_collab_treaty.cli._read_answers", return_value=answers):
+            result = self.runner.invoke(app, ["--version"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn(f"treaty {__version__}", result.output)
+        self.assertIn("template v0.4.1 (gh:yzhaoinuw/agent_collab_treaty)", result.output)
+
+    def test_version_outside_a_project_reports_cli_version_only(self) -> None:
+        from agent_collab_treaty import __version__
+
+        with patch("agent_collab_treaty.cli._read_answers", return_value={}):
+            result = self.runner.invoke(app, ["--version"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertIn(f"treaty {__version__}", result.output)
+        self.assertNotIn("template", result.output)
+
+    def test_version_flag_does_not_require_a_subcommand(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, patch("copier.run_copy") as run_copy:
+            result = self.runner.invoke(app, ["--version"], env={"PWD": tmp})
+
+        self.assertEqual(0, result.exit_code)
+        run_copy.assert_not_called()
+
     def test_diff_reports_drift_against_the_pinned_template_version(self) -> None:
         def fake_render(source, ref, answers, target) -> None:
             (target / "AGENTS.md").write_text(
