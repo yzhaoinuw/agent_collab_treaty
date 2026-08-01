@@ -108,6 +108,8 @@ project_root/
 |  `- work_log_archive/
 |- work_log_archive/
 |- AGENTS.md
+|- CITATION.cff
+|- CONTRIBUTING.md
 |- copier.yml
 |- LICENSE
 |- next_steps.md
@@ -124,7 +126,9 @@ project_root/
 - [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py) - active CLI implementation.
 - [`copier.yml`](copier.yml) - active Copier configuration and template questions.
 - [`template/`](template/) - active installable treaty content.
-- [`README.md`](README.md) - public user and maintainer documentation.
+- [`README.md`](README.md) - public user documentation.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) - contributor front door and maintainer release/publishing mechanics.
+- [`CITATION.cff`](CITATION.cff) - citation metadata; Zenodo reads it when archiving a release, and its `version:`/`date-released:` are bumped as part of the release checklist.
 - [`.github/workflows/`](.github/workflows/) - active PyPI/TestPyPI release automation.
 - Root [`AGENTS.md`](AGENTS.md), [`next_steps.md`](next_steps.md), [`work_log.md`](work_log.md), and this file - dogfooded docs for maintaining this repo.
 

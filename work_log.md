@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-01
 
+### Added CONTRIBUTING.md; ORCID in CITATION.cff (claude-fable-5)
+
+- Added the maintainer's ORCID (0000-0002-0819-5012) to `CITATION.cff`.
+- **Reversed a same-day decision, at the maintainer's request:** the README restructure earlier today deliberately kept Developer Notes in the README instead of creating `CONTRIBUTING.md` ("revisit if it grows"). The maintainer reopened it in the Zenodo/citability context, and two things tipped it: `template/AGENTS.md.jinja`'s doc map already lists `CONTRIBUTING.md` "(if present)", and community guidelines are a checklist item if a JOSS-style submission ever happens.
+- What moved: README "Developer Notes" (release workflows, cutting a release, trusted-publisher setup) → `CONTRIBUTING.md` § Releases. The README tail is now a short Contributing pointer, which also shortens the PyPI render.
+- What deliberately did **not** move: nothing from `AGENTS.md` or `project_overview.md`. Those are the dogfooded treaty — the product itself — so `CONTRIBUTING.md` links into them (§ Common Tasks, § Project-Specific Reminders) rather than duplicating, which would create drift between copies.
+- Cross-references updated: root `AGENTS.md` doc map, `project_overview.md` structure map and active-docs list.
+- Verification:
+  - `git diff --check`; full `python -m unittest discover -s tests -v` (51 tests incl. real Copier merges); `treaty validate .`; `treaty --version`; import smoke check.
+  - `cffconvert --validate -i CITATION.cff` after the ORCID edit.
+  - README ToC anchor `#contributing` matches the new heading; the only remaining "Developer Notes" mentions are historical work-log prose.
+
 ### Added CITATION.cff for Zenodo/DOI archiving (claude-fable-5)
 
 Decision: archive the repo on Zenodo for a DOI. The reasoning that settled it — the value is citability (methods sections in the maintainer's research papers, software output on a CV) and archival permanence, not prestige; a DOI alone is not an academic contribution. A JOSS submission was considered and deliberately not pursued: a workflow/documentation tool is likely out of their research-software scope, and a paper about the workflow pattern itself would be the real route to credit if ever wanted.

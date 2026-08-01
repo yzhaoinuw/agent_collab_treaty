@@ -24,7 +24,7 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 - [The Workflow In Practice](#the-workflow-in-practice)
 - [Badge](#badge)
 - [Why "Treaty"](#why-treaty)
-- [Developer Notes](#developer-notes)
+- [Contributing](#contributing)
 
 ## What's In The Template
 
@@ -286,34 +286,6 @@ Because it's a small agreement about where project context lives, what agents re
 
 Treat it as a starting point, not a fixed standard. Add a "CI Note" section for your stack's commands, a "Domain Reminders" section for non-obvious gotchas, extra `project_overview.md` subsections for the diagrams or schemas that matter. Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
 
-## Developer Notes
+## Contributing
 
-*For maintainers of this repository. If you're using the treaty, you want [Set Up](#set-up) instead.*
-
-Two GitHub Actions workflows handle publishing, both via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo:
-
-- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release.
-- `.github/workflows/test-publish.yml` — manual `workflow_dispatch`, publishes to TestPyPI for dry-runs.
-
-Cutting a release:
-
-```bash
-gh workflow run test-publish.yml      # dry-run to TestPyPI first
-
-# smoke-test the dry-run:
-pipx install --index-url https://test.pypi.org/simple/ \
-  --pip-args="--extra-index-url https://pypi.org/simple/" agent-collab-treaty
-
-# then bump the version in pyproject.toml and __init__.py, and:
-git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
-```
-
-<details>
-<summary>One-time trusted-publisher setup (per maintainer)</summary>
-
-1. **PyPI account** at https://pypi.org, and a *separate* **TestPyPI account** at https://test.pypi.org — they're fully independent services with different credentials.
-2. **Register as a Pending Publisher on PyPI**: https://pypi.org/manage/account/publishing/ → "Add a new pending publisher" → project `agent-collab-treaty`, owner `yzhaoinuw`, repo `agent_collab_treaty`, workflow `release.yml`, environment `pypi`.
-3. **Register on TestPyPI the same way**, except workflow `test-publish.yml` and environment `testpypi`.
-4. **Create both GitHub environments**: repo Settings → Environments → `pypi` and `testpypi`. No secrets needed, since OIDC handles auth. Optionally add protection rules, e.g. require manual approval for `pypi`.
-
-</details>
+Bug reports, feature ideas, and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). It's the contributor front door, and it also carries the release and publishing mechanics for maintainers. To cite the project, use the repo's `CITATION.cff` (GitHub's "Cite this repository" button).
