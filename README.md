@@ -164,11 +164,13 @@ pipx upgrade agent-collab-treaty      # get the latest CLI first
 treaty --version                      # CLI version, and the template you're pinned to
 treaty diff                           # which sections would conflict?
 git add -A && git commit -m "wip"     # update refuses a dirty tree
-treaty update --dry-run               # preview without writing
+treaty update --dry-run               # preview: answer changes, updated files, conflicts
 treaty update                         # apply
 ```
 
 `treaty update` does a **three-way merge** from your pinned version up to the latest release, so edits that don't overlap upstream changes are kept automatically. If any file is left conflicted, the command names it and **exits non-zero** — a conflicted update is never reported as a success.
+
+`treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply.
 
 `treaty diff` writes nothing. It renders the template version you're pinned to into a temp directory and compares section by section:
 

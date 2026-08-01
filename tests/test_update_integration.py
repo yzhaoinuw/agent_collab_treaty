@@ -306,6 +306,75 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertIn("Verify with `pytest -q`.", (dest / "AGENTS.md").read_text())
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_predicts_conflicts_and_new_files_without_mutating(self) -> None:
+        """Issues #16/#18: the preview must show the merge plan, not just run quietly."""
+        dest = self.install()
+        agents = dest / "AGENTS.md"
+        agents.write_text(
+            agents.read_text().replace("Read this file first.", "Read me before anything else."),
+            encoding="utf-8",
+        )
+        commit_all(dest, "reword the startup rule")
+
+        self.revise_template(
+            V1_AGENTS.replace("Read this file first.", "Read this file before any other."),
+            extra={"treaty_conventions.md": "# Conventions\n\nMechanics.\n"},
+        )
+
+        status_before = git(dest, "status", "--porcelain")
+        head_before = git(dest, "rev-parse", "HEAD")
+        agents_before = agents.read_bytes()
+
+        result = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("Template version: v1.0.0 → v2.0.0", result.output)
+        self.assertIn("Conflicts (unresolved):", result.output)
+        self.assertIn("AGENTS.md", result.output)
+        self.assertIn("treaty_conventions.md", result.output)
+        self.assertIn("would leave 1 file(s)", result.output)
+        # The project itself is byte-for-byte untouched.
+        self.assertEqual(agents_before, agents.read_bytes())
+        self.assertEqual(status_before, git(dest, "status", "--porcelain"))
+        self.assertEqual(head_before, git(dest, "rev-parse", "HEAD"))
+        self.assertFalse((dest / "treaty_conventions.md").exists())
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_on_a_clean_update_reports_the_plan_and_exits_zero(self) -> None:
+        dest = self.install()
+        self.revise_template(
+            V1_AGENTS.replace("Read this file first.", "Read this file first, always.")
+        )
+
+        result = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("Template version: v1.0.0 → v2.0.0", result.output)
+        self.assertIn("Updated files:", result.output)
+        self.assertIn("AGENTS.md", result.output)
+        self.assertIn("Re-run without --dry-run to apply", result.output)
+        self.assertNotIn("first, always.", (dest / "AGENTS.md").read_text())
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_names_an_answers_file_that_git_ignores(self) -> None:
+        """Issue #15's trap: metadata that exists on disk but can never be committed."""
+        dest = self.tmp / "ignored_metadata"
+        result = self.runner.invoke(
+            app,
+            ["init", str(dest), "--source", str(self.template), "--ref", "v1.0.0", "--defaults"],
+        )
+        self.assertEqual(0, result.exit_code, result.output)
+        (dest / ".gitignore").write_text(".copier-answers.yml\n", encoding="utf-8")
+        git(dest, "init", "-b", "main")
+        commit_all(dest, "treaty baseline without the answers file")
+
+        result = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("not committed", result.output)
+        self.assertIn(".copier-answers.yml", result.output)
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_alias_declared_before_its_replacement_loses_the_answer(self) -> None:
         """The failure mode the declaration order protects against.
 

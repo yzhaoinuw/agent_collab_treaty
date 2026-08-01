@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import tempfile
 import unittest
 from datetime import date
@@ -8,11 +9,49 @@ from pathlib import Path
 from agent_collab_treaty.validation import validate_project
 
 
+def _git(cwd: Path, *args: str) -> None:
+    subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, check=True)
+
+
 class TreatyValidationTests(unittest.TestCase):
     def test_valid_project_has_no_issues(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_valid_project(root)
+
+            issues = validate_project(root)
+
+        self.assertEqual([], issues)
+
+    def test_gitignored_answers_file_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            _git(root, "init", "-b", "main")
+            (root / ".gitignore").write_text(".copier-answers.yml\n", encoding="utf-8")
+            (root / ".copier-answers.yml").write_text("_commit: v0.6.0\n", encoding="utf-8")
+
+            issues = validate_project(root)
+
+        self.assertEqual(["answers-file-gitignored"], [issue.code for issue in issues])
+
+    def test_trackable_answers_file_is_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            _git(root, "init", "-b", "main")
+            (root / ".copier-answers.yml").write_text("_commit: v0.6.0\n", encoding="utf-8")
+
+            issues = validate_project(root)
+
+        self.assertEqual([], issues)
+
+    def test_missing_answers_file_is_not_flagged_even_with_an_ignore_rule(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            _git(root, "init", "-b", "main")
+            (root / ".gitignore").write_text(".copier-answers.yml\n", encoding="utf-8")
 
             issues = validate_project(root)
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,10 @@ from agent_collab_treaty.cli import (
     _render_pristine,
     app,
 )
+
+
+def _git(cwd: Path, *args: str) -> None:
+    subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, check=True)
 
 
 class TreatyCliTests(unittest.TestCase):
@@ -102,13 +107,41 @@ class TreatyCliTests(unittest.TestCase):
             self.runner.invoke(app, ["update", "/some/dest", "--interactive"])
             self.assertFalse(run_update.call_args.kwargs["defaults"])
 
-    def test_update_dry_run_pretends_without_writing(self) -> None:
-        with patch("copier.run_update") as run_update:
-            result = self.runner.invoke(app, ["update", "/some/dest", "--dry-run"])
+    def test_update_dry_run_outside_a_git_repo_explains_and_exits_nonzero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("copier.run_update") as run_update:
+                result = self.runner.invoke(app, ["update", tmp, "--dry-run"])
+
+        self.assertEqual(1, result.exit_code)
+        self.assertIn("Could not clone the project", result.output)
+        run_update.assert_not_called()
+
+    def test_init_warns_when_git_ignores_the_answers_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git(root, "init", "-b", "main")
+            (root / ".gitignore").write_text(".copier-answers.yml\n", encoding="utf-8")
+
+            with patch("copier.run_copy"):
+                result = self.runner.invoke(
+                    app, ["init", str(root), "--source", ".", "--defaults"]
+                )
 
         self.assertEqual(0, result.exit_code)
-        self.assertTrue(run_update.call_args.kwargs["pretend"])
-        self.assertIn("Preview only", result.output)
+        self.assertIn("git ignores .copier-answers.yml", result.output)
+
+    def test_init_does_not_warn_when_the_answers_file_is_trackable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _git(root, "init", "-b", "main")
+
+            with patch("copier.run_copy"):
+                result = self.runner.invoke(
+                    app, ["init", str(root), "--source", ".", "--defaults"]
+                )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertNotIn("git ignores", result.output)
 
     def test_classify_status_splits_changed_and_unmerged(self) -> None:
         porcelain = "UU AGENTS.md\n M work_log.md\n?? new.txt\nAA both.md\n"

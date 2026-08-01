@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-01
 
+### Codex migration feedback triaged; dry-run made a real preview; ignored-metadata checks (claude-fable-5)
+
+- Codex (GPT-5) migrated four adopter repos to v0.6.0 and filed one issue per repo: #15 (`sleep_scoring`, legacy hand-copied adoption), #16 (`desktop_app_source_updater`), #17 (`fp_analysis`), #18 (`pupil_tracking`). Overall verdict positive (7.5/10 on the hardest case), with no data loss and conflicts always flagged non-zero — the v0.5/v0.6 machinery held up in the field.
+- **#16 and #18 are the same defect filed twice.** Codex's per-repo sessions ran ~90 seconds apart and did not see each other's issues (#18 cross-references #10/#14/#15 but not #16). Process lesson for future fan-out reviews: file sequentially against a shared issue list, or dedupe at the end. #18 closed as the duplicate.
+- **Fixed the defect (#16/#18):** `treaty update --dry-run` printed only boilerplate because Copier's `pretend=True` never materializes the merge. It now runs the real update in a disposable `git clone` of the project's committed state and prints the same summary as apply (answer changes, updated files, conflicts). Exit-policy decision the issue left open: **dry-run exits non-zero when the merge would conflict, matching apply** — parity is the more scriptable contract. macOS gotcha: the temp clone path must be `.resolve()`d or Copier's repo-root detection trips over the `/var → /private/var` symlink.
+- **Fixed #15's top item:** an adopter's `.gitignore` can silently swallow `.copier-answers.yml` (that is exactly what happened in `sleep_scoring`). `treaty init` now warns when git ignores the answers file, `treaty validate` gained `answers-file-gitignored`, and the dry run errors clearly when the answers file exists but is not committed. A *missing* answers file stays legal — this repo dogfoods the docs without Copier management — so only present-but-ignored is an error.
+- Deliberately not done: #17's new-question handling (`--ask-new` / `--set`) — the dry-run fix at least previews the proposed defaults now. Flipping the opt-out question defaults to `false` was considered and rejected: `CopierConfigContractTests` pins them `true` by design ("existing code repos see no change"). #15's `treaty adopt`/`doctor`, risk-classed `treaty diff` headlines, and `--version` source provenance stay parked pending more adopter evidence.
+- Verification:
+  - `git diff --check`; full `python -m unittest discover -s tests` (59 tests, including 3 new real-Copier dry-run integration tests and 3 new validation tests); `treaty validate .`; `treaty --version`; import smoke check; `treaty update --help` renders the new dry-run contract.
+
 ### Added CONTRIBUTING.md; ORCID in CITATION.cff (claude-fable-5)
 
 - Added the maintainer's ORCID (0000-0002-0819-5012) to `CITATION.cff`.

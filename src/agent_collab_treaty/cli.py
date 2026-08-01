@@ -8,7 +8,7 @@ from typing import List, Optional
 
 import typer
 
-ANSWERS_FILE = ".copier-answers.yml"
+from .validation import ANSWERS_FILE, answers_file_ignored
 
 
 def _git_output(dest: Path, *args: str) -> Optional[str]:
@@ -230,6 +230,14 @@ def init(
         skip_if_exists=INIT_SKIP_IF_EXISTS,
     )
 
+    if answers_file_ignored(destination):
+        typer.echo(
+            f"WARNING: git ignores {ANSWERS_FILE} in this project, so it cannot "
+            "be committed. Future `treaty update` and `treaty diff` runs depend "
+            "on it — remove the ignore rule from .gitignore and commit the file.",
+            err=True,
+        )
+
 
 @app.command()
 def update(
@@ -245,7 +253,12 @@ def update(
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
-        help="Preview the update (show the diff) without writing any changes.",
+        help=(
+            "Preview the update without writing any changes: run the merge in a "
+            "disposable clone and report the planned answer changes, updated "
+            "files, and conflicts. Exits non-zero if the merge would conflict, "
+            "matching a real apply."
+        ),
     ),
     defaults: bool = typer.Option(
         False,
@@ -261,7 +274,9 @@ def update(
 
     Recorded answers are reused by default; pass --interactive to re-answer questions.
     If the merge leaves any file with conflict markers, this command lists it and exits
-    non-zero, so a conflicted update is never reported as a success.
+    non-zero, so a conflicted update is never reported as a success. With --dry-run the
+    same merge runs in a disposable clone of the project's committed state, and the same
+    summary and exit policy apply without anything being written to the project.
     """
     import copier
 
@@ -275,16 +290,7 @@ def update(
     use_defaults = not interactive
 
     if dry_run:
-        typer.echo(
-            f"Previewing treaty update for {destination} (no changes will be written)"
-        )
-        copier.run_update(
-            dst_path=str(destination),
-            defaults=use_defaults,
-            overwrite=True,
-            pretend=True,
-        )
-        typer.echo("Preview only — no changes written. Re-run without --dry-run to apply.")
+        _preview_update(destination, use_defaults)
         return
 
     old_answers = _read_answers(destination)
@@ -317,6 +323,81 @@ def update(
         typer.echo("")
         typer.echo("Review the changes, then:")
         typer.echo("    git add -A && git commit")
+
+
+def _preview_update(destination: Path, use_defaults: bool) -> None:
+    """Run the real update in a disposable clone and report what it would do.
+
+    Copier's ``pretend=True`` never materializes the merge, so the only honest
+    preview is to perform it somewhere disposable. Cloning uses the project's
+    committed state — the same state a real update would merge against.
+    """
+    import tempfile
+
+    import copier
+
+    typer.echo(
+        f"Previewing treaty update for {destination} (no changes will be written)"
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        # Resolve symlinks (macOS /var -> /private/var) or Copier's repo-root
+        # detection sees a "different" path than the one it was given.
+        preview = Path(tmp).resolve() / "preview"
+        proc = subprocess.run(
+            ["git", "clone", "--quiet", str(destination), str(preview)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            typer.echo(
+                "Could not clone the project to build the preview. The dry run "
+                "works on committed state, so the project must be the root of a "
+                "git repository with at least one commit.",
+                err=True,
+            )
+            if proc.stderr.strip():
+                typer.echo(proc.stderr.strip(), err=True)
+            raise typer.Exit(1)
+
+        if not (preview / ANSWERS_FILE).exists():
+            if (destination / ANSWERS_FILE).exists():
+                typer.echo(
+                    f"{ANSWERS_FILE} exists but is not committed (is it "
+                    "gitignored?). The preview — and every future treaty "
+                    "update — needs it in the project's git history.",
+                    err=True,
+                )
+            else:
+                typer.echo(
+                    f"No {ANSWERS_FILE} found in {destination}. "
+                    "treaty update only works in a project installed with treaty init.",
+                    err=True,
+                )
+            raise typer.Exit(1)
+
+        old_answers = _read_answers(preview)
+        copier.run_update(dst_path=str(preview), defaults=use_defaults, overwrite=True)
+        new_answers = _read_answers(preview)
+        changed, unmerged = _classify_status(
+            _git_output(preview, "status", "--porcelain") or ""
+        )
+
+    for line in _format_update_summary(old_answers, new_answers, changed, unmerged):
+        typer.echo(line)
+
+    if unmerged:
+        typer.echo("", err=True)
+        typer.echo(
+            f"Applying this update would leave {len(unmerged)} file(s) with "
+            "unresolved conflicts.",
+            err=True,
+        )
+        typer.echo("Preview only — no changes written.", err=True)
+        raise typer.Exit(1)
+
+    typer.echo("")
+    typer.echo("Preview only — no changes written. Re-run without --dry-run to apply.")
 
 
 def _render_pristine(

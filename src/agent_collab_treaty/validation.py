@@ -6,8 +6,11 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 import re
+import subprocess
 from typing import Iterable
 
+
+ANSWERS_FILE = ".copier-answers.yml"
 
 DATE_HEADING_RE = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$")
 SESSION_HEADING_RE = re.compile(r"^### (.+?)\s*$")
@@ -55,6 +58,7 @@ def validate_project(root: Path, today: date | None = None) -> list[ValidationIs
     issues: list[ValidationIssue] = []
     required_paths = _inspect_required_paths(root)
     issues.extend(_validate_required_paths(required_paths))
+    issues.extend(_validate_answers_file(root))
 
     work_log = required_paths["work_log.md"].exact
     if work_log is not None:
@@ -76,6 +80,46 @@ def format_issue(issue: ValidationIssue, root: Path) -> str:
     except ValueError:
         path = issue.path
     return f"{path}:{issue.line}: {issue.code}: {issue.message}"
+
+
+def answers_file_ignored(root: Path) -> bool:
+    """True when git ignores the Copier answers file in ``root``."""
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "-q", ANSWERS_FILE],
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return proc.returncode == 0
+
+
+def _validate_answers_file(root: Path) -> Iterable[ValidationIssue]:
+    """Flag a Copier answers file that git ignores.
+
+    An ignored answers file lets an adopter commit an apparently successful
+    installation whose metadata never reaches the repository, silently breaking
+    every future `treaty update` and `treaty diff` from a fresh clone. A
+    *missing* file is legitimate — treaty docs can be maintained without Copier
+    management — so only the present-but-ignored state is an error.
+    """
+
+    answers = root / ANSWERS_FILE
+    if not answers.exists():
+        return
+    if answers_file_ignored(root):
+        yield ValidationIssue(
+            path=answers,
+            line=1,
+            code="answers-file-gitignored",
+            message=(
+                f"git ignores {ANSWERS_FILE}, so it cannot be committed and "
+                "future `treaty update`/`treaty diff` runs will not find it in "
+                "a fresh clone. Remove the ignore rule and commit the file."
+            ),
+        )
 
 
 def _inspect_required_paths(root: Path) -> dict[str, RequiredPathState]:
