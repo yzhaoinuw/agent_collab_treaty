@@ -5,11 +5,12 @@
 [![Public adopters](https://img.shields.io/badge/adopters-13-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
 <!-- adopters-badge:end -->
 
-A drop-in documentation contract that helps future agent sessions pick up a repository where the last one left off — less repeated reading, fewer lost decisions, clearer handoffs. It works whether the next session uses the same agent, a different model, or a different machine.
+A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder at your repo root, doing two jobs:
 
-`treaty init` installs a small set of root-level Markdown files that any coding agent reads at the start of a session to learn what environment to run in, what's active code versus legacy, what work is in flight, what recent sessions did, and what conventions to follow. Language- and framework-agnostic: used by code repos, but also prose, research, and ops repos.
+- **Agent handoff.** The next session picks up where the last one left off — less repeated reading, fewer lost decisions — whether it's the same agent, a different model, or a different machine.
+- **Planning and work log, for you.** The same files are a running record of what's in flight, what shipped, and what was decided and why. Plain Markdown in git: nothing to log into, diffable, and ready to lift straight into a status update.
 
-Battle-tested on real projects across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
+Language- and framework-agnostic — code repos, but also prose, research, and ops. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
 ## Contents
 
@@ -208,6 +209,8 @@ When a new agent session opens:
 6. At the end of substantive work: run the pre-flight checklist, run `treaty validate`, prepend an entry to `work_log.md`, and update `next_steps.md` if follow-up changed.
 
 The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach tried and discarded and why, and evidence a future agent would otherwise have to rediscover.
+
+That rule is also what makes the log worth reading for *you*. Because it captures decisions rather than activity, `next_steps.md` answers "where does this stand?" and `work_log.md` answers "what did we decide, and why?" — the two questions a status update or a handoff to a colleague actually needs. It costs no extra bookkeeping: the agent writes it as part of finishing the work.
 
 `treaty_conventions.md` carries the full criteria, plus the log rotation policy that keeps `work_log.md` cheap to read.
 
