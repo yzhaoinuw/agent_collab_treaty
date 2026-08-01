@@ -6,7 +6,9 @@ Rotation policy: the live log holds at most the **5 most recent unique calendar 
 
 If today's date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it rather than starting a second `## YYYY-MM-DD` header for the same date.
 
-Update this log at the end of any substantive work session unless the user explicitly asks not to document it. Substantive work includes file edits, meaningful validation or debugging, technical decisions or reversals, reusable discoveries, branch/PR/release state changes, or follow-up work that future agents need. Log useful experiments even when the code was reverted; skip casual Q&A, trivial one-off commands, and pure scratch work with no future coordination value.
+Update this log at the end of any substantive work session unless the user explicitly asks not to document it. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed. See [Work Log Discipline](treaty_conventions.md#work-log-discipline) for what counts as substantive and what to skip.
+
+**Setting this up for the first time?** Leave this file empty. It starts accumulating from the next session. Backfilling it from git history produces exactly the "implemented function X" noise the log exists to avoid.
 
 <!--
 Each session entry follows this shape:

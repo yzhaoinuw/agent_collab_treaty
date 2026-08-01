@@ -90,6 +90,22 @@ The entry counts will drift as those repos grow. They only ever undercount, so s
   - `curl` over all 13 external links in the README — every one returns 200.
   - Anchor audit, ToC/section parity, `readme_renderer[md]` render, and the badge `sed` pattern — all clean.
 
+### Shortened the prompts, and fixed the template gap that made them long (claude-opus-5)
+
+The maintainer's point: a verbose prompt sample is evidence the **template** is under-specified, since the product thesis is that an agent knows what to do from minimal instruction. Re-derived each prompt by checking what a rendered project already tells an agent.
+
+- `"Update the treaty."` is sufficient — verified `treaty_conventions.md` ships the full five-step procedure and `AGENTS.md` links to it, which the Startup Rule guarantees the agent reads. The old prompt restated our own product back at it.
+- `"Fill out the docs in the treaty."` is sufficient for the placeholders (20 in `AGENTS.md`, 32 in `project_overview.md` — self-evident once read), but **one instruction genuinely had no home in the template**: leave `work_log.md` empty at onboarding. Added it to `template/work_log.md` rather than to the README prompt. That is the right fix: guidance an agent needs belongs where the agent will be, not in a README it may never see.
+- Install prompt now names the package and the installer (`pip install agent-collab-treaty`) rather than the human-readable project name, so it works pasted into a cold session with no prior context.
+
+**Found a real bug while in there.** `template/work_log.md` still carried the pre-v0.5.0 activity-shaped criteria ("file edits, meaningful validation or debugging...") — the P4 rewrite updated `treaty_conventions.md` and missed this copy, so the shipped template contradicted itself and duplicated a rule that now lives elsewhere. Replaced with the decisions-not-content line plus a pointer.
+
+**Declined the literal "human read this / agent read this" split** the maintainer floated. The README's audience is humans deciding whether to adopt; the agent's instructions are the installed template. Needing an agent-facing section in the README would itself be the smell that the template is incomplete. Streamlined for humans instead: one prompt per section, mechanics behind `Prefer to run it yourself?` collapsibles. Visible-on-load prose dropped 172 → 160 lines even while adding the prompt blocks.
+
+- Verification:
+  - Rendered a fresh project and asserted each short prompt has in-repo support: placeholder counts, the new leave-it-empty line, the criteria pointer, the `AGENTS.md` → conventions update link, and the five-step procedure. Confirmed the stale wording is gone.
+  - 15 links 200, anchors and ToC parity clean, PyPI renders, badge `sed` matches, `treaty validate` passes on the render.
+
 ### Led the README's setup path with agent prompts (claude-opus-5)
 
 The maintainer pointed out an inconsistency: a package whose selling point is agent autonomy had a README assuming you type everything by hand, when in practice he sets these up by asking an agent. Install, Quick Start, and Update now lead with the prompt, then show the command underneath.

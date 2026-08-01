@@ -17,7 +17,7 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 - [What's In The Template](#whats-in-the-template)
 - [See It In A Real Project](#see-it-in-a-real-project)
 - [Install](#install)
-- [Quick Start](#quick-start)
+- [Set Up](#set-up)
 - [Update](#update)
 - [Validate](#validate)
 - [Wiring Up Your Agent](#wiring-up-your-agent)
@@ -51,14 +51,23 @@ Open any `work_log.md` and read one entry. It says *why* something was decided, 
 
 ## Install
 
-**Hand this to your agent.** That's the intended path — the treaty is a contract agents follow on their own, so setting it up is work they can do too. Every section below leads with the prompt, then shows the command it runs, for when you'd rather drive it yourself.
+Hand this to your agent — that's the intended path, and how these docs are maintained in practice:
 
-> Install the Agent Collab Treaty in this repo and run `treaty init`.
+> pip install agent-collab-treaty, then run `treaty init` in this repo.
+
+<details>
+<summary>Prefer to run it yourself?</summary>
 
 ```bash
 pipx install agent-collab-treaty     # isolated (recommended)
 pip install agent-collab-treaty      # or in a regular venv
+
+cd your-project && treaty init
 ```
+
+`treaty init` asks a few short questions and writes the treaty files into the current directory.
+
+</details>
 
 <details>
 <summary>Other ways to install the treaty</summary>
@@ -75,22 +84,24 @@ Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `trea
 
 </details>
 
-## Quick Start
+## Set Up
 
-```bash
-cd your-project
-treaty init
-```
+`treaty init` leaves bracket placeholders for the project-specific parts. One prompt fills them:
 
-`treaty init` asks a few short questions and writes the treaty files into the current directory. It leaves bracket placeholders — `[app launch command]`, `[path/to/entrypoint]` — for the project-specific parts. Filling those in is the step that makes the treaty useful, and it's the one an agent is genuinely better at than you are, because it can read the whole repo first:
+> Fill out the docs in the treaty.
 
-> Fill out the docs in the treaty. Read the codebase to replace the placeholders in `AGENTS.md` and `project_overview.md`, put whatever is actually in flight into `next_steps.md`, then run `treaty validate .`.
+That's the whole setup. The agent reads the repo, replaces the placeholders, and records what's in flight — the installed docs tell it the rest.
 
-Leave `work_log.md` empty — it starts accumulating from the next session. Backfilling it from git history would produce exactly the "implemented function X" noise the log exists to avoid.
+From there it's self-sustaining: sessions read `AGENTS.md` at startup, prepend to `work_log.md` before handoff, and keep `next_steps.md` honest, unprompted. The only recurring ask is the occasional [update](#update).
 
-From there it's self-sustaining. Future sessions read `AGENTS.md` at startup, prepend to `work_log.md` before handoff, and keep `next_steps.md` honest — no prompting needed. The only recurring ask is the occasional [update](#update).
+<details>
+<summary>Prefer to run it yourself?</summary>
 
-Non-interactive:
+Fill in the bracket placeholders in `AGENTS.md` (runtime, common tasks, project reminders) and `project_overview.md` (entrypoints, active vs. legacy, authored vs. derived), then put whatever is in flight into `next_steps.md` and run `treaty validate .`.
+
+Leave `work_log.md` empty — it starts accumulating from the next session. Backfilling it from git history produces exactly the "implemented function X" noise the log exists to avoid.
+
+Non-interactive install, if you're scripting adoption:
 
 ```bash
 treaty init . --defaults \
@@ -100,6 +111,8 @@ treaty init . --defaults \
   --data has_releases=false \
   --data 'agent_pointers=["claude-code", "cursor"]'
 ```
+
+</details>
 
 <details>
 <summary>The questions it asks</summary>
@@ -128,19 +141,22 @@ Two more worth knowing:
 
 Case-mismatched treaty-looking paths **block** the install, because they can prevent canonical files from being created — especially on Windows. Rename or archive them, then rerun.
 
-To fold existing docs into the treaty, ask an agent, and be explicit that migration is authorized:
+To fold existing docs into the treaty, say so explicitly — migration touches files the treaty otherwise never rewrites:
 
-> Please migrate this repo's existing planning and logging docs into the Agent Collab Treaty. Preserve originals unless you explain and get approval before moving or rewriting them.
-
-The agent should summarize active work into `next_steps.md`, preserve useful history in `work_log.md` or `work_log_archive/`, run `treaty validate . --migration-hints`, and record what changed in `work_log.md`.
+> Migrate this repo's existing planning and logging docs into the treaty. Preserve the originals.
 
 </details>
 
 ## Update
 
-Pull upstream refinements into a project that already has the treaty. This is the step most worth handing over: the merge can leave conflicts, and resolving them is judgment work — deciding which side of each hunk is your project's content and which is the new upstream guidance.
+Occasionally, when a new treaty version lands:
 
-> Update the treaty in this repo. Check `treaty diff` first, then run `treaty update` and resolve any conflicts — keep our project-specific content and fold in the new upstream sections.
+> Update the treaty.
+
+This is the step most worth handing over. The merge can leave conflicts, and resolving them is judgment work — deciding which side of each hunk is your content and which is new upstream guidance. The agent doesn't need telling: the procedure is in the `treaty_conventions.md` sitting in your repo.
+
+<details>
+<summary>Prefer to run it yourself?</summary>
 
 ```bash
 pipx upgrade agent-collab-treaty      # get the latest CLI first
@@ -164,6 +180,8 @@ AGENTS.md
 
 Conflict exposure: 4 section(s) across 1 file(s) would conflict if upstream revises them.
 ```
+
+</details>
 
 <details>
 <summary>What your edits cost at update time</summary>
@@ -269,7 +287,7 @@ Treat it as a starting point, not a fixed standard. Add a "CI Note" section for 
 
 ## Developer Notes
 
-*For maintainers of this repository. If you're using the treaty, you want [Quick Start](#quick-start) instead.*
+*For maintainers of this repository. If you're using the treaty, you want [Set Up](#set-up) instead.*
 
 Two GitHub Actions workflows handle publishing, both via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo:
 
