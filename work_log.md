@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-01
 
+### Released v0.7.0 (claude-fable-5)
+
+- Cut v0.7.0 same-day as the work it ships: the real `treaty update --dry-run` merge preview with apply-matching exit codes (#16, with #18 closed as its duplicate) and gitignored `.copier-answers.yml` detection at init, validate, and dry-run (#15's top item). Minor bump because the dry-run exit-code contract changed (previously always 0; now non-zero on a predicted conflict).
+- Version bumped in `pyproject.toml`, `src/agent_collab_treaty/__init__.py`, and `CITATION.cff` (`date-released` was already 2026-08-01). Annotated tag `v0.7.0` on the `dev` release commit, matching the v0.6.0 precedent; `release.yml` handles PyPI trusted publishing and the GitHub Release with generated notes. The `dev → main` merge is left to the maintainer per branch policy — at release time `main` was exactly one fast-forward behind `dev`, no bot commits.
+- This is the first `v*` release since the Zenodo–GitHub integration was enabled, so it should trigger the first archive and mint the concept DOI. Follow-up (tracked in `next_steps.md`): confirm the Zenodo record, then add the DOI to `CITATION.cff` `identifiers:` and consider a README badge.
+- Verification:
+  - `git diff --check`; full `python -m unittest discover -s tests` (59 tests including the Copier-merge integration tests, no skips taken); `treaty validate .`; `treaty --version` reports 0.7.0; import smoke check.
+  - After pushing: `git ls-remote --tags origin` shows `v0.7.0`, `git ls-remote --heads origin dev` matches local, and the release workflow run was watched to completion.
+
 ### Codex migration feedback triaged; dry-run made a real preview; ignored-metadata checks (claude-fable-5)
 
 - Codex (GPT-5) migrated four adopter repos to v0.6.0 and filed one issue per repo: #15 (`sleep_scoring`, legacy hand-copied adoption), #16 (`desktop_app_source_updater`), #17 (`fp_analysis`), #18 (`pupil_tracking`). Overall verdict positive (7.5/10 on the hardest case), with no data loss and conflicts always flagged non-zero — the v0.5/v0.6 machinery held up in the field.
