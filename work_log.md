@@ -58,6 +58,20 @@ Deliberately **not** done: moving Developer Notes into `CONTRIBUTING.md`. That i
   - Anchor audit: every `](#...)` link resolves against a real heading; ToC entries and `##` sections match exactly in both directions; no other file links to a README anchor.
   - 315 → 273 lines, of which 101 sit inside 7 collapsibles, so 172 lines are visible on load — roughly half the original weight.
 
+### Led the README with both purposes (claude-opus-5)
+
+Follow-on to the restructure above, and the more consequential half. The maintainer named a **second purpose the README had never stated**: the treaty is also a work planning and logging system for humans — status, progress, something to report from — not only an agent-handoff protocol. Positioning, not a feature request.
+
+- Rewrote the description as a lead plus two parallel bullets, **Agent handoff** and **Planning and work log, for you**. The two-jobs framing is what compressed it: both purposes share one sentence of setup instead of each needing a paragraph. Three paragraphs → one lead, two bullets, one closer.
+- Deleted the second intro paragraph, which enumerated what agents learn from each file. Every item in it was already a row of the "What's In The Template" table two screens below — a mid-level explainer duplicating what it introduced. Nothing was relocated, because the table already carried it.
+- Added three sentences to "The Workflow In Practice", which had been framed entirely around agent sessions. Without them the human-facing claim in the description had nothing downstream supporting it. They tie the second purpose to the existing decisions-not-activity rule: that rule is *why* the log reads as a status update rather than an audit trail.
+
+Worth keeping in mind for future doc work here: a positioning claim added to the top of a README needs at least one section further down that makes it real, or it reads as marketing.
+
+- Verification:
+  - Confirmed "five Markdown files and an archive folder" against an actual `treaty init` render rather than counting from memory — `AGENTS.md`, `treaty_conventions.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, plus `work_log_archive/`.
+  - Re-ran the full check set after the edit: `readme_renderer[md]` render (collapsibles intact), the badge workflow's `sed` pattern, and the anchor audit. All clean. Final size 315 → 276 lines.
+
 ## 2026-07-30
 
 ### Released v0.5.0 (claude-opus-5)
