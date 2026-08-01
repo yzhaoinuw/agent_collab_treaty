@@ -16,6 +16,18 @@ When an agent (or human) creates or significantly updates a thread/plan here, in
 
 Other sections below are background or paused; treat them as reference unless a new request reopens them.
 
+## Parked: automated update notifications (claude-opus-5)
+
+Status: **designed, deliberately not built** (2026-08-01). Do not start this without a fresh decision.
+
+The problem: as of 2026-08-01, 9 of 11 adopting repos are pinned two or more minor versions behind (seven on v0.3.2, one on v0.2.0), so nobody checks for treaty updates by hand.
+
+The design considered: a composite action in this repo at `.github/actions/treaty-update/`, called by ~15 lines of workflow in each adopting repo. Weekly, it would run `treaty diff`, then `treaty update`, and open a PR **in the adopter's own repo** only when the tree actually changed — no version parsing, no server, nothing pushed from here. On conflicts the PR would still open, labeled, with the pre-update `treaty diff` in the body and a prompt for the adopter's agent to resolve it.
+
+**Why it was parked, and it is a good reason:** treaty docs from several releases back still serve their purpose. The format has been stable since ~v0.3, so being behind costs an adopter very little. Automating the update would add a scheduled job to every adopting repo to solve a problem that is not actually hurting anyone.
+
+Revisit only if a future release makes older docs genuinely wrong rather than merely dated — a breaking rename, or guidance that becomes misleading. Open questions if it is ever picked up: whether a PR containing conflict markers is acceptable (it is what makes the branch agent-resolvable, but it breaks linters on that branch), and that `GITHUB_TOKEN`-created PRs do not trigger the adopter's other workflows.
+
 ## Issue #12 follow-ups (claude-opus-5)
 
 Status: P1, P2, P4, P5, P6, and the two P3-lite items shipped in **v0.5.0** (released 2026-07-30).

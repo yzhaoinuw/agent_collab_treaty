@@ -9,10 +9,13 @@ _exclude:
 
 _message_after_copy: |
   Treaty installed. Next steps:
-    1. Open AGENTS.md and fill in any remaining bracket-placeholders (env name,
-       verification/lint commands, project-specific reminders). Leave
-       treaty_conventions.md alone — upstream maintains it, and `treaty update`
-       keeps it current.
+    1. Fill in the bracket-placeholders. The quickest way is to ask your agent:
+
+           Fill out the docs in the treaty.
+
+       It will read the repo and fill AGENTS.md and project_overview.md. Doing it
+       by hand works too. Either way, leave treaty_conventions.md alone —
+       upstream maintains it, and `treaty update` keeps it current.
     2. If you selected optional agent pointer files, commit them with the treaty
        docs so those tools can find AGENTS.md automatically.
     3. At the end of substantive work sessions, update work_log.md and

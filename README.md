@@ -219,6 +219,7 @@ The project must be **git-tracked with a clean working tree** — Copier uses gi
 ## Validate
 
 ```bash
+treaty --version                      # what you have, and what you're pinned to
 treaty validate                       # in any project using the treaty
 treaty validate --migration-hints     # plus overlap hints for legacy docs
 ```
