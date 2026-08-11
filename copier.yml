@@ -37,6 +37,32 @@ _message_after_copy: |
        ```
   {% endif %}
 
+docs_dir:
+  type: str
+  help: |-
+    Folder to keep the treaty's working docs in
+    (treaty_conventions.md, next_steps.md, work_log.md,
+    work_log_archive/), so they don't crowd your repo root.
+    AGENTS.md and project_overview.md always stay at the root.
+    Answer '.' to keep everything flat at the root instead.
+  default: "treaty_docs"
+
+# Computed path prefixes derived from docs_dir. Declared with `when: false` so
+# they are never prompted and never recorded, and *after* docs_dir because
+# Copier renders defaults in declaration order.
+#
+# docs_prefix: root-level docs -> the docs folder ('' or 'treaty_docs/').
+# root_prefix: docs-folder files -> the root ('' or '../').
+docs_prefix:
+  type: str
+  when: false
+  default: "{% if docs_dir in ['.', ''] %}{% else %}{{ docs_dir }}/{% endif %}"
+
+root_prefix:
+  type: str
+  when: false
+  default: "{% if docs_dir in ['.', ''] %}{% else %}../{% endif %}"
+
 integration_branch:
   type: str
   help: |-

@@ -232,9 +232,25 @@ class TreatyCliTests(unittest.TestCase):
             _render_pristine("gh:yzhaoinuw/agent_collab_treaty", "v0.4.1", answers, Path("/tmp/x"))
 
         kwargs = run_copy.call_args.kwargs
-        self.assertEqual({"integration_branch": "dev"}, kwargs["data"])
+        # docs_dir is pinned flat: a project installed before that question
+        # existed is flat on disk, so the pristine render has to be flat too or
+        # `treaty diff` would report the whole treaty as drift.
+        self.assertEqual(
+            {"docs_dir": ".", "integration_branch": "dev"}, kwargs["data"]
+        )
         self.assertEqual("v0.4.1", kwargs["vcs_ref"])
         self.assertTrue(kwargs["defaults"])
+
+    def test_render_pristine_keeps_a_recorded_docs_dir(self) -> None:
+        answers = {
+            "_commit": "v0.8.0",
+            "_src_path": "gh:yzhaoinuw/agent_collab_treaty",
+            "docs_dir": "treaty_docs",
+        }
+        with patch("copier.run_copy") as run_copy:
+            _render_pristine("gh:yzhaoinuw/agent_collab_treaty", "v0.8.0", answers, Path("/tmp/x"))
+
+        self.assertEqual({"docs_dir": "treaty_docs"}, run_copy.call_args.kwargs["data"])
 
     def test_diff_requires_an_installed_project(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

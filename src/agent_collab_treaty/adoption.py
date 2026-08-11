@@ -25,13 +25,20 @@ OVERLAPPING_DOC_NAMES = (
     ".cursorrules",
 )
 
+# Both layouts are listed because `docs_dir` is answered during init: the bare
+# names cover `docs_dir="."`, the `*/`-prefixed globs cover any docs folder.
 INIT_SKIP_IF_EXISTS = (
     ".copier-answers.yml",
     "AGENTS.md",
     "project_overview.md",
     "next_steps.md",
     "work_log.md",
+    "treaty_conventions.md",
     "work_log_archive/README.md",
+    "*/next_steps.md",
+    "*/work_log.md",
+    "*/treaty_conventions.md",
+    "*/work_log_archive/README.md",
     "CLAUDE.md",
     ".cursor/rules/treaty.mdc",
     ".windsurf/rules/treaty.md",

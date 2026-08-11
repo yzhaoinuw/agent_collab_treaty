@@ -32,10 +32,15 @@ Describe the path from "user invokes the app" to "result". List each layer brief
 project_root/
 |- AGENTS.md
 |- project_overview.md
-|- next_steps.md
+{% if docs_prefix %}|- {{ docs_dir }}/
+|  |- treaty_conventions.md
+|  |- next_steps.md
+|  |- work_log.md
+|  |- work_log_archive/
+{% else %}|- next_steps.md
 |- work_log.md
 |- work_log_archive/
-|- README.md
+{% endif %}|- README.md
 |- [src/ or app/ or lib/]
 |- [tests/]
 |- [scripts/]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 from typing import Iterable
@@ -17,13 +17,72 @@ SESSION_HEADING_RE = re.compile(r"^### (.+?)\s*$")
 SESSION_METADATA_RE = re.compile(r"^### .+\([^()]+\)\s*$")
 MARKDOWN_LINK_ANCHOR_RE = re.compile(r"\[[^\]]+\]\(#([^)]+)\)")
 
-REQUIRED_PATHS = (
+# Docs that always live at the repo root. AGENTS.md is fixed there by the
+# AGENTS.md convention itself (agents resolve the *nearest* file up the tree, so
+# a nested one would scope to the wrong subtree); project_overview.md is kept
+# alongside it as the human-facing entry point.
+ROOT_REQUIRED_NAMES = (
     "AGENTS.md",
     "project_overview.md",
+)
+
+# Docs that live under ``docs_dir`` — the repo root when that answer is "." .
+DOCS_REQUIRED_NAMES = (
     "next_steps.md",
     "work_log.md",
     "work_log_archive",
 )
+
+# Flat-layout view, kept as the module-level default for callers that reason
+# about treaty paths without a project in hand (see ``adoption``).
+REQUIRED_PATHS = ROOT_REQUIRED_NAMES + DOCS_REQUIRED_NAMES
+
+
+def resolve_docs_dir(root: Path) -> str:
+    """Return the treaty docs folder for ``root`` ("." means the repo root).
+
+    Prefers the recorded Copier answer. Projects maintained without Copier have
+    no answer to read, so fall back to detecting an actual layout on disk and
+    finally to the flat root, which is what every pre-``docs_dir`` project used.
+    """
+
+    recorded = _recorded_docs_dir(root)
+    if recorded:
+        return recorded
+
+    if (root / "work_log.md").exists():
+        return "."
+    for candidate in sorted(p for p in root.iterdir() if p.is_dir()) if root.exists() else []:
+        if (candidate / "work_log.md").exists():
+            return candidate.name
+    return "."
+
+
+def _recorded_docs_dir(root: Path) -> str | None:
+    """Read ``docs_dir`` out of the project's Copier answers file, if present."""
+
+    answers = root / ANSWERS_FILE
+    if not answers.exists():
+        return None
+    try:
+        import yaml
+
+        data = yaml.safe_load(answers.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    value = data.get("docs_dir")
+    return value if isinstance(value, str) and value else None
+
+
+def required_paths(docs_dir: str) -> tuple[str, ...]:
+    """Canonical treaty paths, relative to the project root, for one layout."""
+
+    if docs_dir in (".", ""):
+        return REQUIRED_PATHS
+    prefix = docs_dir.rstrip("/")
+    return ROOT_REQUIRED_NAMES + tuple(f"{prefix}/{name}" for name in DOCS_REQUIRED_NAMES)
 
 
 @dataclass(frozen=True)
@@ -56,15 +115,19 @@ def validate_project(root: Path, today: date | None = None) -> list[ValidationIs
     if today is None:
         today = date.today()
     issues: list[ValidationIssue] = []
-    required_paths = _inspect_required_paths(root)
-    issues.extend(_validate_required_paths(required_paths))
+    docs_dir = resolve_docs_dir(root)
+    paths = required_paths(docs_dir)
+    states = _inspect_required_paths(root, paths)
+    issues.extend(_validate_required_paths(states))
     issues.extend(_validate_answers_file(root))
 
-    work_log = required_paths["work_log.md"].exact
+    docs_prefix = "" if docs_dir in (".", "") else f"{docs_dir.rstrip('/')}/"
+
+    work_log = states[f"{docs_prefix}work_log.md"].exact
     if work_log is not None:
         issues.extend(_validate_work_log(work_log, today))
 
-    next_steps = required_paths["next_steps.md"].exact
+    next_steps = states[f"{docs_prefix}next_steps.md"].exact
     if next_steps is not None:
         issues.extend(_validate_next_steps(next_steps))
 
@@ -122,14 +185,25 @@ def _validate_answers_file(root: Path) -> Iterable[ValidationIssue]:
         )
 
 
-def _inspect_required_paths(root: Path) -> dict[str, RequiredPathState]:
-    entries = tuple(root.iterdir()) if root.exists() else ()
-    states: dict[str, RequiredPathState] = {}
+def _inspect_required_paths(
+    root: Path, paths: Iterable[str]
+) -> dict[str, RequiredPathState]:
+    listings: dict[Path, tuple[Path, ...]] = {}
 
-    for relative in REQUIRED_PATHS:
+    def entries_of(directory: Path) -> tuple[Path, ...]:
+        if directory not in listings:
+            listings[directory] = (
+                tuple(directory.iterdir()) if directory.is_dir() else ()
+            )
+        return listings[directory]
+
+    states: dict[str, RequiredPathState] = {}
+    for relative in paths:
         canonical = root / relative
-        matches = tuple(entry for entry in entries if entry.name.lower() == relative.lower())
-        exact = next((entry for entry in matches if entry.name == relative), None)
+        name = PurePosixPath(relative).name
+        entries = entries_of(canonical.parent)
+        matches = tuple(entry for entry in entries if entry.name.lower() == name.lower())
+        exact = next((entry for entry in matches if entry.name == name), None)
         states[relative] = RequiredPathState(
             canonical=canonical,
             exact=exact,

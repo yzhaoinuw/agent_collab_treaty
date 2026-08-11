@@ -69,6 +69,21 @@ def _user_answers(answers: dict) -> dict:
     return {k: v for k, v in answers.items() if not k.startswith("_")}
 
 
+def _legacy_layout_data(answers: dict) -> dict[str, str]:
+    """Pin projects installed before ``docs_dir`` existed to the flat root layout.
+
+    Those projects have no recorded ``docs_dir``, so an unguarded update would
+    hand them the new ``treaty_docs`` default and Copier would relocate every
+    treaty doc. Copier implements that relocation as *delete the customized file
+    and write a pristine one at the new path* — a silent loss of the adopter's
+    entire work log. Answering ``.`` keeps their layout byte-identical, and the
+    answer is recorded from then on, so this only has to fire once.
+    """
+    if not answers or "docs_dir" in answers:
+        return {}
+    return {"docs_dir": "."}
+
+
 def _format_update_summary(
     old_answers: dict,
     new_answers: dict,
@@ -295,7 +310,12 @@ def update(
 
     old_answers = _read_answers(destination)
     typer.echo(f"Updating the Agent Collab Treaty in {destination}")
-    copier.run_update(dst_path=str(destination), defaults=use_defaults, overwrite=True)
+    copier.run_update(
+        dst_path=str(destination),
+        data=_legacy_layout_data(old_answers),
+        defaults=use_defaults,
+        overwrite=True,
+    )
     new_answers = _read_answers(destination)
 
     changed, unmerged = _classify_status(
@@ -377,7 +397,12 @@ def _preview_update(destination: Path, use_defaults: bool) -> None:
             raise typer.Exit(1)
 
         old_answers = _read_answers(preview)
-        copier.run_update(dst_path=str(preview), defaults=use_defaults, overwrite=True)
+        copier.run_update(
+            dst_path=str(preview),
+            data=_legacy_layout_data(old_answers),
+            defaults=use_defaults,
+            overwrite=True,
+        )
         new_answers = _read_answers(preview)
         changed, unmerged = _classify_status(
             _git_output(preview, "status", "--porcelain") or ""
@@ -413,7 +438,7 @@ def _render_pristine(
         src_path=source,
         dst_path=str(target),
         vcs_ref=ref,
-        data=_user_answers(answers),
+        data={**_legacy_layout_data(answers), **_user_answers(answers)},
         defaults=True,
         quiet=True,
         overwrite=True,
