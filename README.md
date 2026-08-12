@@ -5,7 +5,7 @@
 [![Public adopters](https://img.shields.io/badge/adopters-13-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
 <!-- adopters-badge:end -->
 
-A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder at your repo root, doing two jobs:
+A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `treaty_docs/` — doing two jobs:
 
 - **Agent handoff.** The next session picks up where the last one left off — less repeated reading, fewer lost decisions — whether it's the same agent, a different model, or a different machine.
 - **Planning and work log, for you.** The same files are a running record of what's in flight, what shipped, and what was decided and why. Plain Markdown in git: nothing to log into, diffable, and ready to lift straight into a status update.
@@ -47,7 +47,7 @@ Not samples — living docs, filled in by months of real sessions:
 
 - **[sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)** — sleep-staging app; 39 dated entries since April 2026, rotated across 8 archive chunks: [work_log.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/next_steps.md)
 - **[fp_analysis](https://github.com/yzhaoinuw/fp_analysis)** — fiber-photometry app; 20 dated entries since March 2026, 21 sessions in the live log alone: [work_log.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/next_steps.md)
-- **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/next_steps.md)
+- **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/next_steps.md)
 
 Open any `work_log.md` and read one entry. It says *why* something was decided, not which files changed — that's what makes it worth reading months later, by an agent or by you.
 
