@@ -169,6 +169,35 @@ class FlatRenderingCompatibilityTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("../work_log.md", archive)
 
+    def test_multi_segment_docs_dir_gets_a_depth_aware_root_prefix(self) -> None:
+        """A nested-deeper docs_dir must still link back to the real repo root.
+
+        Reported from the Windows sweep: root_prefix used to be a hardcoded
+        '../', so `docs_dir=docs/agents` produced links that resolved one level
+        short — to docs/AGENTS.md, which does not exist. README advertises
+        exactly that value, so it has to work at any depth.
+        """
+        for docs_dir, expected in (
+            ("treaty_docs", "../"),
+            ("docs/agents", "../../"),
+            ("a/b/c", "../../../"),
+            ("trailing/slash/", "../../"),
+        ):
+            with self.subTest(docs_dir=docs_dir):
+                target = self.tmp / f"seg_{docs_dir.strip('/').replace('/', '_')}"
+                _render(REPO_ROOT, "HEAD", target, docs_dir=docs_dir)
+
+                conventions = target / docs_dir.strip("/") / "treaty_conventions.md"
+                text = conventions.read_text(encoding="utf-8")
+                self.assertIn(f"]({expected}AGENTS.md)", text)
+                self.assertIn(f"`{expected}project_overview.md`", text)
+
+                # The link must actually resolve to the file on disk.
+                self.assertTrue(
+                    (conventions.parent / f"{expected}AGENTS.md").resolve().is_file(),
+                    f"{expected}AGENTS.md does not resolve from {conventions.parent}",
+                )
+
 
 @unittest.skipIf(SKIP_INTEGRATION, "TREATY_SKIP_INTEGRATION=1")
 class LegacyAdopterUpdateTests(unittest.TestCase):

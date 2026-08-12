@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-12
 
+### Acted on the Windows sweep from Codex (GPT-5) on PR #20 (claude-opus-5)
+
+- **Fixed a real bug Codex found:** `root_prefix` was a hardcoded `../`, so a multi-segment `docs_dir` (e.g. `docs/agents`, which `README.md` advertises) rendered links resolving one level short — `docs/AGENTS.md`, which does not exist. Reproduced, then made the prefix depth-aware (`'../' * segment_count`). Verified at depths 1–3 plus a trailing-slash value; regression test added. Chose depth-awareness over restricting `docs_dir` to one segment because the README already documents the multi-segment form.
+- **Independent Windows confirmation of the compatibility claim:** Codex swept 12 local Git adopters, each run twice (PR head `4203d4d` vs. an unmodified v0.7.0 control) — 12/12 identical exit codes, updated-file sets, and conflict sets; no `treaty_docs` mention anywhere; `docs_dir: None -> '.'` on all 12. `core.autocrlf=true`, full suite passed, and the byte-identical guard passed without touching its baseline.
+- **Two sweeps disagreed on absolute numbers, and the reason matters.** Mine cloned GitHub default branches; Codex cloned local working directories. `desktop_app_source_updater` is v0.4.1 on GitHub but v0.6.0 locally — a `treaty update` that was **run locally and never pushed**. `ai_crash_course` is v0.3.1 in both but conflicted in my sweep and came back clean in Codex's, consistent with the same divergence. The *delta* (branch vs. control) was zero in both sweeps, which is the claim actually under test; the absolute conflict counts are a property of the snapshot, not of this change. Do not treat either sweep's conflict totals as the state of the published repos.
+- Codex also covered three adopters my sweep missed (`career_dev`, plus local-only dirs) and skipped `vessel_pulsatility` (not a git repo, so Copier cannot update it).
+- **Not fixed here, pre-existing:** `_format_update_summary` emits `→` (U+2192), which raises `UnicodeEncodeError` on a default Windows cp1252 console — confirmed locally by encoding the line. Codex worked around it with `PYTHONUTF8=1`. Introduced with the summary in v0.6.0, unrelated to this branch; kept out of PR #20 to keep the layout review clean. Also pre-existing: with `core.autocrlf=true`, `git status --porcelain` can list line-ending-normalized files that a normalized `git diff --name-only` does not, so `_classify_status` can overreport "Updated files" on Windows.
+- Verification:
+  - `python -m unittest discover -s tests` — 75 tests, OK (1 skipped); new `test_multi_segment_docs_dir_gets_a_depth_aware_root_prefix` passes and the v0.7.0 byte-identical guard still passes unchanged.
+  - Rendered `docs_dir` at `treaty_docs`, `docs/agents`, `a/b/c`, `trailing/slash/`, and `.` — every `AGENTS.md` link resolves to a real file from the conventions doc's directory.
+  - `treaty validate .`, `treaty --help`, `treaty --version`, import smoke, `git diff --check` — clean.
+
 ### Made the docs layout a Copier answer instead of a template move (claude-opus-5)
 
 - Added a `docs_dir` question so adopters' working docs (`treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`) install under `treaty_docs/`, and dogfooded that layout in this repo. `AGENTS.md` and `project_overview.md` stay at the root — `AGENTS.md` because agents resolve the *nearest* file up the tree, so a nested one would scope to the wrong subtree, and `project_overview.md` because it is the one treaty doc a human newcomer opens, and keeping it put also keeps the most-customized file away from any relocation risk.

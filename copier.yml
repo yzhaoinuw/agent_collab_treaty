@@ -66,7 +66,7 @@ docs_prefix:
 root_prefix:
   type: str
   when: false
-  default: "{% if docs_dir in ['.', ''] %}{% else %}../{% endif %}"
+  default: "{% if docs_dir in ['.', ''] %}{% else %}{{ '../' * (docs_dir.strip('/').split('/') | length) }}{% endif %}"
 
 integration_branch:
   type: str
