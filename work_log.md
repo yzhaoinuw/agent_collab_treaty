@@ -39,6 +39,20 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-08-12
+
+### Fixed a Windows crash in the treaty update summary (claude-opus-5)
+
+- `_format_update_summary` printed `→` (U+2192), which is absent from cp1252 — the default console encoding on Windows — so `typer.echo` raised `UnicodeEncodeError`. Replaced with ASCII `->` in `cli.py` and in the five test assertions that pinned the old glyph.
+- **Severity was higher than it looks, which is why this was worth a standalone fix.** In `update()` the merge is applied *before* the summary prints, so a Windows adopter got a fully applied update followed by a traceback — the natural reading is "the update failed", inviting a re-run or a manual revert of a change that actually succeeded. Shipped with the summary in v0.6.0.
+- Found by Codex (GPT-5) during the Windows sweep on PR #20, where it was reported as an environment note (it worked around it with `PYTHONUTF8=1`). Reclassified as a bug after reproducing the encode failure directly.
+- **Scoping decision:** kept off the `nested-docs` branch and committed straight to `dev`. The bug predates that branch and is unrelated to the layout work, so bundling it would have made a large layout review also a judgement on unrelated CLI output, and would have trapped a shippable fix behind an unmerged experiment. `nested-docs` will need a `dev` merge before it lands; expect a trivial conflict in `cli.py` and the touched test assertions.
+- Checked the rest of the non-ASCII output rather than only the reported symptom: em-dash, curly quotes, and ellipsis all encode fine on cp1252, so no further changes. They would fail on legacy cp850/cp437, but those are not the modern console default and nothing has reported them — deliberately not churned.
+- Verification:
+  - `python -m unittest discover -s tests` — 59 tests, OK (1 skipped).
+  - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
+  - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
+
 ## 2026-08-01
 
 ### Released v0.7.0 (claude-fable-5)

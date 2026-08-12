@@ -328,7 +328,7 @@ class UpdateIntegrationTests(unittest.TestCase):
         result = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
 
         self.assertEqual(1, result.exit_code, result.output)
-        self.assertIn("Template version: v1.0.0 → v2.0.0", result.output)
+        self.assertIn("Template version: v1.0.0 -> v2.0.0", result.output)
         self.assertIn("Conflicts (unresolved):", result.output)
         self.assertIn("AGENTS.md", result.output)
         self.assertIn("treaty_conventions.md", result.output)
@@ -349,7 +349,7 @@ class UpdateIntegrationTests(unittest.TestCase):
         result = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
 
         self.assertEqual(0, result.exit_code, result.output)
-        self.assertIn("Template version: v1.0.0 → v2.0.0", result.output)
+        self.assertIn("Template version: v1.0.0 -> v2.0.0", result.output)
         self.assertIn("Updated files:", result.output)
         self.assertIn("AGENTS.md", result.output)
         self.assertIn("Re-run without --dry-run to apply", result.output)

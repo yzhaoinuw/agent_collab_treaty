@@ -85,13 +85,13 @@ def _format_update_summary(
             lines.append(f"Template version: {new_v or 'unknown'} (unchanged)")
         else:
             lines.append(
-                f"Template version: {old_v or 'unknown'} → {new_v or 'unknown'}"
+                f"Template version: {old_v or 'unknown'} -> {new_v or 'unknown'}"
             )
 
     old_user = _user_answers(old_answers)
     new_user = _user_answers(new_answers)
     answer_diffs = [
-        f"  - {key}: {old_user.get(key)!r} → {new_user.get(key)!r}"
+        f"  - {key}: {old_user.get(key)!r} -> {new_user.get(key)!r}"
         for key in sorted(set(old_user) | set(new_user))
         if old_user.get(key) != new_user.get(key)
     ]
