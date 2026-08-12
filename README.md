@@ -162,14 +162,19 @@ The `docs_dir` question controls the folder name. Answer `.` for the flat layout
 To move an existing project into a folder, update first, then relocate in one commit:
 
 ```bash
-treaty update                       # records docs_dir: '.'
+treaty update                       # first: records docs_dir: '.'
 mkdir treaty_docs
 git mv work_log.md next_steps.md treaty_conventions.md work_log_archive treaty_docs/
-sed -i '' "s/^docs_dir: .*/docs_dir: treaty_docs/" .copier-answers.yml   # Linux: sed -i
+# then edit .copier-answers.yml: change  docs_dir: '.'  to  docs_dir: treaty_docs
 git commit -am "Move treaty docs into treaty_docs/"
 ```
 
-Because the recorded answer and the files on disk now agree, the next `treaty update` merges at the new paths with no conflict. Fix the doc links in your `AGENTS.md` by hand afterward — they still point at the old flat paths.
+The order matters: `treaty update` has to run *first*, so the project is on a template version that understands `docs_dir` before the files move. Because the recorded answer and the files on disk then agree, the next `treaty update` merges at the new paths with no conflict.
+
+Two things to check afterward, neither of which upstream can do for you:
+
+- **Doc links in your `AGENTS.md`** still point at the old flat paths. That file is yours, so fix them by hand.
+- **Your `.gitignore`**, if it denies everything and re-allows specific files (`*` followed by `!work_log.md`). Those negations stop matching once the files move, so anything added under `treaty_docs/` later — a new archive chunk, say — is silently ignored. Add `!treaty_docs/` and `!treaty_docs/**` , then confirm with `git check-ignore -v treaty_docs/work_log.md`.
 
 </details>
 
