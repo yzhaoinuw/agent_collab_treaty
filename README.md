@@ -31,13 +31,15 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 | File | Purpose |
 |---|---|
 | `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. **This is the file you customize.** |
-| `treaty_conventions.md` | The generic mechanics `AGENTS.md` links to: work-log criteria, rotation and dating rules, branch handoff, release gate, update procedure. **Maintained upstream — leave it alone** and `treaty update` keeps it current. |
 | `project_overview.md` | Orientation map: active vs. legacy code, authored vs. derived files, repo structure, where to look first. |
-| `next_steps.md` | Active roadmap. "Currently Hot" points agents at the threads that matter now. |
-| `work_log.md` | Session journal, newest first. Agents prepend substantive work before handoff. |
-| `work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
+| `treaty_docs/treaty_conventions.md` | The generic mechanics `AGENTS.md` links to: work-log criteria, rotation and dating rules, branch handoff, release gate, update procedure. **Maintained upstream — leave it alone** and `treaty update` keeps it current. |
+| `treaty_docs/next_steps.md` | Active roadmap. "Currently Hot" points agents at the threads that matter now. |
+| `treaty_docs/work_log.md` | Session journal, newest first. Agents prepend substantive work before handoff. |
+| `treaty_docs/work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
 
-Those first two files split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
+`AGENTS.md` and `treaty_conventions.md` split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
+
+The working docs sit in `treaty_docs/` so they don't crowd your repo root; `AGENTS.md` and `project_overview.md` stay at the root, where a newcomer and an agent both expect to find them. Set the `docs_dir` question to rename that folder, or to `.` to keep every file flat at the root. Projects installed before v0.8.0 stay flat automatically — see [Where the docs live](#where-the-docs-live).
 
 ## See It In A Real Project
 
@@ -78,7 +80,7 @@ The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/), so yo
 pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
 ```
 
-Or copy the files by hand from [`template/`](template/) — not from this repo's root, which holds our own dogfooded docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files.
+Or copy the files by hand from [`template/`](template/) — not from this repo's root, which holds our own dogfooded docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files. The literal `{{ docs_dir }}` directory in there is the docs folder awaiting its name: copy its contents into `treaty_docs/` (or straight to the root for a flat layout).
 
 Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `treaty diff` won't work on them — you'd copy new sections from [`template/`](template/) by hand instead.
 
@@ -127,10 +129,47 @@ Three questions drop sections that don't apply to your project. All default to y
 
 Opting out beats deleting: a section that never rendered can never conflict, while a section you deleted collects a conflict every time upstream revises it.
 
-Two more worth knowing:
+Three more worth knowing:
 
+- **`docs_dir`** is the folder the working docs live in, `treaty_docs` by default. Answer `.` to keep everything flat at the repo root. See [Where the docs live](#where-the-docs-live).
 - **`env_activation`** accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
 - **`verification_command`** is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaced `test_command` in v0.5.0; older projects carry their recorded answer over automatically.
+
+</details>
+
+<details id="where-the-docs-live">
+<summary>Where the docs live</summary>
+
+Since v0.8.0 the working docs install into `treaty_docs/`, leaving `AGENTS.md` and `project_overview.md` at the repo root:
+
+```text
+your_repo/
+|- AGENTS.md
+|- project_overview.md
+|- treaty_docs/
+|  |- treaty_conventions.md
+|  |- next_steps.md
+|  |- work_log.md
+|  |- work_log_archive/
+```
+
+`AGENTS.md` has to stay at the root: agents resolve the *nearest* `AGENTS.md` up the directory tree, so one nested inside `treaty_docs/` would apply only to files inside that folder — the opposite of what you want. `project_overview.md` stays with it as the human-facing entry point.
+
+The `docs_dir` question controls the folder name. Answer `.` for the flat layout, or any other name (`docs/agents`, `.treaty`) to put them elsewhere.
+
+**Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. Verified against every Copier-managed adopter we maintain: identical files touched, identical conflicts, versus the same update on v0.7.0.
+
+To move an existing project into a folder, update first, then relocate in one commit:
+
+```bash
+treaty update                       # records docs_dir: '.'
+mkdir treaty_docs
+git mv work_log.md next_steps.md treaty_conventions.md work_log_archive treaty_docs/
+sed -i '' "s/^docs_dir: .*/docs_dir: treaty_docs/" .copier-answers.yml   # Linux: sed -i
+git commit -am "Move treaty docs into treaty_docs/"
+```
+
+Because the recorded answer and the files on disk now agree, the next `treaty update` merges at the new paths with no conflict. Fix the doc links in your `AGENTS.md` by hand afterward — they still point at the old flat paths.
 
 </details>
 

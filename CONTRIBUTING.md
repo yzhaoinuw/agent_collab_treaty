@@ -25,7 +25,7 @@ python -m venv .venv && .venv/bin/python -m pip install -e .
   treaty --help && treaty --version && treaty validate .
   ```
 
-- This repo dogfoods the treaty it ships: substantive changes prepend a `work_log.md` entry and update `next_steps.md`. The criteria live in `AGENTS.md` § When To Update Treaty Docs.
+- This repo dogfoods the treaty it ships: substantive changes prepend a `treaty_docs/work_log.md` entry and update `treaty_docs/next_steps.md`. The criteria live in `AGENTS.md` § When To Update Treaty Docs.
 
 ## Touching `template/`
 

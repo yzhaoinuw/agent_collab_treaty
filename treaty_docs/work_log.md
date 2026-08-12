@@ -39,6 +39,27 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-08-12
+
+### Made the docs layout a Copier answer instead of a template move (claude-opus-5)
+
+- Added a `docs_dir` question so adopters' working docs (`treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`) install under `treaty_docs/`, and dogfooded that layout in this repo. `AGENTS.md` and `project_overview.md` stay at the root — `AGENTS.md` because agents resolve the *nearest* file up the tree, so a nested one would scope to the wrong subtree, and `project_overview.md` because it is the one treaty doc a human newcomer opens, and keeping it put also keeps the most-customized file away from any relocation risk.
+- **Decision: layout is an answer, never a template-side file move.** Measured on copier 9.15.1 in throwaway templates:
+  - A naive move (template file relocated, no migration) **silently destroys adopter content**: Copier deletes the customized file and writes a pristine one at the new path. No conflict, no warning — only `D work_log.md` in `git status`. An adopter running `git add -A` loses the log from HEAD.
+  - A `_migrations` before-hook doing `git mv` preserves content but then conflicts in **every** moved file for **every** adopter — verified even on a pure move with zero content change, because Copier renders the old version at the old path so the moved file always reads as add-vs-existing. It also requires `--trust`.
+- Rejected approach worth not re-deriving: `_copier_operation` is **undefined** inside question defaults (probed directly — it renders as `UNDEFINED`), so Copier cannot distinguish copy from update on its own to pick a per-operation default. The legacy pin therefore lives in our CLI wrapper (`_legacy_layout_data`), which injects `docs_dir="."` when the answers file has no recorded value.
+- Also rejected: `docs_dir=""` for the flat layout. An empty path segment makes Copier skip the entire directory (the same rule the `{% if %}` conditional-file trick relies on) and renders links as `/work_log.md`. The flat answer must be `"."`, which resolves to the root correctly.
+- Recorded the resulting invariant in `AGENTS.md`: with `docs_dir="."` the template must render **byte-identical** to v0.7.0, because every pre-v0.8.0 adopter is pinned there. Found the hard way — a single added line in `project_overview.md`'s tree diagram conflicted for every adopter until the flat branch was made an exact match. `tests/test_docs_dir.py::test_flat_layout_is_byte_identical_to_v070` now diffs the whole rendered tree against the `v0.7.0` tag.
+- **Warning for future verification runs on macOS:** `timeout` does not exist here (it is `gtimeout` from coreutils). The first adopter dry-run batch used it, so no dry-run actually executed and the harness reported a clean `exit=0` for all 14 repos. An all-green result that arrives too easily is the signal to check the harness, not the change.
+- Shared state: branch `nested-docs` pushed to origin. Not merged to `dev` — a Windows pass is still outstanding, because `docs_dir` is now a path segment and `required_paths()` builds POSIX-style strings while Copier renders paths with the OS separator.
+- Verification:
+  - `python -m unittest discover -s tests` — 74 tests, OK (1 skipped); includes 13 new `docs_dir` tests and the byte-identical guard.
+  - `treaty validate .` on this repo after the dogfood move — passed, resolving `docs_dir` via on-disk detection since this repo has no `.copier-answers.yml`.
+  - `treaty --help`, `treaty --version`, `python -c "import agent_collab_treaty, agent_collab_treaty.cli"`, `git diff --check` — all clean.
+  - Real-adopter dry-runs across all 14 Copier-managed `yzhaoinuw/*` repos, each run twice (branch vs. an unmodified-v0.7.0 control): **identical conflict sets and identical touched-file sets in 14/14**, zero occurrences of `treaty_docs` in any output, and `docs_dir: None → '.'` on every repo. Nothing was written to any remote.
+  - End-to-end fixtures: v0.7.0 adopter updating (stays flat, no conflicts, history intact); the same project relocating and then taking a further upstream release (merges cleanly at the new paths); fresh install (nested, `treaty validate` passes).
+- Side-finding, not addressed here: eight of the 14 adopters are pinned at v0.2.0–v0.3.3, predating the v0.5.0 AGENTS/conventions split, and will conflict on `AGENTS.md`/`project_overview.md` whenever they next update — independent of this change.
+
 ## 2026-08-01
 
 ### Released v0.7.0 (claude-fable-5)

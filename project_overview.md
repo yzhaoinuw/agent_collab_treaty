@@ -6,7 +6,7 @@ This document orients a new agent or human collaborator to the Agent Collab Trea
 
 `agent-collab-treaty` is a small Python package that publishes the `treaty` CLI. The CLI installs and updates a Copier template containing a shared documentation contract for human + multi-agent collaboration on any codebase.
 
-The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md`, `treaty_conventions.md`, `project_overview.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/`.
+The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md` and `project_overview.md` at the repo root, plus `treaty_conventions.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/` under `treaty_docs/`.
 
 ## Active Runtime Path
 
@@ -37,7 +37,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - Splits Markdown on `##` headings and classifies each section as untouched, modified, removed, added, or renamed.
 - Rename detection pairs a removed heading with an added one when their bodies are at least `RENAME_SIMILARITY` similar, because a rename is the one drift a three-way merge cannot auto-resolve.
-- `ADOPTER_OWNED` exempts `work_log.md` and `next_steps.md` from the risk total — their drift is the point of the treaty, not a hazard.
+- `ADOPTER_OWNED` exempts `work_log.md` and `next_steps.md` from the risk total (matched by filename, so it holds in either layout) — their drift is the point of the treaty, not a hazard.
 - Pure functions throughout; the Copier render lives in `cli._render_pristine` so tests never need the network.
 
 ### 3. Adoption preflight module
@@ -73,7 +73,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - Contains the files installed into downstream projects.
 - `template/AGENTS.md.jinja` is rendered with the Copier answers. It holds what adopters customize; upstream keeps its bodies short.
-- `template/treaty_conventions.md.jinja` holds the mechanics we maintain (work-log criteria, rotation/dating, branch handoff, release gate, update procedure). Adopters are told not to edit it, which is what keeps `treaty update` close to conflict-free.
+- `template/{{ docs_dir }}/treaty_conventions.md.jinja` holds the mechanics we maintain (work-log criteria, rotation/dating, branch handoff, release gate, update procedure). Adopters are told not to edit it, which is what keeps `treaty update` close to conflict-free.
 - `template/.copier-answers.yml.jinja` records the source, commit, and answers so `treaty update` can work later.
 - Optional pointer templates render `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` when selected.
 - Other template docs are plain Markdown starting points for project-specific context.
@@ -101,22 +101,24 @@ project_root/
 |- template/
 |  |- .copier-answers.yml.jinja
 |  |- AGENTS.md.jinja
-|  |- treaty_conventions.md.jinja
+|  |- project_overview.md.jinja
+|  `- {{ docs_dir }}/          <- literal dir name; Copier renders it
+|     |- treaty_conventions.md.jinja
+|     |- next_steps.md
+|     |- work_log.md
+|     `- work_log_archive/
+|- treaty_docs/
 |  |- next_steps.md
-|  |- project_overview.md
 |  |- work_log.md
 |  `- work_log_archive/
-|- work_log_archive/
 |- AGENTS.md
 |- CITATION.cff
 |- CONTRIBUTING.md
 |- copier.yml
 |- LICENSE
-|- next_steps.md
 |- project_overview.md
 |- pyproject.toml
-|- README.md
-`- work_log.md
+`- README.md
 ```
 
 ## What Looks Active vs. Legacy
@@ -130,12 +132,12 @@ project_root/
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) - contributor front door and maintainer release/publishing mechanics.
 - [`CITATION.cff`](CITATION.cff) - citation metadata; Zenodo reads it when archiving a release, and its `version:`/`date-released:` are bumped as part of the release checklist.
 - [`.github/workflows/`](.github/workflows/) - active PyPI/TestPyPI release automation.
-- Root [`AGENTS.md`](AGENTS.md), [`next_steps.md`](next_steps.md), [`work_log.md`](work_log.md), and this file - dogfooded docs for maintaining this repo.
+- Root [`AGENTS.md`](AGENTS.md), this file, and [`treaty_docs/`](treaty_docs/) ([`next_steps.md`](treaty_docs/next_steps.md), [`work_log.md`](treaty_docs/work_log.md)) - dogfooded docs for maintaining this repo.
 
 ### Likely older or secondary
 
 - There are no known legacy code paths yet.
-- [`work_log_archive/`](work_log_archive/) is historical context, not active code.
+- [`treaty_docs/work_log_archive/`](treaty_docs/work_log_archive/) is historical context, not active code.
 - Local pointer files such as `CLAUDE.md`, `CODEX.md`, and `GEMINI.md` are intentionally ignored if created locally.
 
 ## Authored vs. Derived
@@ -197,10 +199,10 @@ If you only want to understand the current product, read files in this order:
 2. [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py)
 3. [`copier.yml`](copier.yml)
 4. [`template/AGENTS.md.jinja`](template/AGENTS.md.jinja)
-5. [`template/treaty_conventions.md.jinja`](template/treaty_conventions.md.jinja)
+5. [`template/{{ docs_dir }}/treaty_conventions.md.jinja`](template/%7B%7B%20docs_dir%20%7D%7D/treaty_conventions.md.jinja)
 6. [`template/project_overview.md`](template/project_overview.md)
-7. [`next_steps.md`](next_steps.md)
-8. [`work_log.md`](work_log.md)
+7. [`treaty_docs/next_steps.md`](treaty_docs/next_steps.md)
+8. [`treaty_docs/work_log.md`](treaty_docs/work_log.md)
 
 The key idea: `treaty init` copies the template into a target repo, and `treaty update` later applies upstream template changes using Copier metadata. Everything else is documentation quality, update safety, and agent-discovery ergonomics.
 

@@ -16,6 +16,11 @@ _message_after_copy: |
        It will read the repo and fill AGENTS.md and project_overview.md. Doing it
        by hand works too. Either way, leave treaty_conventions.md alone —
        upstream maintains it, and `treaty update` keeps it current.
+    {%- if docs_dir not in ['.', ''] %}
+       The working docs (treaty_conventions.md, next_steps.md, work_log.md,
+       work_log_archive/) are in {{ docs_dir }}/; AGENTS.md and
+       project_overview.md are at the repo root.
+    {%- endif %}
     2. If you selected optional agent pointer files, commit them with the treaty
        docs so those tools can find AGENTS.md automatically.
     3. At the end of substantive work sessions, update work_log.md and
