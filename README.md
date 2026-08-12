@@ -39,7 +39,7 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 
 `AGENTS.md` and `treaty_conventions.md` split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
 
-The working docs sit in `treaty_docs/` so they don't crowd your repo root; `AGENTS.md` and `project_overview.md` stay at the root, where a newcomer and an agent both expect to find them. Set the `docs_dir` question to rename that folder, or to `.` to keep every file flat at the root. Projects installed before v0.8.0 stay flat automatically — see [Where the docs live](#where-the-docs-live).
+The working docs sit in `treaty_docs/` so they don't crowd your repo root; `AGENTS.md` and `project_overview.md` stay at the root, where a newcomer and an agent both expect to find them. Set the `docs_dir` question to rename that folder, or to `.` to keep every file flat at the root. Projects installed before v0.8.0 stay flat automatically — see *Where the docs live* under [Install](#install).
 
 ## See It In A Real Project
 
@@ -131,13 +131,13 @@ Opting out beats deleting: a section that never rendered can never conflict, whi
 
 Three more worth knowing:
 
-- **`docs_dir`** is the folder the working docs live in, `treaty_docs` by default. Answer `.` to keep everything flat at the repo root. See [Where the docs live](#where-the-docs-live).
+- **`docs_dir`** is the folder the working docs live in, `treaty_docs` by default. Answer `.` to keep everything flat at the repo root. See *Where the docs live* below.
 - **`env_activation`** accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
 - **`verification_command`** is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaced `test_command` in v0.5.0; older projects carry their recorded answer over automatically.
 
 </details>
 
-<details id="where-the-docs-live">
+<details>
 <summary>Where the docs live</summary>
 
 Since v0.8.0 the working docs install into `treaty_docs/`, leaving `AGENTS.md` and `project_overview.md` at the repo root:
