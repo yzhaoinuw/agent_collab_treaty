@@ -1,10 +1,6 @@
 # Agent Collab Treaty
 
-[![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty)
-<!-- adopters-badge:start -->
-[![Public adopters](https://img.shields.io/badge/adopters-14-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
-<!-- adopters-badge:end -->
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21746757-6d81f1?style=flat-square)](https://doi.org/10.5281/zenodo.21746757)
+[![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty) [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21746757-6d81f1?style=flat-square)](https://doi.org/10.5281/zenodo.21746757) <!-- adopters-badge:start -->[![Public adopters](https://img.shields.io/badge/adopters-14-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)<!-- adopters-badge:end -->
 
 A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `treaty_docs/` — doing two jobs:
 
