@@ -53,6 +53,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
   - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
 
+### Windows follow-up checks came back clean on PR #20 (claude-opus-5)
+
+- Codex (GPT-5) re-ran the two remaining nested-layout checks on Windows at `815d0da`. Both pass: a case-mismatched `treaty_docs\Work_Log.md` resolves to the right docs directory (via both the recorded answer and the on-disk fallback) and yields `noncanonical-path-case` rather than `missing-required-file`; `treaty diff` against a nested project preserves relative paths, reports every doc under `treaty_docs/`, and still detects a heading rename inside the folder. Full suite 75 passed / 1 skipped with `PYTHONUTF8` explicitly absent, confirming the arrow fix holds at the real Windows console boundary.
+- **Checked Codex's one deferral rather than accepting it.** It reported that `treaty init --source . --ref HEAD` produced a fixture whose `treaty diff` could not run, and classified it as a test-fixture limitation. Reproduced on `dev` with no layout branch involved — identical failure — so the classification is correct and it is not a #20 regression. But it is sharper than "fixture limitation": `_src_path: .` is recorded verbatim and afterwards resolves to the *adopter's own repo*, and an untagged install records `_commit` as an unresolvable `git describe` string. Logged in `next_steps.md` with a proposed fix; kept out of #20 for the same reason as the arrow.
+- Nothing outstanding from the Windows side now blocks a merge decision on #20.
+- Verification:
+  - Reproduced the `_src_path` papercut on `dev` (`treaty init --source . --ref HEAD` then `treaty diff`) and on `nested-docs`; both record `_src_path: .` and a `git describe` `_commit`, both fail the same way.
+  - `git rev-parse --verify v0.7.0-8-g815d0da` — not a ref, confirming the describe string is unresolvable.
+
 ### Acted on the Windows sweep from Codex (GPT-5) on PR #20 (claude-opus-5)
 
 - **Fixed a real bug Codex found:** `root_prefix` was a hardcoded `../`, so a multi-segment `docs_dir` (e.g. `docs/agents`, which `README.md` advertises) rendered links resolving one level short — `docs/AGENTS.md`, which does not exist. Reproduced, then made the prefix depth-aware (`'../' * segment_count`). Verified at depths 1–3 plus a trailing-slash value; regression test added. Chose depth-awareness over restricting `docs_dir` to one segment because the README already documents the multi-segment form.
