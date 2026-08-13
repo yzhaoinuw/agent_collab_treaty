@@ -53,6 +53,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
   - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
 
+### Merged PR #20 and absolutised local template sources (claude-opus-5)
+
+- Merged `nested-docs` into `dev` as a **fast-forward**, deliberately not `--rebase`/`--squash`. `dev` was already an ancestor of the branch, so a fast-forward creates no merge commit and leaves `dev`/`main` unable to diverge on the DAG — which is the outcome the PR-merge rule in `AGENTS.md` exists to protect. It also preserves commit SHAs, and several are cited by hash in `work_log.md`, `next_steps.md`, and the PR discussion; rewriting them would have falsified our own records. GitHub marked #20 merged automatically once the head commit became reachable from `dev`.
+- Fixed the `_src_path` half of the local-source papercut: `treaty init --source <local path>` now resolves the path to absolute before handing it to Copier (`_resolve_source`), so the recorded source keeps pointing at the template from anywhere. Remote specs (`gh:`, `https://`, `git+ssh://`) are passed through untouched, since they are not filesystem paths. Applied to `treaty diff --source` as well.
+- **Deliberately only half the item.** The other half — Copier recording `_commit` as an unresolvable `git describe` string for untagged installs — is a distinct defect and was left alone rather than quietly widening an approved one-line fix. Effect after this change: the failure moves from "git runs in the adopter's own repository" (baffling) to "git runs in the correct template repository and fails on an unreal ref" (still a raw traceback). Re-logged in `next_steps.md` with a concrete proposal.
+- Verification:
+  - `python -m unittest discover -s tests` — 79 tests, OK (1 skipped); 4 new `_resolve_source` tests covering local paths, `.`, remote-spec passthrough, and what `init` actually hands Copier.
+  - End-to-end: `treaty init --source . --ref HEAD` now records `_src_path: /Users/yuezhao/python_projects/agent_collab_treaty` instead of `.`.
+  - `treaty validate .`, `git diff --check` — clean.
+
 ### Windows follow-up checks came back clean on PR #20 (claude-opus-5)
 
 - Codex (GPT-5) re-ran the two remaining nested-layout checks on Windows at `815d0da`. Both pass: a case-mismatched `treaty_docs\Work_Log.md` resolves to the right docs directory (via both the recorded answer and the on-disk fallback) and yields `noncanonical-path-case` rather than `missing-required-file`; `treaty diff` against a nested project preserves relative paths, reports every doc under `treaty_docs/`, and still detects a heading rename inside the folder. Full suite 75 passed / 1 skipped with `PYTHONUTF8` explicitly absent, confirming the arrow fix holds at the real Windows console boundary.

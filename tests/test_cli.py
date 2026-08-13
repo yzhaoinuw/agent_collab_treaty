@@ -12,6 +12,7 @@ from agent_collab_treaty.cli import (
     _classify_status,
     _format_update_summary,
     _render_pristine,
+    _resolve_source,
     app,
 )
 
@@ -319,3 +320,41 @@ def write_valid_project(root: Path) -> None:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ResolveSourceTests(unittest.TestCase):
+    """`--source .` must not be recorded verbatim.
+
+    Copier writes --source straight into `_src_path`, so a relative value is
+    re-resolved later from the installed project — where it points at the
+    adopter's own repo, and every subsequent `treaty diff` / `treaty update`
+    runs git in the wrong repository.
+    """
+
+    def test_local_path_becomes_absolute(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            resolved = _resolve_source(tmp)
+            self.assertTrue(Path(resolved).is_absolute())
+            self.assertEqual(Path(tmp).resolve(), Path(resolved))
+
+    def test_dot_resolves_to_the_current_directory(self) -> None:
+        resolved = _resolve_source(".")
+        self.assertTrue(Path(resolved).is_absolute())
+        self.assertEqual(Path.cwd().resolve(), Path(resolved))
+
+    def test_remote_specs_pass_through_untouched(self) -> None:
+        for spec in (
+            "gh:yzhaoinuw/agent_collab_treaty",
+            "https://github.com/yzhaoinuw/agent_collab_treaty.git",
+            "git+ssh://git@github.com/yzhaoinuw/agent_collab_treaty.git",
+        ):
+            with self.subTest(spec=spec):
+                self.assertEqual(spec, _resolve_source(spec))
+
+    runner = CliRunner()
+
+    def test_init_records_an_absolute_source(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("copier.run_copy") as run_copy:
+                self.runner.invoke(app, ["init", tmp, "--source", ".", "--defaults"])
+            self.assertTrue(Path(run_copy.call_args.kwargs["src_path"]).is_absolute())

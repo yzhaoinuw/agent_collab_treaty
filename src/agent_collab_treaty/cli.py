@@ -128,6 +128,23 @@ def _format_update_summary(
     return lines
 
 
+def _resolve_source(source: str) -> str:
+    """Expand a local template source to an absolute path; pass URLs through.
+
+    Copier records ``--source`` verbatim as ``_src_path``. A relative value like
+    ``.`` is therefore re-resolved later *from the installed project*, where it
+    points at the adopter's own repository instead of the template — so every
+    subsequent `treaty diff` / `treaty update` runs git commands in the wrong
+    repo. Absolutising it at install time keeps the recorded source meaningful
+    from anywhere. Remote specs (``gh:``, ``git+``, ``https://``…) are not paths
+    and are left untouched.
+    """
+    candidate = Path(source).expanduser()
+    if candidate.exists():
+        return str(candidate.resolve())
+    return source
+
+
 def _parse_data(pairs: Optional[List[str]]) -> dict[str, str]:
     """Parse `key=value` strings from --data into a dict for Copier."""
     if not pairs:
@@ -237,7 +254,7 @@ def init(
 
     typer.echo(f"Installing the Agent Collab Treaty into {destination}")
     copier.run_copy(
-        src_path=source,
+        src_path=_resolve_source(source),
         dst_path=str(destination),
         vcs_ref=ref,
         defaults=defaults,
@@ -482,7 +499,7 @@ def diff(
         )
         raise typer.Exit(1)
 
-    template_source = source or answers.get("_src_path")
+    template_source = _resolve_source(source) if source else answers.get("_src_path")
     if not template_source:
         typer.echo(
             f"{ANSWERS_FILE} records no template source; pass --source explicitly.",
