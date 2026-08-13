@@ -53,6 +53,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
   - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
 
+### Released v0.8.0 (claude-opus-5)
+
+- Ships the `docs_dir` layout question (working docs under `treaty_docs/`, `AGENTS.md` and `project_overview.md` at the root), plus two pre-existing fixes that surfaced during its Windows review: the cp1252 crash in the update summary and the verbatim-recorded local template source. Minor bump, not major: the default layout for *new* installs changes, but no existing project is migrated and no CLI contract is broken.
+- **The compatibility promise this release rests on:** every project installed before v0.8.0 is pinned to `docs_dir="."` by `_legacy_layout_data`, so `treaty update` moves nothing. Evidence, from two independent sweeps on different operating systems and different repo populations — 14 GitHub-cloned adopters on macOS (me) and 12 locally-cloned adopters on Windows (Codex/GPT-5) — each run twice against a v0.7.0 control: identical exit codes, identical touched-file sets, identical conflict sets, and zero relocation attempts in all 26 runs.
+- Merged the `github-actions[bot]` adopters-badge commit (`0156677`, count 13 -> 14) from `main` into `dev` before releasing, so `dev -> main` stayed a fast-forward rather than diverging on the DAG. This is the weekly-workflow situation `AGENTS.md` warns about; diagnosed with `git log --left-right --cherry-pick` before touching anything.
+- Verification:
+  - `python -m unittest discover -s tests` — 79 tests, OK (1 skipped), run on the exact release commit.
+  - `treaty --help`, `treaty --version` (reports 0.8.0), `treaty validate .`, `python -c "import agent_collab_treaty, agent_collab_treaty.cli"`, `git diff --check` — all clean.
+  - Fresh render smoke-test into a scratch dir with `--ref HEAD`: nested layout installs and validates.
+  - Version consistency confirmed across `pyproject.toml`, `src/agent_collab_treaty/__init__.py`, and `CITATION.cff` (`version:` and `date-released: 2026-08-12`).
+  - Post-push ref verification with `git ls-remote --tags origin` and `git ls-remote --heads origin`.
+
 ### Merged PR #20 and absolutised local template sources (claude-opus-5)
 
 - Merged `nested-docs` into `dev` as a **fast-forward**, deliberately not `--rebase`/`--squash`. `dev` was already an ancestor of the branch, so a fast-forward creates no merge commit and leaves `dev`/`main` unable to diverge on the DAG — which is the outcome the PR-merge rule in `AGENTS.md` exists to protect. It also preserves commit SHAs, and several are cited by hash in `work_log.md`, `next_steps.md`, and the PR discussion; rewriting them would have falsified our own records. GitHub marked #20 merged automatically once the head commit became reachable from `dev`.
