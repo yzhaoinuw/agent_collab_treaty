@@ -53,6 +53,20 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
   - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
 
+### Built treaty relocate (claude-opus-5)
+
+- New `treaty relocate [--to <dir>] [--dry-run] [--force]` moves the four working docs between layouts in one pass: `git mv` so history follows, link rewrites in `AGENTS.md` and `project_overview.md`, the reverse rewrite of `../AGENTS.md`-style links inside the moved docs, the `docs_dir` answer, and removal of the emptied folder. `--to .` flattens back; multi-segment targets get matching link depth.
+- **Why a command instead of the four-step guide it replaces:** each manual step fails quietly. Relocating before `treaty update` leaves the recorded answer disagreeing with the files, so the *next* update renders its baseline at the old paths and conflicts — `relocate` refuses to start in that state and says to update first. `AGENTS.md` keeps pointing at old paths, and it is the file every agent reads first. And a deny-all `.gitignore` stops matching after the move.
+- **Deliberate boundary: it rewrites only treaty-owned docs.** References from an adopter's README, CHANGELOG, or CI config are *reported* and left alone — editing files the treaty does not own would be overreach, and the measured cases (`sleep_scoring`, `BrainFlowZZZ_directory_overview`, `vessel_diameter_respiration`) are prose that needs human judgement, not mechanical substitution.
+- Closed the loop on the gitignore hazard with a new `treaty-doc-gitignored` validation code, so it stays caught after the relocation session ends. Getting the probe right took two attempts worth recording: `git check-ignore` **exempts paths already in the index**, so probing the moved docs reported clean on exactly the repos at risk; and probing an arbitrary new filename false-positived on any deny-all repo, flagging the repo root, because ignoring unknown root files is what those repos intend. The correct question is `--no-index` against the treaty's *own* canonical paths plus one representative future archive chunk.
+- Two bugs caught by testing rather than review: files inside `work_log_archive/` were reported as "external references" when the directory moves wholesale (its same-folder links are correct after the move), and flattening left an empty `treaty_docs/` behind.
+- Verification:
+  - `python -m unittest discover -s tests` — 94 tests, OK (1 skipped); 15 new in `tests/test_relocate.py`.
+  - End-to-end against real fixtures: ordering guard blocks a v0.7.0-pinned project and leaves every file untouched; after `treaty update` the same project relocates cleanly; **the following `treaty update` to a newer template merged at the relocated paths with no conflict**, which is the property the whole design exists to produce.
+  - Round trip nested -> flat restores `AGENTS.md` byte-for-byte; `docs/agents` produces `../../AGENTS.md` links that resolve to a real file.
+  - Deny-all `.gitignore` fixture: passes validation while flat, fails with `treaty-doc-gitignored` after relocating, passes again after applying the suggested rules.
+  - `treaty validate .` on this repo and on all fixtures; `git diff --check` clean.
+
 ### Released v0.8.0 (claude-opus-5)
 
 - Ships the `docs_dir` layout question (working docs under `treaty_docs/`, `AGENTS.md` and `project_overview.md` at the root), plus two pre-existing fixes that surfaced during its Windows review: the cp1252 crash in the update summary and the verbatim-recorded local template source. Minor bump, not major: the default layout for *new* installs changes, but no existing project is migrated and no CLI contract is broken.

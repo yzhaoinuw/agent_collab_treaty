@@ -120,6 +120,7 @@ def validate_project(root: Path, today: date | None = None) -> list[ValidationIs
     states = _inspect_required_paths(root, paths)
     issues.extend(_validate_required_paths(states))
     issues.extend(_validate_answers_file(root))
+    issues.extend(_validate_docs_not_ignored(root, states))
 
     docs_prefix = "" if docs_dir in (".", "") else f"{docs_dir.rstrip('/')}/"
 
@@ -183,6 +184,62 @@ def _validate_answers_file(root: Path) -> Iterable[ValidationIssue]:
                 "a fresh clone. Remove the ignore rule and commit the file."
             ),
         )
+
+
+def _validate_docs_not_ignored(
+    root: Path, states: dict[str, RequiredPathState]
+) -> Iterable[ValidationIssue]:
+    """Flag treaty docs that git ignores.
+
+    Same failure as an ignored answers file, one level out: the docs look
+    installed but never reach the repository. It bites hardest after the docs
+    move into a folder, because a deny-all ``.gitignore`` that re-allows the
+    flat filenames stops matching the new paths — already-tracked files survive,
+    so nothing looks wrong until a later work-log rotation adds a file that is
+    silently untracked.
+    """
+
+    # Two subtleties decide how this is asked:
+    #  * `git check-ignore` exempts paths already in the index, so docs moved in
+    #    with `git mv` would report clean. `--no-index` asks the rules directly.
+    #  * Probing an arbitrary new filename would false-positive on any repo with
+    #    a deliberate deny-all `.gitignore` plus an allowlist, since ignoring
+    #    unknown files is exactly what those repos intend. So probe the treaty's
+    #    own canonical paths, plus one representative future archive chunk —
+    #    the file a work-log rotation will actually try to add.
+    probes: list[tuple[str, Path]] = []
+    for relative, state in states.items():
+        if state.exact is None:
+            continue
+        probes.append((relative, state.exact))
+        if state.exact.is_dir():
+            probes.append(
+                (f"{relative}/work_log_1970-01-01_to_1970-01-02.md", state.exact)
+            )
+
+    for probe, anchor in sorted(probes):
+        try:
+            proc = subprocess.run(
+                ["git", "-C", str(root), "check-ignore", "--no-index", "-q", probe],
+                capture_output=True,
+                check=False,
+            )
+        except OSError:
+            return
+        if proc.returncode == 0:
+            yield ValidationIssue(
+                path=anchor,
+                line=1,
+                code="treaty-doc-gitignored",
+                message=(
+                    f"git ignores {probe}, so this treaty doc cannot be "
+                    "committed. A deny-all .gitignore that re-allows the old "
+                    "flat filenames does this once the docs move into a folder: "
+                    "files already tracked survive, but the next work-log "
+                    "rotation is silently untracked. Allow the docs directory "
+                    "and re-check with git check-ignore -v --no-index."
+                ),
+            )
 
 
 def _inspect_required_paths(

@@ -159,22 +159,22 @@ The `docs_dir` question controls the folder name. Answer `.` for the flat layout
 
 **Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. Verified against every Copier-managed adopter we maintain: identical files touched, identical conflicts, versus the same update on v0.7.0.
 
-To move an existing project into a folder, update first, then relocate in one commit:
+To move an existing project into a folder, use `treaty relocate`:
 
 ```bash
-treaty update                       # first: records docs_dir: '.'
-mkdir treaty_docs
-git mv work_log.md next_steps.md treaty_conventions.md work_log_archive treaty_docs/
-# then edit .copier-answers.yml: change  docs_dir: '.'  to  docs_dir: treaty_docs
-git commit -am "Move treaty docs into treaty_docs/"
+treaty update                       # first: records docs_dir
+treaty relocate --dry-run           # see the plan
+treaty relocate                     # apply it
 ```
 
-The order matters: `treaty update` has to run *first*, so the project is on a template version that understands `docs_dir` before the files move. Because the recorded answer and the files on disk then agree, the next `treaty update` merges at the new paths with no conflict.
+It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. `--to` picks a different folder, and `--to .` flattens everything back to the root.
 
-Two things to check afterward, neither of which upstream can do for you:
+Two things it will not do silently:
 
-- **Doc links in your `AGENTS.md`** still point at the old flat paths. That file is yours, so fix them by hand.
-- **Your `.gitignore`**, if it denies everything and re-allows specific files (`*` followed by `!work_log.md`). Those negations stop matching once the files move, so anything added under `treaty_docs/` later — a new archive chunk, say — is silently ignored. Add `!treaty_docs/` and `!treaty_docs/**` , then confirm with `git check-ignore -v treaty_docs/work_log.md`.
+- **It refuses to run before `treaty update`.** A project whose answers predate `docs_dir` is pinned to a template that hardcodes the flat paths, so moving first guarantees a conflict on the next update. The command says so and stops.
+- **It checks your `.gitignore`.** If your repo denies everything (`*`) and re-allows specific files, those rules stop matching once the docs move — already-tracked files survive, but the next work-log rotation is silently untracked. `treaty relocate` names the offending rule, and `treaty validate` keeps flagging it (`treaty-doc-gitignored`) until it is fixed.
+
+References from files the treaty does not own — your README, CHANGELOG, CI config — are reported but never rewritten. Those are yours to update.
 
 </details>
 
@@ -270,7 +270,7 @@ treaty validate                       # in any project using the treaty
 treaty validate --migration-hints     # plus overlap hints for legacy docs
 ```
 
-It checks canonical filenames, `work_log.md` structure, live-log rotation, session verification sections, and `next_steps.md` "Currently Hot" links. Exits non-zero when issues are found; `--warn-only` keeps it advisory.
+It checks canonical filenames, `work_log.md` structure, live-log rotation, session verification sections, `next_steps.md` "Currently Hot" links, and whether git would ignore the treaty docs themselves. Exits non-zero when issues are found; `--warn-only` keeps it advisory.
 
 ## Wiring Up Your Agent
 

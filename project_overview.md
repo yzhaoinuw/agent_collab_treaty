@@ -97,6 +97,7 @@ project_root/
 |  |- __init__.py
 |  |- adoption.py
 |  |- cli.py
+|  |- relocate.py
 |  `- validation.py
 |- template/
 |  |- .copier-answers.yml.jinja
@@ -126,6 +127,7 @@ project_root/
 ### Active / relevant now
 
 - [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py) - active CLI implementation.
+- [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check).
 - [`copier.yml`](copier.yml) - active Copier configuration and template questions.
 - [`template/`](template/) - active installable treaty content.
 - [`README.md`](README.md) - public user documentation.

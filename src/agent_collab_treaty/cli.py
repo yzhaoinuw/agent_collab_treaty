@@ -518,6 +518,92 @@ def diff(
 
 
 @app.command()
+def relocate(
+    destination: Path = typer.Argument(
+        Path("."),
+        help="Project directory to relocate (defaults to the current directory).",
+    ),
+    to: str = typer.Option(
+        "treaty_docs",
+        "--to",
+        help="Folder to hold the working docs. Use '.' to flatten them back to the root.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Show the plan without moving anything.",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Relocate even with uncommitted changes (you lose the easy undo).",
+    ),
+) -> None:
+    """Move this project's treaty working docs into (or out of) a subfolder.
+
+    Moves `treaty_conventions.md`, `next_steps.md`, `work_log.md`, and
+    `work_log_archive/`, rewrites the doc links in `AGENTS.md` and
+    `project_overview.md`, and records the new `docs_dir` — in one pass, so the
+    recorded answer and the files on disk never disagree. `AGENTS.md` and
+    `project_overview.md` always stay at the repo root.
+
+    Refuses to run on a project whose recorded answers predate `docs_dir`:
+    relocating one of those before `treaty update` guarantees a conflict on the
+    next update.
+    """
+    from .relocate import apply_relocation, format_plan, plan_relocation
+
+    destination = destination.expanduser().resolve()
+
+    if not force and not dry_run:
+        porcelain = _git_output(destination, "status", "--porcelain")
+        if porcelain is None:
+            typer.echo(
+                "Not a git repository (or git is unavailable). Relocation rewrites "
+                "and moves files; run it in a git-tracked project so you can undo "
+                "it, or pass --force to proceed anyway.",
+                err=True,
+            )
+            raise typer.Exit(1)
+        if porcelain.strip():
+            typer.echo(
+                "Working tree is not clean. Commit or stash first so the "
+                "relocation is a single reviewable change, or pass --force.",
+                err=True,
+            )
+            raise typer.Exit(1)
+
+    plan = plan_relocation(destination, to)
+    for line in format_plan(plan):
+        typer.echo(line)
+
+    if plan.is_noop:
+        return
+
+    if plan.blockers:
+        raise typer.Exit(1)
+
+    if dry_run:
+        typer.echo("")
+        typer.echo("Dry run — nothing was written. Re-run without --dry-run to apply.")
+        return
+
+    typer.echo("")
+    for action in apply_relocation(plan):
+        typer.echo(f"  {action}")
+
+    typer.echo("")
+    if plan.gitignore_risk:
+        typer.echo(
+            "Fix the .gitignore rules listed above before committing, or the "
+            "moved docs will not stay tracked.",
+            err=True,
+        )
+    typer.echo("Review the changes, then:")
+    typer.echo("    git add -A && git commit")
+
+
+@app.command()
 def validate(
     path: Path = typer.Argument(
         Path("."),
