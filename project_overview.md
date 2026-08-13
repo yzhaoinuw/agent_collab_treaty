@@ -74,7 +74,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Contains the files installed into downstream projects.
 - `template/AGENTS.md.jinja` is rendered with the Copier answers. It holds what adopters customize; upstream keeps its bodies short.
 - `template/{{ docs_dir }}/treaty_conventions.md.jinja` holds the mechanics we maintain (work-log criteria, rotation/dating, branch handoff, release gate, update procedure). Adopters are told not to edit it, which is what keeps `treaty update` close to conflict-free.
-- `template/.copier-answers.yml.jinja` records the source, commit, and answers so `treaty update` can work later.
+- `template/.copier-answers.yml.jinja` records the source, commit, and answers so `treaty update` can work later. It sits at the template root, *outside* `template/{{ docs_dir }}/`, so it always renders to the adopter's repo root — Copier reads it from there, and it is what records `docs_dir` in the first place.
 - Optional pointer templates render `CLAUDE.md`, `.cursor/rules/treaty.mdc`, `.windsurf/rules/treaty.md`, and `.aider.conf.yml` when selected.
 - Other template docs are plain Markdown starting points for project-specific context.
 

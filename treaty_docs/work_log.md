@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### Documented why `.copier-answers.yml` stays at the repo root (claude-opus-5)
+
+- **Prompted by a real adopter-side question** while agents were updating repos to v0.9.0: after the working docs move into `treaty_docs/`, why is `.copier-answers.yml` still at the root? Nothing in the README, the prompt help, or the post-copy message answered it, and the tree diagram under *Where the docs live* did not even show the file. Fixed in four places: README (tree + a paragraph), `docs_dir` prompt help, `_message_after_copy` step 2, and `project_overview.md`.
+- **The reason worth not re-deriving: it is a chicken-and-egg constraint, not a convention.** The answers file is what *records* `docs_dir`, so it cannot live inside the folder it names — you would have to know `docs_dir` to find the file that tells you `docs_dir`. Everything reads it from the destination root (`validation.py`, `relocate.py`, `cli.py`, and Copier itself). Added this to the root `AGENTS.md` reminder that previously only said "don't remove or rename it", because the gap that reminder leaves open is a future agent tidying it into `template/{{ docs_dir }}/` — which Copier would apply as delete-plus-create and silently break every adopter's update path.
+- **Deliberately did not touch `template/treaty_conventions.md.jinja`**, which is where update mechanics normally belong. The flat rendering is frozen against `v0.7.0`, so prose there fails `test_flat_layout_is_byte_identical_to_v070` and lands a conflict in every adopter pinned to `docs_dir: '.'` — 16 of 17 as of today's survey. Worth stating plainly for the next agent: **while the freeze holds, adopter-facing documentation lands in the README, the Copier prompts, and the post-copy message, not in the shipped docs.** That is a real constraint on how the treaty documents itself, and it is the first time it has redirected a change rather than merely blocking one.
+- `treaty relocate`'s plan line now reads `Answers: docs_dir -> X (edited in place; .copier-answers.yml stays at the repo root)`, since a relocation preview listing every other doc as a move is exactly where "did it forget this one?" occurs.
+- Verification:
+  - `python -m unittest discover -s tests -v` — 96 tests, OK (1 skipped: case-collision, unsupported filesystem). Includes the full integration suite and the flat-rendering freeze test, which passes because prompt help and `_message_after_copy` are not part of the rendered tree.
+  - `treaty --help`, `treaty --version` (0.9.0), `treaty validate .`, import smoke — all pass. `git diff --check` clean.
+  - Rendered a scratch project at `docs_dir=treaty_docs` and confirmed `.copier-answers.yml` lands at the root with the working docs in the folder.
+
 ### Wired up the Zenodo DOI (claude-opus-5)
 
 - **Recorded the concept DOI `10.5281/zenodo.21746757`** in `CITATION.cff` under `identifiers:`, added a matching README badge, and pointed the Contributing section's citation line at it. Closes the Zenodo follow-up that had been open since 2026-08-01.

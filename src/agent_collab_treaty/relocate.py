@@ -396,7 +396,10 @@ def format_plan(plan: RelocationPlan) -> list[str]:
             for p, n in plan.link_edits
         )
     if plan.answers_update:
-        lines.append(f"Answers: docs_dir -> {plan.new_docs_dir}")
+        lines.append(
+            f"Answers: docs_dir -> {plan.new_docs_dir} "
+            f"(edited in place; {ANSWERS_FILE} stays at the repo root)"
+        )
 
     if plan.gitignore_risk:
         lines.append("WARNING - git would ignore the new location:")

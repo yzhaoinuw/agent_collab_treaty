@@ -21,8 +21,10 @@ _message_after_copy: |
        work_log_archive/) are in {{ docs_dir }}/; AGENTS.md and
        project_overview.md are at the repo root.
     {%- endif %}
-    2. If you selected optional agent pointer files, commit them with the treaty
-       docs so those tools can find AGENTS.md automatically.
+    2. Commit .copier-answers.yml along with the docs. It stays at the repo root
+       whatever docs_dir you chose, and `treaty update` / `treaty diff` read your
+       answers and template pin from it. Commit any agent pointer files you
+       selected too, so those tools can find AGENTS.md automatically.
     3. At the end of substantive work sessions, update work_log.md and
        next_steps.md according to AGENTS.md.
   {% if include_treaty_badge %}
@@ -48,7 +50,8 @@ docs_dir:
     Folder to keep the treaty's working docs in
     (treaty_conventions.md, next_steps.md, work_log.md,
     work_log_archive/), so they don't crowd your repo root.
-    AGENTS.md and project_overview.md always stay at the root.
+    AGENTS.md, project_overview.md, and .copier-answers.yml
+    always stay at the root.
     Answer '.' to keep everything flat at the root instead.
   default: "treaty_docs"
 

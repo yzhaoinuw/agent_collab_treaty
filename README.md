@@ -149,6 +149,7 @@ Since v0.8.0 the working docs install into `treaty_docs/`, leaving `AGENTS.md` a
 
 ```text
 your_repo/
+|- .copier-answers.yml
 |- AGENTS.md
 |- project_overview.md
 |- treaty_docs/
@@ -159,6 +160,8 @@ your_repo/
 ```
 
 `AGENTS.md` has to stay at the root: agents resolve the *nearest* `AGENTS.md` up the directory tree, so one nested inside `treaty_docs/` would apply only to files inside that folder — the opposite of what you want. `project_overview.md` stays with it as the human-facing entry point.
+
+**`.copier-answers.yml` stays at the root too, at every `docs_dir` value** — including after `treaty relocate` moves the working docs. It is Copier's bookkeeping, not a treaty doc: it records your answers and the template version you are pinned to, and `treaty update` / `treaty diff` read it from the repo root. It is also the file that records `docs_dir` itself, so it cannot live inside the folder it names. Commit it; a gitignored answers file breaks every later update, which is why `treaty init` warns about one and `treaty validate` flags it.
 
 The `docs_dir` question controls the folder name. Answer `.` for the flat layout, or any other name (`docs/agents`, `.treaty`) to put them elsewhere.
 
