@@ -55,8 +55,17 @@ def git(cwd: Path, *args: str) -> str:
     return proc.stdout
 
 
-def write_template(root: Path, agents_body: str, extra: dict[str, str] | None = None) -> None:
-    """Write a minimal Copier template into ``root``."""
+def write_template(
+    root: Path,
+    agents_body: str,
+    extra: dict[str, str] | None = None,
+    questions: str = "",
+) -> None:
+    """Write a minimal Copier template into ``root``.
+
+    ``questions`` appends extra Copier questions, so a revision can introduce
+    one that the installed project has no recorded answer for.
+    """
     (root / "template").mkdir(parents=True, exist_ok=True)
     (root / "copier.yml").write_text(
         textwrap.dedent(
@@ -66,7 +75,8 @@ def write_template(root: Path, agents_body: str, extra: dict[str, str] | None = 
               type: str
               default: "demo"
             """
-        ),
+        )
+        + textwrap.dedent(questions),
         encoding="utf-8",
     )
     (root / "template" / "AGENTS.md.jinja").write_text(agents_body, encoding="utf-8")
@@ -148,8 +158,13 @@ class UpdateIntegrationTests(unittest.TestCase):
         commit_all(dest, "treaty baseline")
         return dest
 
-    def revise_template(self, agents_body: str, extra: dict[str, str] | None = None) -> None:
-        write_template(self.template, agents_body, extra)
+    def revise_template(
+        self,
+        agents_body: str,
+        extra: dict[str, str] | None = None,
+        questions: str = "",
+    ) -> None:
+        write_template(self.template, agents_body, extra, questions)
         commit_all(self.template, "template v2", tag="v2.0.0")
 
     def update(self, dest: Path):
@@ -304,6 +319,104 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertIn("verification_command: pytest -q", answers)
         self.assertNotIn("test_command:", answers)
         self.assertIn("Verify with `pytest -q`.", (dest / "AGENTS.md").read_text())
+
+    # --- answering questions that are new in the target version (issue #23) ---
+
+    NEW_QUESTION = 'verification_command:\n  type: str\n  default: ""\n'
+    V2_WITH_QUESTION = textwrap.dedent(
+        """\
+        # Guidelines for {{ project_name }}
+
+        ## Startup Rule
+
+        Read this file first.
+
+        ## Runtime Environment
+
+        [fill me in]
+
+        ## Conventions
+
+        Verify with `{{ verification_command }}`.
+        """
+    )
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_data_answers_a_question_that_is_new_in_the_target_version(self) -> None:
+        """Issue #23: without this the only routes were a full re-prompt or
+        hand-editing the answers file the treaty tells you not to edit."""
+        dest = self.install()
+        self.revise_template(self.V2_WITH_QUESTION, questions=self.NEW_QUESTION)
+
+        result = self.runner.invoke(
+            app, ["update", str(dest), "--data", "verification_command=pytest -q"]
+        )
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn(
+            "verification_command: pytest -q",
+            (dest / ".copier-answers.yml").read_text(encoding="utf-8"),
+        )
+        self.assertIn(
+            "Verify with `pytest -q`.", (dest / "AGENTS.md").read_text(encoding="utf-8")
+        )
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_a_new_question_silently_takes_its_default_without_data(self) -> None:
+        """The behavior --data exists to escape; pinned so it cannot drift unnoticed."""
+        dest = self.install()
+        self.revise_template(self.V2_WITH_QUESTION, questions=self.NEW_QUESTION)
+
+        result = self.update(dest)
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("Verify with ``.", (dest / "AGENTS.md").read_text(encoding="utf-8"))
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_previews_data_without_writing_it(self) -> None:
+        dest = self.install()
+        self.revise_template(self.V2_WITH_QUESTION, questions=self.NEW_QUESTION)
+
+        result = self.runner.invoke(
+            app,
+            ["update", str(dest), "--dry-run", "--data", "verification_command=pytest -q"],
+        )
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("verification_command", result.output)
+        self.assertIn("pytest -q", result.output)
+        self.assertNotIn(
+            "verification_command",
+            (dest / ".copier-answers.yml").read_text(encoding="utf-8"),
+            "the preview must not write the answer into the real project",
+        )
+
+    def test_rejects_a_docs_dir_override_and_points_at_relocate(self) -> None:
+        """Copier applies a layout change as delete-plus-create, so --data must
+        not become a one-flag route to the thing `treaty relocate` exists for."""
+        dest = self.install()
+        before = (dest / ".copier-answers.yml").read_text(encoding="utf-8")
+
+        result = self.runner.invoke(
+            app, ["update", str(dest), "--data", "docs_dir=treaty_docs"]
+        )
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("treaty relocate --to treaty_docs", result.output)
+        self.assertEqual(
+            before,
+            (dest / ".copier-answers.yml").read_text(encoding="utf-8"),
+            "the refusal must happen before anything is written",
+        )
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_rejects_a_docs_dir_override_too(self) -> None:
+        dest = self.install()
+        result = self.runner.invoke(
+            app, ["update", str(dest), "--dry-run", "--data", "docs_dir=treaty_docs"]
+        )
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("treaty relocate --to treaty_docs", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_dry_run_predicts_conflicts_and_new_files_without_mutating(self) -> None:

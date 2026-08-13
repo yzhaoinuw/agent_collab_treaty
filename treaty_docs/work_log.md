@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### `treaty update --data` for questions new in the target version — issues #23/#17 (claude-opus-5)
+
+- **The friction it removes**, reported from a v0.3.3 → v0.9.0 jump where six questions were new: the only two routes were `--interactive` (re-prompts *every* question through a TUI, awkward from an agent session and easy to fat-finger) or hand-editing `.copier-answers.yml` — whose own first line says not to — which then needs its own commit because Copier refuses a dirty tree. Three steps and a permanent junk commit, to answer two questions.
+- **Named `--data`, not `--set` as the issue proposed**, to match the flag `treaty init` already has. Same `_parse_data` parser, same `key=value` repeatable shape, plumbed into the `data=` argument both update paths already passed for the legacy layout pin. `--dry-run` takes it too, so a preview reflects the answers you intend rather than the recorded ones.
+- **`--data docs_dir=…` is refused, and this is the load-bearing decision.** Copier applies a layout change as delete-plus-create — no merge, no conflict, no warning. Exposing `data=` without this guard would have handed adopters a one-flag route to exactly the destruction `docs_dir` and `treaty relocate` were built to prevent; the flag that makes the tool scriptable would have made the dangerous thing scriptable too. It exits 1 before writing anything and names `treaty relocate --to <folder>`. **Generalizable: when you expose an internal knob, check what it now reaches that the surrounding design deliberately fenced off.**
+- **Also closes #17**, which had carried `--ask-new`/`--set` as "partly mitigated, not implemented" since v0.7.0. #23 rediscovered it independently from an adopter seat, which is what made the case.
+- Pinned the *old* behavior in a test as well (`test_a_new_question_silently_takes_its_default_without_data`) — the default-taking is intended, not a bug, and it should not drift unnoticed now that there is a way around it.
+- Verification:
+  - `python -m unittest discover -s tests` — 112 tests, OK (1 skipped). Five new: answering a genuinely new question end-to-end across two real template versions, the no-`--data` control, dry-run previewing without writing, and the `docs_dir` refusal on both the real and dry-run paths.
+  - CLI smoke on a scratch project: refusal message and exit 1, `--data nope` rejected by the parser, help text renders.
+
 ### `treaty relocate` now retargets project links inside the moved docs — issue #24 (claude-opus-5)
 
 - **The bug, from a real Windows adopter (`sleep_scoring`):** a link like `[media/README.md](media/README.md)` in a flat `next_steps.md` kept its text when the file moved into `treaty_docs/`, so it silently resolved to `treaty_docs/media/README.md`. Both the dry run and `treaty validate` stayed quiet. `_plan_link_edits` only ever retargeted *treaty* doc names, and `_plan_external_refs` only looked at the other direction — files pointing **into** the treaty docs. Links pointing **out** of a moving doc at the project's own content were nobody's job.

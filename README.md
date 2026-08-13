@@ -229,7 +229,15 @@ treaty update                         # apply
 
 `treaty update` does a **three-way merge** from your pinned version up to the latest release, so edits that don't overlap upstream changes are kept automatically. If any file is left conflicted, the command names it and **exits non-zero** — a conflicted update is never reported as a success.
 
-`treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply.
+`treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply. Because the clone is of your *committed* state, uncommitted edits aren't previewed — but `--data` values are, since they come from the command line.
+
+**Answering questions that are new in the target version.** Recorded answers are reused, and any question added since your pinned version silently takes the template default. Name the ones you care about with `--data`, repeatable:
+
+```bash
+treaty update --data uses_precommit=false --data verification_command="python -m pytest -q"
+```
+
+That is the whole reason it exists: without it, a big version jump leaves you re-prompting for *every* question with `--interactive`, or hand-editing the `.copier-answers.yml` whose first line tells you not to. `--data docs_dir=…` is refused on purpose — changing the layout through Copier deletes your customized docs and writes pristine ones at the new path, which is what [`treaty relocate`](#where-the-docs-live) exists to do safely.
 
 `treaty diff` writes nothing. It renders the template version you're pinned to into a temp directory and compares section by section:
 

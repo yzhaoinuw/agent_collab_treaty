@@ -282,6 +282,17 @@ def update(
         "--interactive",
         help="Re-prompt for template answers instead of reusing the recorded ones.",
     ),
+    data: Optional[List[str]] = typer.Option(
+        None,
+        "--data",
+        metavar="KEY=VALUE",
+        help=(
+            "Answer a template question non-interactively; repeatable. Use it "
+            "for questions that are new in the target version, which otherwise "
+            "silently take the template default. Recorded answers are still "
+            "reused for everything you do not name."
+        ),
+    ),
     dry_run: bool = typer.Option(
         False,
         "--dry-run",
@@ -289,7 +300,9 @@ def update(
             "Preview the update without writing any changes: run the merge in a "
             "disposable clone and report the planned answer changes, updated "
             "files, and conflicts. Exits non-zero if the merge would conflict, "
-            "matching a real apply."
+            "matching a real apply. The clone is of the project's *committed* "
+            "state, so uncommitted edits are not previewed — but --data values "
+            "are, since they are supplied on the command line."
         ),
     ),
     defaults: bool = typer.Option(
@@ -304,7 +317,8 @@ def update(
     The target must be a git-tracked project (Copier needs git for three-way merges).
     Run `git init && git add . && git commit -m "treaty baseline"` if you haven't yet.
 
-    Recorded answers are reused by default; pass --interactive to re-answer questions.
+    Recorded answers are reused by default; pass --interactive to re-answer questions,
+    or --data key=value to answer individual ones (repeatable) without a prompt.
     If the merge leaves any file with conflict markers, this command lists it and exits
     non-zero, so a conflicted update is never reported as a success. With --dry-run the
     same merge runs in a disposable clone of the project's committed state, and the same
@@ -320,16 +334,18 @@ def update(
             err=True,
         )
     use_defaults = not interactive
+    overrides = _parse_data(data)
+    _reject_layout_override(overrides)
 
     if dry_run:
-        _preview_update(destination, use_defaults)
+        _preview_update(destination, use_defaults, overrides)
         return
 
     old_answers = _read_answers(destination)
     typer.echo(f"Updating the Agent Collab Treaty in {destination}")
     copier.run_update(
         dst_path=str(destination),
-        data=_legacy_layout_data(old_answers),
+        data=_update_data(old_answers, overrides),
         defaults=use_defaults,
         overwrite=True,
     )
@@ -362,7 +378,43 @@ def update(
         typer.echo("    git add -A && git commit")
 
 
-def _preview_update(destination: Path, use_defaults: bool) -> None:
+def _update_data(answers: dict, overrides: dict[str, str]) -> dict:
+    """Answers to force for this update: the legacy layout pin, then --data.
+
+    Order matters only in principle — ``docs_dir`` is the one key the pin sets
+    and ``_reject_layout_override`` refuses it from --data — but it is written
+    this way so a future pinned answer cannot be silently overridden either.
+    """
+    return {**_legacy_layout_data(answers), **overrides}
+
+
+def _reject_layout_override(overrides: dict[str, str]) -> None:
+    """Refuse `--data docs_dir=...`; that is `treaty relocate`'s job, not Copier's.
+
+    Copier applies a layout change as "delete the adopter's customized file,
+    write a pristine one at the new path" — no merge, no conflict, no warning.
+    Letting --data through would hand adopters a one-flag way to do exactly the
+    thing the whole docs_dir design exists to prevent.
+    """
+    if "docs_dir" not in overrides:
+        return
+    typer.echo(
+        "--data docs_dir=... is not supported. Changing the layout through "
+        "Copier deletes your customized docs and writes pristine ones at the "
+        "new path, with no merge and no warning.",
+        err=True,
+    )
+    typer.echo(
+        f"Use `treaty relocate --to {overrides['docs_dir']}` instead — it moves "
+        "the docs with git mv, rewrites their links, and records the answer.",
+        err=True,
+    )
+    raise typer.Exit(1)
+
+
+def _preview_update(
+    destination: Path, use_defaults: bool, overrides: Optional[dict[str, str]] = None
+) -> None:
     """Run the real update in a disposable clone and report what it would do.
 
     Copier's ``pretend=True`` never materializes the merge, so the only honest
@@ -416,7 +468,7 @@ def _preview_update(destination: Path, use_defaults: bool) -> None:
         old_answers = _read_answers(preview)
         copier.run_update(
             dst_path=str(preview),
-            data=_legacy_layout_data(old_answers),
+            data=_update_data(old_answers, overrides or {}),
             defaults=use_defaults,
             overwrite=True,
         )
