@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### Issue triage and a `next_steps.md` accuracy pass (claude-opus-5)
+
+- **Closed #21** (Windows verification for `treaty relocate`). All seven checks passed, the one finding shipped in v0.9.0, and nothing was left technically outstanding. Three results from that sweep were recorded upstream rather than lost with the issue: `git check-ignore --no-index` is load-bearing on Windows too, the clean-tree guard does *not* false-positive under `core.autocrlf=true` (my prediction was wrong), and report-only for external references is the confirmed default.
+- **Kept #15, #17, #19 open, each for a different reason.** #17's proposal (`--ask-new` / `--set`) is genuinely unimplemented — grepped `cli.py` to confirm — and `docs_dir` in v0.8.0 hit exactly that shape but was solved with a per-question pin (`_legacy_layout_data`), not a general mechanism, so the gap is unchanged. #15 is down to its parked remainder. **#19 is blocked on a decision, not on effort**: it asks whether doc-quality guidance belongs in the treaty's scope at all, and no answer has been recorded — worth noting that today's README work was an instance of exactly the defect it describes.
+- **`next_steps.md` "Currently Hot" had become a release-announcement archive.** Five of its twelve bullets were shipped releases with nothing in flight, one still said "`dev → main` merge pending" for v0.7.0, and one described the next step in a thread that shipped as v0.9.0. Collapsed all five into a single "shipped, nothing outstanding" line pointing at `work_log.md`, and moved the adopters-badge history to the Background section. The section is meant to answer "what is in flight," and a reader could no longer tell that from it.
+- **Surveyed adopter pins directly via the GitHub API**, because the existing tally ("nine of eleven … five remain," dated 2026-08-01) was stale enough to mislead. Actual state: 17 Copier-managed `yzhaoinuw/*` repos, one on v0.9.0, the rest spread from v0.7.0 down to v0.2.0, with 13 pinned below v0.6.0. Recorded the breakdown rather than a summary number, since the summary is what went stale last time.
+- **Ruled out a false alarm worth not re-deriving:** the badge reads 14 while the survey found 17 adopters. The gap is exactly the 3 private repos — the badge counts public ones, so it is correct. Checked before flagging it as a counter bug.
+- Verification:
+  - `treaty validate .` — passed (its "Currently Hot" link check covers the edited section). `git diff --check` — clean.
+  - Issue state confirmed with `gh issue list` after closing: #22, #19, #17, #15 open.
+  - Pin survey run against the live API across all `yzhaoinuw/*` repos, reading `_commit` from each `.copier-answers.yml`; public/private status cross-checked with `gh repo list`.
+
 ### README prompt/shell disambiguation, and the migration lesson from `docs_dir` (claude-opus-5)
 
 - **Maintainer read the README cold and could not tell that the blockquoted lines are things you type to an agent.** Lead-ins like "Hand this to your agent" and "One prompt fills them" implied it without ever saying it, and the surrounding `bash` blocks trained the eye to read every set-off block as a shell command. Fixed by naming it four times rather than once: an explicit `**Prompt — type this into your agent's chat:**` label above each of the four prompts (install, set up, migrate existing docs, update), plus a "How to read this README" paragraph in the intro that says these are not shell commands and that nothing needs installing before the first one. Repetition over elegance was the deliberate call — a reader who lands mid-page from the Contents list never sees a one-time convention note.
