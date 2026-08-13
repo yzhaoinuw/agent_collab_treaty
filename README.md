@@ -175,14 +175,17 @@ treaty relocate --dry-run           # see the plan
 treaty relocate                     # apply it
 ```
 
-It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. `--to` picks a different folder, and `--to .` flattens everything back to the root.
+It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. `--to` picks a different folder, and `--to .` flattens everything back to the root.
 
 Two things it will not do silently:
 
 - **It refuses to run before `treaty update`.** A project whose answers predate `docs_dir` is pinned to a template that hardcodes the flat paths, so moving first guarantees a conflict on the next update. The command says so and stops.
 - **It checks your `.gitignore`.** If your repo denies everything (`*`) and re-allows specific files, those rules stop matching once the docs move — already-tracked files survive, but the next work-log rotation is silently untracked. `treaty relocate` names the offending rule, and `treaty validate` keeps flagging it (`treaty-doc-gitignored`) until it is fixed.
 
-References from files the treaty does not own — your README, CHANGELOG, CI config — are reported but never rewritten. Those are yours to update.
+Links pointing in **both** directions are handled, but differently:
+
+- **Out of a moved doc, at your own files** — a `[demo](media/README.md)` in `next_steps.md` — is **rewritten** to `../media/README.md` so it still resolves. URLs, bare anchors, absolute paths, and links that were already broken are left exactly as written. The dry run lists these before it touches anything.
+- **Into the treaty docs, from files the treaty does not own** — your README, CHANGELOG, CI config — is **reported but never rewritten**. Those are yours to update.
 
 </details>
 

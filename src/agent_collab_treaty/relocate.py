@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import os
 import re
 import subprocess
 
@@ -46,6 +47,7 @@ class RelocationPlan:
     new_docs_dir: str
     moves: list[tuple[Path, Path]] = field(default_factory=list)
     link_edits: list[tuple[Path, int]] = field(default_factory=list)
+    outbound_edits: list[tuple[Path, int]] = field(default_factory=list)
     answers_update: bool = False
     blockers: list[str] = field(default_factory=list)
     external_refs: list[tuple[Path, int]] = field(default_factory=list)
@@ -98,6 +100,127 @@ def _retarget(text: str, old: str, new: str) -> tuple[str, int]:
     return pattern.subn(new, text)
 
 
+# Markdown link targets: `](target)` for inline links and images, and
+# `[label]: target` for reference definitions.
+_INLINE_TARGET = re.compile(
+    r"(?P<pre>\]\(\s*<?)(?P<target>[^)<>\s]+)(?P<post>>?(?:\s+[\"'][^\"']*[\"'])?\s*\))"
+)
+_REFERENCE_TARGET = re.compile(
+    r"(?m)^(?P<pre>\[[^\]]+\]:[ \t]+<?)(?P<target>[^\s<>]+)(?P<post>>?)"
+)
+_URL_SCHEME = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:")
+
+
+def _relocated_target(
+    target: str, root: Path, old_parent: Path, new_parent: Path, owned: set[Path]
+) -> str | None:
+    """Rewrite one project-relative link for a file that changed directory.
+
+    Returns ``None`` to leave the link exactly as written. That is the answer
+    for anything the move cannot invalidate — URLs, bare anchors, absolute
+    paths, targets that escape the repo, and targets that do not resolve to a
+    real file (already broken or historical, and not ours to guess at).
+
+    Treaty-owned targets also return ``None``: docs that move in lockstep keep
+    their relative path, and links to the root docs are the existing
+    ``_retarget`` pass's job. Two passes rewriting one link would compound.
+    """
+
+    path_part, sep, fragment = target.partition("#")
+    if not path_part or path_part.startswith("/"):
+        return None
+    # A percent-encoded path would have to be decoded to resolve and re-encoded
+    # to write back; leaving it alone is the safe answer, not a silent mangle.
+    if _URL_SCHEME.match(path_part) or "%" in path_part:
+        return None
+
+    old_target = Path(os.path.normpath(old_parent / path_part))
+    if not old_target.is_relative_to(root) or not old_target.exists():
+        return None
+    if old_target in owned or any(
+        old_target.is_relative_to(tree) for tree in owned if tree.is_dir()
+    ):
+        return None
+
+    new_path = Path(os.path.relpath(old_target, new_parent)).as_posix()
+    if path_part.endswith("/") and not new_path.endswith("/"):
+        new_path += "/"
+    if new_path == path_part:
+        return None
+    return f"{new_path}{sep}{fragment}"
+
+
+def _rewrite_outbound(
+    text: str, root: Path, old_parent: Path, new_parent: Path, owned: set[Path]
+) -> tuple[str, int]:
+    """Retarget every project-relative link in one moved document."""
+
+    rewritten = 0
+
+    def swap(match: re.Match) -> str:
+        nonlocal rewritten
+        new_target = _relocated_target(
+            match.group("target"), root, old_parent, new_parent, owned
+        )
+        if new_target is None:
+            return match.group(0)
+        rewritten += 1
+        return f"{match.group('pre')}{new_target}{match.group('post')}"
+
+    for pattern in (_INLINE_TARGET, _REFERENCE_TARGET):
+        text = pattern.sub(swap, text)
+    return text, rewritten
+
+
+def _moving_markdown_files(plan: RelocationPlan) -> list[tuple[Path, Path]]:
+    """(old path, new path) for every Markdown file whose directory changes.
+
+    Works before or after the move, so planning and applying share it: whichever
+    side of a move is on disk is the one walked for directory contents.
+    """
+
+    pairs: list[tuple[Path, Path]] = []
+    for source, destination in plan.moves:
+        present = source if source.exists() else destination
+        if present.is_dir():
+            for path in sorted(present.rglob("*.md")):
+                relative = path.relative_to(present)
+                pairs.append((source / relative, destination / relative))
+        elif present.suffix.lower() == ".md":
+            pairs.append((source, destination))
+    return pairs
+
+
+def _owned_targets(root: Path, plan: RelocationPlan) -> set[Path]:
+    """Paths whose links another pass already handles, or that move in lockstep."""
+
+    owned = {root / name for name in ROOT_DOC_NAMES}
+    owned |= {source for source, _ in plan.moves}
+    return owned
+
+
+def _plan_outbound_links(root: Path, plan: RelocationPlan) -> None:
+    """Count project-relative links inside the moving docs that the move breaks.
+
+    Reported separately from ``link_edits`` because these point *out* of the
+    treaty set — at the project's own media, source, and docs. Until issue #24
+    nothing rewrote them, so a link like ``media/README.md`` in a flat
+    ``next_steps.md`` silently resolved to ``treaty_docs/media/README.md`` once
+    the file moved, and both the dry run and `treaty validate` stayed quiet.
+    """
+
+    owned = _owned_targets(root, plan)
+    for old_path, new_path in _moving_markdown_files(plan):
+        if not old_path.is_file():
+            continue
+        text = old_path.read_text(encoding="utf-8")
+        _, count = _rewrite_outbound(
+            text, root, old_path.parent, new_path.parent, owned
+        )
+        if count:
+            plan.outbound_edits.append((old_path, count))
+
+
 def _doc_reference_pairs(old: str, new: str) -> list[tuple[str, str]]:
     """Old -> new reference strings for each movable doc, longest name first."""
     old_p, new_p = docs_prefix(old), docs_prefix(new)
@@ -125,6 +248,7 @@ def plan_relocation(root: Path, target: str) -> RelocationPlan:
         return plan
     _plan_moves(root, plan)
     _plan_link_edits(root, plan)
+    _plan_outbound_links(root, plan)
     _plan_external_refs(root, plan)
     _plan_gitignore(root, plan)
     return plan
@@ -348,6 +472,19 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
                 rel = path.relative_to(root).as_posix()
                 actions.append(f"rewrote {total} root link(s) in {rel}")
 
+    owned = _owned_targets(root, plan)
+    for old_path, new_path in _moving_markdown_files(plan):
+        if not new_path.is_file():
+            continue
+        text = new_path.read_text(encoding="utf-8")
+        updated, count = _rewrite_outbound(
+            text, root, old_path.parent, new_path.parent, owned
+        )
+        if count:
+            new_path.write_text(updated, encoding="utf-8")
+            rel = new_path.relative_to(root).as_posix()
+            actions.append(f"rewrote {count} project link(s) in {rel}")
+
     # Drop the old docs folder once it is empty, so flattening does not leave a
     # stray directory behind. Anything the adopter put in there keeps it alive.
     old_p = docs_prefix(plan.old_docs_dir)
@@ -394,6 +531,12 @@ def format_plan(plan: RelocationPlan) -> list[str]:
         lines.extend(
             f"  - {p.relative_to(plan.root).as_posix()} ({n} reference(s))"
             for p, n in plan.link_edits
+        )
+    if plan.outbound_edits:
+        lines.append("Project links inside the moved docs (retargeted for the new depth):")
+        lines.extend(
+            f"  - {p.relative_to(plan.root).as_posix()} ({n} link(s))"
+            for p, n in plan.outbound_edits
         )
     if plan.answers_update:
         lines.append(

@@ -18,6 +18,7 @@ import yaml
 from agent_collab_treaty.relocate import (
     apply_relocation,
     docs_prefix,
+    format_plan,
     plan_relocation,
     root_prefix,
 )
@@ -181,6 +182,104 @@ class RelocateTests(unittest.TestCase):
             (root / "docs" / "agents" / "../../AGENTS.md").resolve().is_file()
         )
         self.assertFalse((root / "docs" / "agents" / "AGENTS.md").exists())
+
+    # --- outbound project links (issue #24) -----------------------------
+
+    def _with_project_content(self, docs_dir: str = ".") -> Path:
+        """A project whose treaty docs link *out* at its own files."""
+        root = self._project(docs_dir)
+        prefix = docs_prefix(docs_dir)
+        rp = root_prefix(docs_dir)
+
+        (root / "media").mkdir(exist_ok=True)
+        (root / "media" / "README.md").write_text("# Media\n", encoding="utf-8")
+        (root / "media" / "demo.png").write_bytes(b"\x89PNG\r\n")
+        (root / "src").mkdir(exist_ok=True)
+        (root / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+
+        (root / f"{prefix}next_steps.md").write_text(
+            "# Next Steps\n\n## Currently Hot\n\n"
+            f"- Assets in [`media/README.md`]({rp}media/README.md)\n"
+            f"- Entry point [app]({rp}src/app.py) and ![demo]({rp}media/demo.png)\n"
+            f"- Section link [anchor]({rp}media/README.md#usage)\n"
+            "- Homepage <https://example.com/x.md> and [site](https://example.com/y.md)\n"
+            "- Same-page [jump](#currently-hot) and absolute [abs](/etc/hosts)\n"
+            "- Long gone [ghost](deleted/notes.md)\n\n"
+            f"[assets]: {rp}media/README.md\n",
+            encoding="utf-8",
+        )
+        _git(root, "add", "-A")
+        _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "content")
+        return root
+
+    def test_outbound_project_links_gain_depth_on_the_way_in(self) -> None:
+        root = self._with_project_content(".")
+        apply_relocation(plan_relocation(root, "treaty_docs"))
+
+        moved = root / "treaty_docs" / "next_steps.md"
+        text = moved.read_text(encoding="utf-8")
+        self.assertIn("(../media/README.md)", text)
+        self.assertIn("(../src/app.py)", text)
+        self.assertIn("(../media/demo.png)", text)
+        self.assertIn("[assets]: ../media/README.md", text)
+        # The link must resolve to the real file, not merely look plausible.
+        self.assertTrue((moved.parent / "../media/README.md").resolve().is_file())
+
+    def test_outbound_links_keep_their_anchors(self) -> None:
+        root = self._with_project_content(".")
+        apply_relocation(plan_relocation(root, "treaty_docs"))
+        text = (root / "treaty_docs" / "next_steps.md").read_text(encoding="utf-8")
+        self.assertIn("(../media/README.md#usage)", text)
+
+    def test_outbound_links_match_multi_segment_depth(self) -> None:
+        root = self._with_project_content(".")
+        apply_relocation(plan_relocation(root, "docs/agents"))
+
+        moved = root / "docs" / "agents" / "next_steps.md"
+        text = moved.read_text(encoding="utf-8")
+        self.assertIn("(../../media/README.md)", text)
+        self.assertTrue((moved.parent / "../../media/README.md").resolve().is_file())
+
+    def test_round_trip_restores_the_original_outbound_link(self) -> None:
+        root = self._with_project_content(".")
+        before = (root / "next_steps.md").read_text(encoding="utf-8")
+
+        apply_relocation(plan_relocation(root, "treaty_docs"))
+        # Assert the halfway state too, or "restored" is trivially true for a
+        # round trip that never rewrote anything in the first place.
+        moved = (root / "treaty_docs" / "next_steps.md").read_text(encoding="utf-8")
+        self.assertIn("(../media/README.md)", moved)
+        self.assertNotIn("(media/README.md)", moved)
+
+        apply_relocation(plan_relocation(root, "."))
+        self.assertEqual(before, (root / "next_steps.md").read_text(encoding="utf-8"))
+
+    def test_leaves_links_a_move_cannot_invalidate(self) -> None:
+        root = self._with_project_content(".")
+        apply_relocation(plan_relocation(root, "treaty_docs"))
+        text = (root / "treaty_docs" / "next_steps.md").read_text(encoding="utf-8")
+
+        self.assertIn("<https://example.com/x.md>", text)
+        self.assertIn("(https://example.com/y.md)", text)
+        self.assertIn("(#currently-hot)", text)
+        self.assertIn("(/etc/hosts)", text)
+        # Already broken before the move: not ours to guess at.
+        self.assertIn("(deleted/notes.md)", text)
+
+    def test_dry_run_reports_outbound_links_before_applying(self) -> None:
+        root = self._with_project_content(".")
+        plan = plan_relocation(root, "treaty_docs")
+
+        self.assertEqual(
+            [(root / "next_steps.md", 5)],
+            plan.outbound_edits,
+            "the dry run must name the outbound links it will retarget",
+        )
+        rendered = "\n".join(format_plan(plan))
+        self.assertIn("Project links inside the moved docs", rendered)
+        self.assertIn("next_steps.md (5 link(s))", rendered)
+        # Planning writes nothing.
+        self.assertIn("media/README.md", (root / "next_steps.md").read_text(encoding="utf-8"))
 
     def test_relocation_uses_git_mv_so_history_follows(self) -> None:
         root = self._project(".")

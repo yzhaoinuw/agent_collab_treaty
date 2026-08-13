@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### `treaty relocate` now retargets project links inside the moved docs — issue #24 (claude-opus-5)
+
+- **The bug, from a real Windows adopter (`sleep_scoring`):** a link like `[media/README.md](media/README.md)` in a flat `next_steps.md` kept its text when the file moved into `treaty_docs/`, so it silently resolved to `treaty_docs/media/README.md`. Both the dry run and `treaty validate` stayed quiet. `_plan_link_edits` only ever retargeted *treaty* doc names, and `_plan_external_refs` only looked at the other direction — files pointing **into** the treaty docs. Links pointing **out** of a moving doc at the project's own content were nobody's job.
+- **Both link directions are now covered, and they are deliberately handled differently:** outbound links are *rewritten* (the treaty owns the file that moved, so it owns the breakage); inbound references from files the treaty does not own stay *reported but untouched*. That asymmetry is the design, not an inconsistency — see the README.
+- **What is deliberately left alone**, because a move cannot invalidate it: URLs, bare anchors, absolute paths, targets that escape the repo, and targets that do not resolve. That last one matters — an already-broken or historical link is not ours to guess at, and rewriting it would turn a visible mistake into a plausible-looking wrong one. Percent-encoded paths are skipped too rather than decoded-and-re-encoded.
+- **Links to treaty-owned targets are skipped on purpose.** Docs that move in lockstep keep their relative path (`work_log_archive/README.md` → `../work_log.md`), and root-doc links are the existing `_retarget` pass's job. Two passes rewriting one link would compound; the skip set is what keeps them from colliding.
+- **The mutation test caught a weak test of my own.** With the fix disabled, 4 of 5 new tests failed but `test_round_trip_restores_the_original_outbound_link` still passed: if nothing is ever rewritten, a round trip is trivially equal. It now asserts the halfway state as well, and all 5 fail without the fix. **A round-trip test that does not pin the midpoint proves nothing.**
+- Verification:
+  - `python -m unittest discover -s tests` — 107 tests, OK (1 skipped). Six new tests covering the issue's own acceptance list: depth gained on the way in, multi-segment depth, anchors preserved, round trip, links left alone, and the dry run reporting before applying.
+  - **Mutation-tested**: monkeypatched `_rewrite_outbound` to the pre-fix behavior and confirmed all 5 outbound tests fail.
+  - End-to-end through the CLI on a scratch `treaty init` project reproducing the issue verbatim: `[`media/README.md`](media/README.md)` → `[`media/README.md`](../media/README.md)`, target resolves on disk, link *text* untouched, sibling URL untouched, dry run named the file and count first.
+
 ### Settled the flat-rendering freeze: paths frozen, content free (claude-opus-5)
 
 - **The freeze was over-broad, and the evidence says so.** `test_flat_layout_is_byte_identical_to_v070` compared the entire rendered flat tree byte-for-byte against `v0.7.0`, which froze every word of prose in the template. It was blocking three separate improvements (#19, #23.2, #23.3a) and had already redirected the answers-file documentation earlier the same day.
