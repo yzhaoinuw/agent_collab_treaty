@@ -12,6 +12,8 @@ A drop-in documentation contract for repositories worked on by agents, humans, o
 
 Language- and framework-agnostic — code repos, but also prose, research, and ops. Your agent can set it up in two prompts and maintain it unsupervised from there. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
+**How to read this README.** The blockquoted lines below — the ones introduced by *"Prompt — type this into your agent's chat"* — are **exactly that: sentences you type or paste into your AI coding agent** (Claude Code, Codex, Cursor, Gemini CLI, whichever you use). They are not shell commands, and you do not need anything installed before sending the first one: the agent installs the CLI and runs it for you. Every prompt is paired with a collapsed *"Prefer to run it yourself?"* section holding the equivalent terminal commands, for when you'd rather drive.
+
 ## Contents
 
 - [What's In The Template](#whats-in-the-template)
@@ -22,8 +24,8 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 - [Validate](#validate)
 - [Wiring Up Your Agent](#wiring-up-your-agent)
 - [The Workflow In Practice](#the-workflow-in-practice)
-- [Badge](#badge)
 - [Why "Treaty"](#why-treaty)
+- [Badge](#badge)
 - [Contributing](#contributing)
 
 ## What's In The Template
@@ -53,9 +55,13 @@ Open any `work_log.md` and read one entry. It says *why* something was decided, 
 
 ## Install
 
-Hand this to your agent — that's the intended path, and how these docs are maintained in practice:
+Handing the install to your agent is the intended path, and how these docs are maintained in practice.
+
+**Prompt — type this into your agent's chat:**
 
 > pip install agent-collab-treaty, then run `treaty init` in this repo.
+
+The agent installs the CLI, runs `treaty init`, and answers its questions with you. Nothing needs to be installed on your side first.
 
 <details>
 <summary>Prefer to run it yourself?</summary>
@@ -88,7 +94,9 @@ Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `trea
 
 ## Set Up
 
-`treaty init` leaves bracket placeholders for the project-specific parts. One prompt fills them:
+`treaty init` leaves bracket placeholders for the project-specific parts. One more prompt fills them.
+
+**Prompt — type this into your agent's chat:**
 
 > Fill out the docs in the treaty.
 
@@ -185,7 +193,9 @@ References from files the treaty does not own — your README, CHANGELOG, CI con
 
 Case-mismatched treaty-looking paths **block** the install, because they can prevent canonical files from being created — especially on Windows. Rename or archive them, then rerun.
 
-To fold existing docs into the treaty, say so explicitly — migration touches files the treaty otherwise never rewrites:
+To fold existing docs into the treaty, say so explicitly — migration touches files the treaty otherwise never rewrites.
+
+**Prompt — type this into your agent's chat:**
 
 > Migrate this repo's existing planning and logging docs into the treaty. Preserve the originals.
 
@@ -193,7 +203,9 @@ To fold existing docs into the treaty, say so explicitly — migration touches f
 
 ## Update
 
-Occasionally, when a new treaty version lands:
+Occasionally a new treaty version lands. One prompt takes care of it.
+
+**Prompt — type this into your agent's chat:**
 
 > Update the treaty.
 
@@ -288,20 +300,30 @@ For any other tool, add a one-line default instruction: *"At the start of every 
 
 ## The Workflow In Practice
 
-When a new agent session opens:
+**This section describes what your *agent* does on its own — it is not a checklist for you to follow or to paste into a chat.** The installed docs already tell the agent all of it. It's written out here so you know what a session should look like, and can tell when one has skipped a step.
 
-1. Read `AGENTS.md` first.
-2. Use its documentation map to open only the relevant docs.
-3. Read the top of `work_log.md` for recent context.
-4. Check `next_steps.md` → "Currently Hot" for active priorities.
-5. Do the work, following the conventions in `AGENTS.md`.
-6. At the end of substantive work: run the pre-flight checklist, run `treaty validate`, prepend an entry to `work_log.md`, and update `next_steps.md` if follow-up changed.
+When a new agent session opens, the agent:
+
+1. Reads `AGENTS.md` first.
+2. Uses its documentation map to open only the relevant docs.
+3. Reads the top of `work_log.md` for recent context.
+4. Checks `next_steps.md` → "Currently Hot" for active priorities.
+5. Does the work, following the conventions in `AGENTS.md`.
+6. At the end of substantive work: runs the pre-flight checklist, runs `treaty validate`, prepends an entry to `work_log.md`, and updates `next_steps.md` if follow-up changed.
+
+Your only part in this is the occasional [update](#update) prompt.
 
 The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach tried and discarded and why, and evidence a future agent would otherwise have to rediscover.
 
 That rule is also what makes the log worth reading for *you*. Because it captures decisions rather than activity, `next_steps.md` answers "where does this stand?" and `work_log.md` answers "what did we decide, and why?" — the two questions a status update or a handoff to a colleague actually needs. It costs no extra bookkeeping: the agent writes it as part of finishing the work.
 
 `treaty_conventions.md` carries the full criteria, plus the log rotation policy that keeps `work_log.md` cheap to read.
+
+## Why "Treaty"
+
+Because it's a small agreement about where project context lives, what agents read first, and what they write back before leaving.
+
+Treat it as a starting point, not a fixed standard. Add a "CI Note" section for your stack's commands, a "Domain Reminders" section for non-obvious gotchas, extra `project_overview.md` subsections for the diagrams or schemas that matter. Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
 
 ## Badge
 
@@ -325,12 +347,6 @@ Use the single-color shields.io fallback only if your README also renders **outs
 This repo's own README uses the tri-color badge via a relative path; adopters use the `raw.githubusercontent.com` URL, which is the same image.
 
 </details>
-
-## Why "Treaty"
-
-Because it's a small agreement about where project context lives, what agents read first, and what they write back before leaving.
-
-Treat it as a starting point, not a fixed standard. Add a "CI Note" section for your stack's commands, a "Domain Reminders" section for non-obvious gotchas, extra `project_overview.md` subsections for the diagrams or schemas that matter. Keep additions coherent with the existing structure rather than rewriting it — the value of a shared template is that every repo looks the same to the next agent.
 
 ## Contributing
 

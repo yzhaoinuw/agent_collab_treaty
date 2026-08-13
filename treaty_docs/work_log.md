@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### README prompt/shell disambiguation, and the migration lesson from `docs_dir` (claude-opus-5)
+
+- **Maintainer read the README cold and could not tell that the blockquoted lines are things you type to an agent.** Lead-ins like "Hand this to your agent" and "One prompt fills them" implied it without ever saying it, and the surrounding `bash` blocks trained the eye to read every set-off block as a shell command. Fixed by naming it four times rather than once: an explicit `**Prompt — type this into your agent's chat:**` label above each of the four prompts (install, set up, migrate existing docs, update), plus a "How to read this README" paragraph in the intro that says these are not shell commands and that nothing needs installing before the first one. Repetition over elegance was the deliberate call — a reader who lands mid-page from the Contents list never sees a one-time convention note.
+- **"The Workflow In Practice" was reading as instructions for the user.** It is a description of what the agent does unprompted, but its imperative numbered steps ("Read `AGENTS.md` first") are indistinguishable from a user checklist. Rewrote the steps in third person about the agent and opened the section by saying outright that it is not a checklist for the reader. Kept the section rather than cutting it: knowing the expected shape of a session is how an adopter notices when one skips the work-log step.
+- Moved `Why "Treaty"` above `Badge` — the badge is cosmetic and was sitting between two sections that explain the product.
+- **Recorded the `docs_dir` retrospective as an `AGENTS.md` reminder**, prompted by the maintainer asking why that work took a full day. The two mechanical lessons were already there (never move a template file; the flat rendering is frozen); what was missing is the process one: price a path/layout change as a migration *before* writing it, over three questions — what Copier sees on the next update, what the adopter must run and in what order, and what silently stops matching afterward. Both v0.8.0→v0.9.0 costs trace to skipping it: the flat-rendering freeze was found by conflict sweep rather than reasoning, and the four-step manual relocation guide shipped in v0.8.0 had to be replaced by `treaty relocate` a day later. Distilled to: **a migration we can only describe as a manual procedure is a command we have not written yet.**
+- Docs only — no template, CLI, or `copier.yml` change, so no adopter-facing behavior moves and the flat-rendering guard is untouched.
+- Verification:
+  - `python -m unittest discover -s tests` with `TREATY_SKIP_INTEGRATION=1` — 96 tests, OK (16 skipped).
+  - `treaty validate .` — passed. `git diff --check` — clean.
+  - Confirmed the four prompt labels render at the four intended sites and the new heading order is Workflow → Why "Treaty" → Badge → Contributing, with the Contents list reordered to match; grepped first for other references to the moved anchors (`#badge`, `#why-treaty`) — the Contents list was the only one.
+
 ### Released v0.9.0 (claude-opus-5)
 
 - Ships `treaty relocate` and the `treaty-doc-gitignored` validation check.
