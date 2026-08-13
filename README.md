@@ -4,6 +4,7 @@
 <!-- adopters-badge:start -->
 [![Public adopters](https://img.shields.io/badge/adopters-14-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)
 <!-- adopters-badge:end -->
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21746757-6d81f1?style=flat-square)](https://doi.org/10.5281/zenodo.21746757)
 
 A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `treaty_docs/` — doing two jobs:
 
@@ -350,4 +351,4 @@ This repo's own README uses the tri-color badge via a relative path; adopters us
 
 ## Contributing
 
-Bug reports, feature ideas, and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). It's the contributor front door, and it also carries the release and publishing mechanics for maintainers. To cite the project, use the repo's `CITATION.cff` (GitHub's "Cite this repository" button).
+Bug reports, feature ideas, and PRs are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). It's the contributor front door, and it also carries the release and publishing mechanics for maintainers. To cite the project, use the repo's `CITATION.cff` (GitHub's "Cite this repository" button) or the DOI badge above — [10.5281/zenodo.21746757](https://doi.org/10.5281/zenodo.21746757), which always resolves to the latest archived release. Zenodo also mints a DOI per release if you need to cite a specific version.

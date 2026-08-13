@@ -41,6 +41,18 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### Wired up the Zenodo DOI (claude-opus-5)
+
+- **Recorded the concept DOI `10.5281/zenodo.21746757`** in `CITATION.cff` under `identifiers:`, added a matching README badge, and pointed the Contributing section's citation line at it. Closes the Zenodo follow-up that had been open since 2026-08-01.
+- **Concept DOI, not the version DOI — this is the whole decision.** Zenodo mints both: `10.5281/zenodo.21912341` is v0.9.0 specifically, and `10.5281/zenodo.21746757` resolves to whatever the latest archived release is. The concept DOI is what belongs in citation metadata, because a version DOI would freeze every future citation on v0.9.0. Added an explicit warning to the release checklist in `AGENTS.md`, since the checklist already says to bump `version:`/`date-released:` in `CITATION.cff` each release and the next agent to read it could reasonably assume the DOI wants bumping too. It does not.
+- **How the DOI was found, worth not re-deriving:** Zenodo's public search API returns nothing for this record under any query tried (`agent_collab_treaty`, quoted, `title:`, `yzhaoinuw`). The reliable path is the GitHub-integration redirect — `curl -sI https://zenodo.org/badge/latestdoi/<github_repo_id>` returns a 302 whose `location` is the newest version DOI, and `GET https://zenodo.org/api/records/<id>` then gives `conceptdoi` directly. Repo id comes from `gh api repos/<owner>/<repo> --jq .id`.
+- **Confirmed the archive is working as designed:** three versions archived — v0.7.0 (2026-08-01), v0.8.0, and v0.9.0 — so `next_steps.md` was right that v0.7.0 would be the first. The record reads `CITATION.cff` correctly: title "Agent Collab Treaty" rather than the default `owner/repo: tag`, ORCID attached, MIT license.
+- Chose a shields.io `flat-square` badge over the official Zenodo one so the three README badges read as one system. The official badge is a one-line swap if the more recognisable scholarly styling is preferred.
+- Verification:
+  - `python -c "import yaml; yaml.safe_load(open('CITATION.cff'))"` — parses; `identifiers[0]` is the concept DOI.
+  - Both DOIs resolved through `doi.org` (302 → the Zenodo record) and the badge image URL fetched 200.
+  - `treaty validate .` — passed. `git diff --check` — clean.
+
 ### Issue triage and a `next_steps.md` accuracy pass (claude-opus-5)
 
 - **Closed #21** (Windows verification for `treaty relocate`). All seven checks passed, the one finding shipped in v0.9.0, and nothing was left technically outstanding. Three results from that sweep were recorded upstream rather than lost with the issue: `git check-ignore --no-index` is load-bearing on Windows too, the clean-tree guard does *not* false-positive under `core.autocrlf=true` (my prediction was wrong), and report-only for external references is the confirmed default.

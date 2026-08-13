@@ -23,5 +23,12 @@ keywords:
   - documentation
   - copier template
   - research software
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.21746757
+    description: >-
+      Concept DOI for Agent Collab Treaty. It always resolves to the latest
+      archived release, so it stays correct across versions and must not be
+      replaced with a version-specific DOI.
 version: 0.9.0
 date-released: "2026-08-13"
