@@ -41,6 +41,21 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-08-13
 
+### Settled the flat-rendering freeze: paths frozen, content free (claude-opus-5)
+
+- **The freeze was over-broad, and the evidence says so.** `test_flat_layout_is_byte_identical_to_v070` compared the entire rendered flat tree byte-for-byte against `v0.7.0`, which froze every word of prose in the template. It was blocking three separate improvements (#19, #23.2, #23.3a) and had already redirected the answers-file documentation earlier the same day.
+- **Measured what a content change actually costs**, with five real Copier updates against v0.7.0 flat adopters carrying real work-log history (probe kept at `tests/test_docs_dir.py`): adopter left conventions alone → **0 conflicts**; edited a *different* section → **0 conflicts**, both sides survived; edited the *same* section → 1 conflict; the #23.2 `work_log.md` fix on a live log → **0 conflicts**; same fix where the adopter had hand-deleted the paragraph → 1 conflict. **No scenario lost adopter content.** The worst case is one visible, resolvable conflict confined to a region the adopter had edited.
+- **The old test's own docstring justified only the path half** — "Copier implements a template-side file move as delete-plus-create… the failure mode that silently destroys an adopter's work log." That argument is about *paths*. The content assertion was bundled in with it and guards a different, far milder failure mode. Best read: the content freeze was a release-scoped proof for v0.8.0/v0.9.0 ("the nested-layout release changes nothing for you") that got mistaken for a permanent law.
+- **Corrected a claim I made earlier the same day.** I had said `treaty_conventions.md` was the *wrong* place for the answers-file note because of the freeze. It is the *safest* file in the template to change: adopters are told not to edit it, #23 confirms it sits at zero drift, and when local equals the merge base upstream prose applies cleanly every time. The risk ordering was backwards — the expensive files are the ones adopters edit heavily. The note now lives in the conventions "Updating The Treaty" section, where it belonged.
+- **Three-tier policy now in `AGENTS.md`:** paths frozen permanently with no escape hatch; `treaty_conventions.md` content free; content of adopter-edited docs allowed but priced and justified in the log.
+- **Replaced the proxy with behavioral tests.** `test_flat_layout_paths_are_frozen` keeps the path-set diff against `v0.7.0`; `FlatConventionsMergeTests` and `FlatWorkLogMergeTests` assert the property the content half was reaching for — adopter content always survives, and a conflict appears only where the adopter edited the same region. **Generalizable: when a behavioral test can tell you what a change costs, don't keep a proxy that forbids it.**
+- Also caught a false positive worth not repeating: a plain `'<<<<<<<' in text` check reports a conflict in *every* rendering, because `treaty_conventions.md` documents conflict markers in its own prose. Marker detection has to be line-anchored (`^<{7} `).
+- Verification:
+  - `python -m unittest discover -s tests` — 101 tests, OK (1 skipped: case-collision, unsupported filesystem). Was 96 before; the 5 new ones are the merge scenarios.
+  - **Mutation-tested the replacement path freeze** rather than trusting a green run: `git mv`'d `next_steps.md` → `roadmap.md` in a throwaway template clone and confirmed the path-set diff catches it (`missing from mutated: {'next_steps.md'}`). It is not a weaker guard than what it replaced.
+  - Confirmed the live conventions edit merges clean for a v0.7.0 flat adopter who left the file alone.
+  - `treaty validate .`, CLI/import smoke, `git diff --check` — all clean.
+
 ### Documented why `.copier-answers.yml` stays at the repo root (claude-opus-5)
 
 - **Prompted by a real adopter-side question** while agents were updating repos to v0.9.0: after the working docs move into `treaty_docs/`, why is `.copier-answers.yml` still at the root? Nothing in the README, the prompt help, or the post-copy message answered it, and the tree diagram under *Where the docs live* did not even show the file. Fixed in four places: README (tree + a paragraph), `docs_dir` prompt help, `_message_after_copy` step 2, and `project_overview.md`.

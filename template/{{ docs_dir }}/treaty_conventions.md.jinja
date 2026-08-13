@@ -81,6 +81,8 @@ If a ref is missing or points at the wrong commit after the push, fix it before 
 
 Pulling upstream treaty refinements into this project is a maintainer's call — only do it when asked. This is distinct from updating `work_log.md` / `next_steps.md` content.
 
+All of it runs off `.copier-answers.yml` at the repo root — Copier's record of the answers this project was installed with and the template version it is pinned to. It stays at the root whatever layout the docs use, because it is the file that records the layout. Keep it committed: if git ignores it, `treaty update` and `treaty diff` have nothing to read and cannot run.
+
 1. Commit or stash local changes first. `treaty update` requires a clean, git-tracked working tree and refuses to run on a dirty one.
 2. `treaty diff` shows, section by section, how far this project has drifted from the template version it is pinned to — that is the conflict exposure before you touch anything.
 3. `treaty update --dry-run` previews the merge without writing.
