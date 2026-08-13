@@ -53,6 +53,20 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - Re-ran the cp1252 simulation that reproduced the crash (encoding the rendered summary through a strict cp1252 writer): passes, output reads `Template version: v0.7.0 -> v0.8.0`.
   - `git diff --check`, `treaty --help`, `treaty --version`, `treaty validate .`, import smoke — all clean.
 
+### Acted on the Windows sweep of treaty relocate, issue #21 (claude-opus-5)
+
+- Codex (GPT-5) ran all seven checks on Windows 10 / Git 2.42 / Python 3.11 with `core.autocrlf=true`. All passed: full suite, flat->nested->flat round trip, `git mv` producing `R100` renames, the ordering guard leaving the index byte-identical, the deny-all `.gitignore` sequence, and multi-segment targets.
+- **My main prediction was wrong.** I expected the clean-tree guard to false-positive on Windows, because `git status --porcelain` over-reports under `autocrlf` — the exact thing Codex had found on #20. It did not reproduce: status and diff were both empty before each relocation, and no `--force` was needed. Recording it because the reasoning was sound and the conclusion still wrong; the porcelain quirk evidently needs a file whose stored line endings actually differ, not merely a repo with `autocrlf` on.
+- **Fixed the one real finding:** a case-only target (`--to Treaty_Docs` from `treaty_docs`) reported four "already exists" blockers, because on a case-insensitive filesystem those are one directory so every destination looks occupied. Nothing was ever mutated — the defect was the message, not the behaviour. Now detected explicitly and reported as a single blocker naming the two-step `git mv` workaround. The check compares `samefile()`, so on a case-sensitive filesystem a case-only rename is still a genuine move and proceeds normally.
+- **Declined to implement case-only renames properly.** It would need a two-step rename through a temporary directory, which is real risk (an interrupted run leaves the docs under a temp name) for an operation nobody has asked for. A clear refusal plus the manual recipe is the proportionate answer.
+- Codex confirmed independently that `git check-ignore` exempts tracked paths on Git for Windows 2.42, so the `--no-index` flag in `_validate_docs_not_ignored` is load-bearing on that platform too, not just macOS.
+- Codex endorsed report-only for references in files the treaty does not own, and suggested an opt-in `--rewrite-external` if demand appears. Not building it now — no demand, and the measured cases are prose needing judgement.
+- Also noted: my issue text said "94 passed, 1 skipped" when it is 94 run / 93 passed / 1 skipped. Corrected in the count reported here.
+- Verification:
+  - `python -m unittest discover -s tests` — 96 tests, OK (1 skipped); 2 new covering the case-only refusal and that a genuine folder rename still works.
+  - Reproduced the original four-blocker output on macOS (also case-insensitive), then confirmed the new single message, exit 1, and a clean `git status` proving nothing was mutated.
+  - `treaty validate .`, `git diff --check` — clean.
+
 ### Built treaty relocate (claude-opus-5)
 
 - New `treaty relocate [--to <dir>] [--dry-run] [--force]` moves the four working docs between layouts in one pass: `git mv` so history follows, link rewrites in `AGENTS.md` and `project_overview.md`, the reverse rewrite of `../AGENTS.md`-style links inside the moved docs, the `docs_dir` answer, and removal of the emptied folder. `--to .` flattens back; multi-segment targets get matching link depth.

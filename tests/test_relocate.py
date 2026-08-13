@@ -199,6 +199,33 @@ class RelocateTests(unittest.TestCase):
         apply_relocation(plan_relocation(root, "treaty_docs"))
         self.assertEqual([], validate_project(root))
 
+    def test_case_only_rename_is_refused_with_one_clear_message(self) -> None:
+        """Reported from the Windows sweep on #21.
+
+        On a case-insensitive filesystem `treaty_docs` and `Treaty_Docs` are one
+        directory, so every destination looked occupied and the planner emitted
+        four "already exists" blockers for what is a single unsupported
+        operation. Nothing was ever mutated; the message was the defect.
+        """
+        root = self._project("treaty_docs")
+        if not (root / "TREATY_DOCS").is_dir():
+            self.skipTest("case-sensitive filesystem; case-only rename is a real move")
+
+        plan = plan_relocation(root, "Treaty_Docs")
+        self.assertEqual(1, len(plan.blockers), plan.blockers)
+        self.assertIn("case-only rename", plan.blockers[0])
+        self.assertFalse(plan.answers_update)
+        self.assertEqual([], plan.moves)
+        with self.assertRaises(ValueError):
+            apply_relocation(plan)
+        self.assertTrue((root / "treaty_docs" / "work_log.md").exists())
+
+    def test_a_genuine_rename_still_works(self) -> None:
+        root = self._project("treaty_docs")
+        apply_relocation(plan_relocation(root, "other_docs"))
+        self.assertTrue((root / "other_docs" / "work_log.md").exists())
+        self.assertFalse((root / "treaty_docs").exists())
+
     # --- the things it cannot fix itself ---------------------------------
 
     def test_reports_references_it_does_not_own(self) -> None:

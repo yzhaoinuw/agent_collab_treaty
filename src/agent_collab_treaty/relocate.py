@@ -121,11 +121,51 @@ def plan_relocation(root: Path, target: str) -> RelocationPlan:
         return plan
 
     _check_ordering(root, plan)
+    if _is_case_only_rename(root, plan):
+        return plan
     _plan_moves(root, plan)
     _plan_link_edits(root, plan)
     _plan_external_refs(root, plan)
     _plan_gitignore(root, plan)
     return plan
+
+
+def _is_case_only_rename(root: Path, plan: RelocationPlan) -> bool:
+    """Detect ``treaty_docs`` -> ``Treaty_Docs`` on a case-insensitive filesystem.
+
+    There the two names are the same directory, so every destination looks
+    occupied and the move planner emits one "already exists" blocker per doc —
+    technically safe (nothing is touched) but it reads as four unrelated
+    problems instead of the single unsupported operation it is. On a
+    case-sensitive filesystem the names are genuinely different directories and
+    the ordinary path handles it, so this only fires where it applies.
+    """
+
+    if plan.old_docs_dir.lower() != plan.new_docs_dir.lower():
+        return False
+
+    old_p, new_p = docs_prefix(plan.old_docs_dir), docs_prefix(plan.new_docs_dir)
+    old_dir = root / old_p.rstrip("/") if old_p else root
+    new_dir = root / new_p.rstrip("/") if new_p else root
+    if not (old_dir.is_dir() and new_dir.is_dir()):
+        return False
+    try:
+        if not old_dir.samefile(new_dir):
+            return False
+    except OSError:
+        return False
+
+    # Nothing will happen, so do not advertise an answers rewrite.
+    plan.answers_update = False
+    plan.blockers.append(
+        f"{plan.old_docs_dir!r} and {plan.new_docs_dir!r} are the same directory "
+        "on this filesystem, so this is a case-only rename and treaty relocate "
+        "cannot do it in one step. Rename it yourself with two git moves "
+        f"(git mv {plan.old_docs_dir} tmp-docs && git mv tmp-docs "
+        f"{plan.new_docs_dir}), then update docs_dir in .copier-answers.yml to "
+        "match."
+    )
+    return True
 
 
 def _check_ordering(root: Path, plan: RelocationPlan) -> None:
