@@ -88,7 +88,7 @@ class TreatyCliTests(unittest.TestCase):
             result = self.runner.invoke(app, ["update", "/some/dest"])
 
         self.assertEqual(0, result.exit_code)
-        self.assertIn("Template version: v0.3.2 → v0.3.3", result.output)
+        self.assertIn("Template version: v0.3.2 -> v0.3.3", result.output)
         self.assertIn("Updated files:", result.output)
         self.assertIn("git add -A && git commit", result.output)
         self.assertNotIn("Conflicts", result.output)
@@ -153,9 +153,9 @@ class TreatyCliTests(unittest.TestCase):
         old = {"_commit": "v0.3.2", "include_treaty_badge": False}
         new = {"_commit": "v0.3.3", "include_treaty_badge": True}
         lines = "\n".join(_format_update_summary(old, new, ["AGENTS.md"], []))
-        self.assertIn("Template version: v0.3.2 → v0.3.3", lines)
+        self.assertIn("Template version: v0.3.2 -> v0.3.3", lines)
         self.assertIn("Answer changes:", lines)
-        self.assertIn("include_treaty_badge: False → True", lines)
+        self.assertIn("include_treaty_badge: False -> True", lines)
 
     def test_version_reports_cli_and_pinned_template_versions(self) -> None:
         from agent_collab_treaty import __version__
