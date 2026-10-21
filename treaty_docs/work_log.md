@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-21
 
+### Released v0.9.1 (claude-opus-5-5, high)
+
+- Released the 2026-08-13 `--data` flag and today's batch (#25 refusal and backstop, `validate` warnings, conventions prose) so they can be test-driven in the adopter repos. The version is bumped in `pyproject.toml`, `__init__.py`, and `CITATION.cff` (`identifiers:` DOI left alone).
+- **Branch state:** `main` had moved on its own (bot badge commit 2f5df3a, README only). With the maintainer's OK, merged `origin/main` into `dev` (conflict-free, same as 988e15c last time), then fast-forwarded `main` to `dev` and tagged `v0.9.1` on it.
+- Added `@AGENTS.md` to this repo's local, gitignored `CLAUDE.md`. `treaty validate .` now passes with no warnings.
+- Verification:
+  - `python -m unittest discover -s tests` and the CLI/import smoke tests on the release commit (see the commit's pre-flight run); `treaty validate .` clean.
+  - Refs checked with `git ls-remote --tags origin` and `git ls-remote --heads origin main dev` after pushing.
+
 ### Issue triage by ROI, then the zero-disruption batch: #25, #27, #28, half of #26, version skew (claude-opus-5-5, high)
 
 - **Triage first.** Ranked the 10 open issues by urgency and by ROI weighted toward non-disruptive fixes. The disruption scale used, cheapest first: CLI-only → `treaty_conventions.md` prose (merges cleanly downstream) → content of adopter-edited docs (costs a conflict) → new files or Copier questions. This session shipped everything in the first two tiers; the ranking and remainder are in `next_steps.md`.
