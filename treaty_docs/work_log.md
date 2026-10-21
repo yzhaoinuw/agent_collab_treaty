@@ -41,6 +41,17 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-21
 
+### v0.9.1 test drive findings, released as v0.9.2: #30 and two wording fixes (claude-opus-5-5, high)
+
+- **Codex (GPT-6) test drive on two Windows adopters:** `vessel_diameter_respiration` (v0.2.0 → v0.9.1, flat layout) and `pupil_tracking` (v0.9.0 → v0.9.1, `treaty_docs`). **First field evidence for #25:** the refusal fired correctly on a real deny-all `*` + allowlist `.gitignore`. After `!*.rej` was added, preview and apply agreed on the same three conflicts and nothing was lost. `--data` (#17/#23.1) worked in both modes.
+- **#30, a real bug since v0.8.0:** `treaty diff` exempted `work_log.md`/`next_steps.md` from conflict exposure by exact path, so the exemption only ever matched the flat layout. Every nested-layout project (the default for new installs) had its own logs counted as risk: 30 sections reported versus 23 real in `pupil_tracking`. Now matched by file name. That is safe only because `compare_trees` walks the template's render, not arbitrary project files, and the comment says so, so nobody points it at a wider tree later. Report only; merges were never affected.
+- **The `*.rej` refusal hint was bad advice for exactly the repos that trip it.** "Remove that rule" is wrong for a deny-all `.gitignore` that exists to keep raw data out. It now suggests a `!*.rej` exception, and an integration test proves that exception clears the refusal.
+- **The `work-log-missing-verification` message now names the inline case** (`- Verification: ran X` on one line) and points at that line. Accepting the inline form would be a policy change and was deliberately not made.
+- Not acted on: the adopter's update-readiness-check idea (folded into #15's parked `doctor` work), and their #23 corroboration of the first-run paragraph and placeholders, which strengthens the planned v0.10 template batch but adds no new work.
+- Verification:
+  - `python -m unittest discover -s tests` — 132 tests, OK (1 skipped). The #30 tests (root, one-folder and two-folder layouts for both files, conventions still at risk, end-to-end through `compare_trees` + `format_report`) were mutation-checked: 5 failures with the old exact-path check.
+  - `git diff --check`; `treaty --version`, `treaty validate .`, import smoke; `pip wheel` build.
+
 ### Released v0.9.1 (claude-opus-5-5, high)
 
 - Released the 2026-08-13 `--data` flag and today's batch (#25 refusal and backstop, `validate` warnings, conventions prose) so they can be test-driven in the adopter repos. The version is bumped in `pyproject.toml`, `__init__.py`, and `CITATION.cff` (`identifiers:` DOI left alone).
