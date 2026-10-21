@@ -239,6 +239,56 @@ class TreatyValidationTests(unittest.TestCase):
         self.assertIn("next-steps-broken-hot-link", {issue.code for issue in issues})
 
 
+class WarningTests(unittest.TestCase):
+    """Warnings are reported by validate_project but never fail validation."""
+
+    def test_claude_pointer_without_an_import_is_a_warning(self) -> None:
+        """Issue #27: a request to read AGENTS.md is not an import of it."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "CLAUDE.md").write_text(
+                "In a new chat, read AGENTS.md first.\n", encoding="utf-8"
+            )
+
+            issues = validate_project(root)
+
+        self.assertEqual(["claude-pointer-missing-import"], [i.code for i in issues])
+        self.assertFalse(issues[0].is_error)
+
+    def test_claude_pointer_with_an_import_is_clean(self) -> None:
+        for body in ("@AGENTS.md\n", "# Claude\n\n@./AGENTS.md\n", "See @AGENTS.md for the rules.\n"):
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                write_valid_project(root)
+                (root / "CLAUDE.md").write_text(body, encoding="utf-8")
+
+                self.assertEqual([], validate_project(root))
+
+    def test_cli_older_than_the_pinned_template_is_a_warning(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / ".copier-answers.yml").write_text("_commit: v99.0.0\n", encoding="utf-8")
+
+            issues = validate_project(root)
+
+        self.assertEqual(["cli-older-than-template"], [i.code for i in issues])
+        self.assertFalse(issues[0].is_error)
+        self.assertIn("pip install -U agent-collab-treaty", issues[0].message)
+
+    def test_cli_matching_or_newer_than_the_pin_is_clean(self) -> None:
+        from agent_collab_treaty import __version__
+
+        for commit in (f"v{__version__}", f"v{__version__}-4-gabc1234", "v0.1.0", "abc1234"):
+            with self.subTest(commit=commit), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                write_valid_project(root)
+                (root / ".copier-answers.yml").write_text(f"_commit: {commit}\n", encoding="utf-8")
+
+                self.assertEqual([], validate_project(root))
+
+
 def write_valid_project(root: Path) -> None:
     (root / "work_log_archive").mkdir()
     (root / "AGENTS.md").write_text("# Guidelines\n", encoding="utf-8")

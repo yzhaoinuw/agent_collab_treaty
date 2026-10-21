@@ -18,6 +18,18 @@ class AdoptionPreflightTests(unittest.TestCase):
 
         self.assertEqual([], notices)
 
+    def test_claude_pointer_without_an_import_is_reported(self) -> None:
+        """Init skips an existing CLAUDE.md, so say so when it would not load the treaty."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "CLAUDE.md").write_text("Read AGENTS.md first.\n", encoding="utf-8")
+            missing = inspect_adoption_context(root)
+            (root / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+            present = inspect_adoption_context(root)
+
+        self.assertIn("claude-pointer-missing-import", {n.code for n in missing})
+        self.assertNotIn("claude-pointer-missing-import", {n.code for n in present})
+
     def test_existing_canonical_treaty_paths_are_reported(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

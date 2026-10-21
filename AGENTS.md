@@ -52,7 +52,7 @@ Pre-flight checklist before committing:
 
 ## When To Update Treaty Docs
 
-At the end of any substantive session, prepend a `treaty_docs/work_log.md` entry unless the user says not to or the exchange was trivial. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed, so log the decision, the reversal, the approach tried and discarded and why, evidence future agents shouldn't have to rediscover, and shared-state changes (branch/PR/release/env). Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `treaty_docs/next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate.
+At the end of any substantive session, prepend a `treaty_docs/work_log.md` entry unless the user says not to or the exchange was trivial. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed, so log the decision, the reversal, the approach tried and discarded and why, evidence future agents shouldn't have to rediscover, and shared-state changes (branch/PR/release/env). Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `treaty_docs/next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate. **Check the log before every push to `dev` or merge to `main`, too** — a long session has no clear end, so that is the trigger that reliably fires.
 
 ## Agent Roles, PR Policy, and Merges
 

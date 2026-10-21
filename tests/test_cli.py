@@ -262,6 +262,48 @@ class TreatyCliTests(unittest.TestCase):
         self.assertIn("treaty init", result.output)
         render.assert_not_called()
 
+    def test_validate_passes_with_warnings_and_labels_them(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "CLAUDE.md").write_text("Read AGENTS.md first.\n", encoding="utf-8")
+
+            result = self.runner.invoke(app, ["validate", str(root)])
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("CLAUDE.md:1: warning: claude-pointer-missing-import:", result.output)
+        self.assertIn("Treaty validation passed (1 warning(s)).", result.output)
+
+    def test_validate_still_fails_on_errors_alongside_warnings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "CLAUDE.md").write_text("Read AGENTS.md first.\n", encoding="utf-8")
+            (root / "next_steps.md").unlink()
+
+            result = self.runner.invoke(app, ["validate", str(root)])
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("missing-required-file", result.output)
+        self.assertNotIn("validation passed", result.output)
+
+    def test_update_warns_when_the_cli_is_older_than_the_template(self) -> None:
+        """Issues #22/#23: an old CLI in a project env runs quietly against a newer pin."""
+        old = {"_commit": "v0.3.2"}
+        new = {"_commit": "v99.0.0"}
+        with patch("copier.run_update"), patch(
+            "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+        ), patch("agent_collab_treaty.cli._git_output", return_value=""):
+            result = self.runner.invoke(app, ["update", "/some/dest"])
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("older than this project's template (v99.0.0)", result.output)
+
+    def test_format_update_summary_lists_rejected_merges(self) -> None:
+        lines = _format_update_summary({}, {}, [], [], ["work_log.md"])
+        self.assertIn("  - work_log.md  (see work_log.md.rej)", lines)
+        self.assertNotIn("No file changes.", lines)
+
     def test_validate_migration_hints_reports_overlapping_docs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

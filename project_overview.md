@@ -26,9 +26,9 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - Defines the Typer app, a top-level `--version` callback, and the `treaty init`, `treaty update`, `treaty diff`, and `treaty validate` commands.
 - `treaty --version` prints the CLI version, plus the pinned `_commit` and `_src_path` when run inside an installed project. It is an eager callback, so it works without a subcommand and leaves `no_args_is_help` intact.
 - `treaty init` prints non-destructive adoption preflight notices for existing treaty files, case-mismatched treaty-looking files, and common overlapping project/agent docs before calling `copier.run_copy(...)` with the official template source by default: `gh:yzhaoinuw/agent_collab_treaty`; matching treaty template paths are passed through Copier's `skip_if_exists`, and noncanonical treaty-looking paths block init until the user resolves them.
-- `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject.
+- `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject. It refuses to start when `status.showUntrackedFiles=no` or a `*.rej` ignore rule would hide Copier's rejected hunks from it (issue #25), and fails if a new `.rej` survives the merge anyway.
 - `treaty diff` renders the pinned template into a temp dir via `_render_pristine(...)` and reports section-level drift; read-only, and it needs no clean tree.
-- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default; `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
+- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default (issues marked `warning:` print but never fail); `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
 
 ### 2b. Drift module
@@ -127,6 +127,7 @@ project_root/
 ### Active / relevant now
 
 - [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py) - active CLI implementation.
+- [`src/agent_collab_treaty/versions.py`](src/agent_collab_treaty/versions.py) - compares the CLI version with a project's pinned `_commit`; `update` and `validate` warn when the CLI is older.
 - [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check).
 - [`copier.yml`](copier.yml) - active Copier configuration and template questions.
 - [`template/`](template/) - active installable treaty content.
@@ -164,7 +165,7 @@ The committed test suite:
 - [`tests/test_validation.py`](tests/test_validation.py) - temporary project fixtures for valid docs, missing metadata/verification, work-log rotation, and broken Currently Hot anchors.
 - [`tests/test_diff.py`](tests/test_diff.py) - section splitting, classification, rename detection, and report formatting; all pure, no Copier or network.
 - [`tests/test_cli.py`](tests/test_cli.py) - Typer runner tests with Copier and git mocked out.
-- [`tests/test_update_integration.py`](tests/test_update_integration.py) - **real** Copier three-way merges over git-backed scratch projects: clean updates, surviving local edits, conflicts with non-zero exit, upstream file additions, answer reuse, and the hidden-alias migration. Uses a synthetic throwaway template, not this repo's own, so the tests do not depend on release history or on tags surviving a shallow CI checkout. `CopierConfigContractTests` in the same file asserts the properties of our real `copier.yml` that the migration depends on.
+- [`tests/test_update_integration.py`](tests/test_update_integration.py) - **real** Copier three-way merges over git-backed scratch projects: clean updates, surviving local edits, conflicts with non-zero exit, upstream file additions, answer reuse, the hidden-alias migration, and the hidden-`.rej` refusal and backstop. Uses a synthetic throwaway template, not this repo's own, so the tests do not depend on release history or on tags surviving a shallow CI checkout. `CopierConfigContractTests` in the same file asserts the properties of our real `copier.yml` that the migration depends on.
 
 These spawn real git and Copier processes, so the suite runs ~13s instead of ~0.2s. For a fast inner loop, `TREATY_SKIP_INTEGRATION=1` skips them while keeping the config-contract tests, which are pure YAML parsing.
 

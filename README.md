@@ -283,6 +283,8 @@ After merging, `treaty update` prints a summary: old → new template version, a
 
 The project must be **git-tracked with a clean working tree** — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't.
 
+To keep unrelated untracked files (data, scratch output) from tripping the clean-tree check, list them in `.git/info/exclude`. **Don't hide them with `status.showUntrackedFiles=no`, and don't gitignore `*.rej`:** Copier finds each conflict through the `.rej` file it leaves in `git status`, so with either setting a conflicting file would be silently replaced by the template version. `treaty update` refuses to run under either one, and fails if a merge leaves a `.rej` behind anyway.
+
 </details>
 
 ## Validate
@@ -294,6 +296,8 @@ treaty validate --migration-hints     # plus overlap hints for legacy docs
 ```
 
 It checks canonical filenames, `work_log.md` structure, live-log rotation, session verification sections, `next_steps.md` "Currently Hot" links, and whether git would ignore the treaty docs themselves. Exits non-zero when issues are found; `--warn-only` keeps it advisory.
+
+Two checks are warnings, which print but never fail: a `CLAUDE.md` that doesn't import `AGENTS.md` (a line asking Claude to read it isn't an import; `@AGENTS.md` is), and a `treaty` CLI older than the template your project is pinned to.
 
 ## Wiring Up Your Agent
 

@@ -22,6 +22,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -417,6 +418,86 @@ class UpdateIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(1, result.exit_code, result.output)
         self.assertIn("treaty relocate --to treaty_docs", result.output)
+
+    # --- hidden rejected hunks (issue #25) ---------------------------------
+
+    def conflicting_project(self) -> tuple[Path, Path]:
+        """A project whose next update conflicts in AGENTS.md."""
+        dest = self.install()
+        agents = dest / "AGENTS.md"
+        agents.write_text(
+            agents.read_text().replace("Read this file first.", "Read me before anything else."),
+            encoding="utf-8",
+        )
+        commit_all(dest, "reword the startup rule")
+        self.revise_template(V1_AGENTS.replace("Read this file first.", "Read this file before any other."))
+        return dest, agents
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_refuses_when_untracked_files_are_hidden_from_git_status(self) -> None:
+        """Reproduced 2026-10-21: with this setting, Copier never sees its own
+        AGENTS.md.rej, so the update replaced the edited file with the template
+        and exited 0 while the dry run (a clone without the repo config)
+        correctly predicted a conflict."""
+        dest, agents = self.conflicting_project()
+        git(dest, "config", "status.showUntrackedFiles", "no")
+        before = agents.read_text(encoding="utf-8")
+
+        for args in (["update", str(dest)], ["update", str(dest), "--dry-run"]):
+            with self.subTest(args=args):
+                result = self.runner.invoke(app, args)
+                self.assertEqual(1, result.exit_code, result.output)
+                self.assertIn("status.showUntrackedFiles=no", result.output)
+                self.assertIn(".git/info/exclude", result.output)
+
+        self.assertEqual(before, agents.read_text(encoding="utf-8"))
+        self.assertEqual([], list(dest.rglob("*.rej")))
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_refuses_when_git_ignores_reject_files(self) -> None:
+        dest, _ = self.conflicting_project()
+        (dest / ".git" / "info" / "exclude").write_text("*.rej\n", encoding="utf-8")
+
+        result = self.update(dest)
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("git ignores *.rej files", result.output)
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_a_reject_copier_left_behind_fails_the_update(self) -> None:
+        """The backstop: if anything still hides a reject from Copier, the
+        update must not hand the adopter a `git add -A && git commit`."""
+        dest, agents = self.conflicting_project()
+        git(dest, "config", "status.showUntrackedFiles", "no")
+
+        with patch("agent_collab_treaty.cli._reject_recovery_blockers", return_value=[]):
+            result = self.update(dest)
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertIn("Rejected merges", result.output)
+        self.assertIn("AGENTS.md  (see AGENTS.md.rej)", result.output)
+        self.assertIn("Do not commit this state", result.output)
+        self.assertNotIn("git add -A && git commit", result.output)
+        # The failure mode itself, pinned: the edit lives only in the reject.
+        self.assertNotIn("Read me before anything else.", agents.read_text(encoding="utf-8"))
+        self.assertIn(
+            "Read me before anything else.",
+            (dest / "AGENTS.md.rej").read_text(encoding="utf-8"),
+        )
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_a_pre_existing_reject_is_not_blamed_on_the_update(self) -> None:
+        dest = self.install()
+        (dest / "old.rej").write_text("leftover\n", encoding="utf-8")
+        self.revise_template(V1_AGENTS.replace("Read this file first.", "Read this file first, always."))
+
+        with patch("agent_collab_treaty.cli._reject_recovery_blockers", return_value=[]):
+            # Copier refuses a dirty tree, so hide the leftover the safe way.
+            (dest / ".git" / "info" / "exclude").write_text("old.rej\n", encoding="utf-8")
+            result = self.update(dest)
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertNotIn("Rejected merges", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_dry_run_predicts_conflicts_and_new_files_without_mutating(self) -> None:

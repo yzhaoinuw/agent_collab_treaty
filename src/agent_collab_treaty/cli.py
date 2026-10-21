@@ -50,6 +50,74 @@ def _classify_status(porcelain: str) -> tuple[list[str], list[str]]:
     return sorted(changed), sorted(unmerged)
 
 
+def _reject_files(dest: Path) -> set[str]:
+    """Untracked ``*.rej`` files under ``dest``, as POSIX paths relative to it.
+
+    Asked of ``git ls-files --others`` without ``--exclude-standard`` on purpose:
+    that lists untracked files whatever ``status.showUntrackedFiles`` or the
+    ignore rules say, and those two settings are exactly what hide a reject
+    from Copier in the first place.
+    """
+    out = _git_output(dest, "ls-files", "--others", "-z", "--", "*.rej")
+    if not out:
+        return set()
+    return {path for path in out.split("\0") if path}
+
+
+#: Copier's update applies the adopter's own edits as a patch on top of the new
+#: template with ``git apply --reject``, then finds the rejected hunks through
+#: ``git status`` and turns each into inline conflict markers. Anything that
+#: hides an untracked ``.rej`` from ``git status`` skips that step: the file is
+#: left as the pristine template, the adopter's edits sit only in the ``.rej``,
+#: and Copier reports success (issue #25).
+_REJECT_PROBE = "AGENTS.md.rej"
+
+
+def _reject_recovery_blockers(dest: Path) -> list[str]:
+    """Settings in ``dest`` that would hide Copier's rejected hunks from it."""
+    blockers: list[str] = []
+    mode = (_git_output(dest, "config", "--get", "status.showUntrackedFiles") or "").strip()
+    if mode.lower() in ("no", "false", "off", "0"):
+        blockers.append(
+            f"git config status.showUntrackedFiles={mode} is in effect (from the "
+            "repo, your global config, or GIT_CONFIG_* environment variables). "
+            "Unset it for the update. To keep unrelated untracked files out of "
+            "the way, list them in .git/info/exclude instead."
+        )
+    ignored = subprocess.run(
+        ["git", "-C", str(dest), "check-ignore", "--no-index", "-q", _REJECT_PROBE],
+        capture_output=True,
+        check=False,
+    )
+    if ignored.returncode == 0:
+        blockers.append(
+            "git ignores *.rej files here (see `git check-ignore -v --no-index "
+            f"{_REJECT_PROBE}`). Remove that rule for the update."
+        )
+    return blockers
+
+
+def _refuse_if_rejects_hidden(dest: Path) -> None:
+    blockers = _reject_recovery_blockers(dest)
+    if not blockers:
+        return
+    typer.echo(
+        "Refusing to update: Copier finds merge conflicts through `git status`, "
+        "and this project hides the files it needs to see. A conflicting file "
+        "would be replaced by the template version, your edits left only in an "
+        "untracked .rej file, and the update reported as a success.",
+        err=True,
+    )
+    for blocker in blockers:
+        typer.echo(f"  - {blocker}", err=True)
+    raise typer.Exit(1)
+
+
+def _rejected_targets(rejects: set[str]) -> list[str]:
+    """The files whose patch was rejected, named by stripping ``.rej``."""
+    return sorted(path[: -len(".rej")] for path in rejects)
+
+
 def _read_answers(dest: Path) -> dict:
     """Load the Copier answers file for ``dest``; return {} if missing/unreadable."""
     answers_path = dest / ANSWERS_FILE
@@ -89,8 +157,10 @@ def _format_update_summary(
     new_answers: dict,
     changed: list[str],
     unmerged: list[str],
+    rejected: Optional[list[str]] = None,
 ) -> list[str]:
     """Build the human-readable post-update summary lines."""
+    rejected = rejected or []
     lines: list[str] = []
 
     old_v = old_answers.get("_commit")
@@ -122,7 +192,10 @@ def _format_update_summary(
     if unmerged:
         lines.append("Conflicts (unresolved):")
         lines.extend(f"  - {path}" for path in unmerged)
-    if not changed and not unmerged:
+    if rejected:
+        lines.append("Rejected merges (your edits are only in the .rej file):")
+        lines.extend(f"  - {path}  (see {path}.rej)" for path in rejected)
+    if not changed and not unmerged and not rejected:
         lines.append("No file changes.")
 
     return lines
@@ -180,6 +253,13 @@ def _version_lines(cwd: Path) -> list[str]:
         suffix = f" ({source})" if source else ""
         lines.append(f"template {commit}{suffix}")
     return lines
+
+
+def _warn_if_cli_older(commit: object) -> None:
+    from .versions import cli_older_than, skew_message
+
+    if cli_older_than(commit):
+        typer.echo(f"WARNING: {skew_message(commit)}", err=True)
 
 
 def _version_callback(value: bool) -> None:
@@ -336,12 +416,18 @@ def update(
     use_defaults = not interactive
     overrides = _parse_data(data)
     _reject_layout_override(overrides)
+    # Checked on the real project in both modes: a repo-local setting does not
+    # survive into the dry run's clone, which is how a preview could predict a
+    # conflict that the real update then silently skipped.
+    _refuse_if_rejects_hidden(destination)
 
     if dry_run:
         _preview_update(destination, use_defaults, overrides)
         return
 
     old_answers = _read_answers(destination)
+    _warn_if_cli_older(old_answers.get("_commit"))
+    rejects_before = _reject_files(destination)
     typer.echo(f"Updating the Agent Collab Treaty in {destination}")
     copier.run_update(
         dst_path=str(destination),
@@ -350,12 +436,39 @@ def update(
         overwrite=True,
     )
     new_answers = _read_answers(destination)
+    if new_answers.get("_commit") != old_answers.get("_commit"):
+        _warn_if_cli_older(new_answers.get("_commit"))
 
     changed, unmerged = _classify_status(
         _git_output(destination, "status", "--porcelain") or ""
     )
-    for line in _format_update_summary(old_answers, new_answers, changed, unmerged):
+    new_rejects = _reject_files(destination) - rejects_before
+    rejected = _rejected_targets(new_rejects)
+    changed = [path for path in changed if path not in new_rejects]
+    for line in _format_update_summary(
+        old_answers, new_answers, changed, unmerged, rejected
+    ):
         typer.echo(line)
+
+    if rejected:
+        typer.echo("", err=True)
+        typer.echo(
+            f"Update did NOT complete cleanly — {len(rejected)} file(s) were "
+            "replaced by the template version, and your edits to them survive "
+            "only in the .rej file(s) listed above. Do not commit this state.",
+            err=True,
+        )
+        typer.echo(
+            "Your pre-update content is still in HEAD. To back out, restore the "
+            "tracked files and delete the rejects, then rerun:",
+            err=True,
+        )
+        typer.echo(
+            "    git checkout -- . && rm "
+            + " ".join(sorted(new_rejects)),
+            err=True,
+        )
+        raise typer.Exit(1)
 
     if unmerged:
         typer.echo("", err=True)
@@ -466,6 +579,7 @@ def _preview_update(
             raise typer.Exit(1)
 
         old_answers = _read_answers(preview)
+        _warn_if_cli_older(old_answers.get("_commit"))
         copier.run_update(
             dst_path=str(preview),
             data=_update_data(old_answers, overrides or {}),
@@ -473,12 +587,30 @@ def _preview_update(
             overwrite=True,
         )
         new_answers = _read_answers(preview)
+        if new_answers.get("_commit") != old_answers.get("_commit"):
+            _warn_if_cli_older(new_answers.get("_commit"))
         changed, unmerged = _classify_status(
             _git_output(preview, "status", "--porcelain") or ""
         )
+        # A fresh clone has no rejects of its own, so every one is new.
+        new_rejects = _reject_files(preview)
+        rejected = _rejected_targets(new_rejects)
+        changed = [path for path in changed if path not in new_rejects]
 
-    for line in _format_update_summary(old_answers, new_answers, changed, unmerged):
+    for line in _format_update_summary(
+        old_answers, new_answers, changed, unmerged, rejected
+    ):
         typer.echo(line)
+
+    if rejected:
+        typer.echo("", err=True)
+        typer.echo(
+            f"Applying this update would replace {len(rejected)} file(s) with "
+            "the template version and leave your edits only in .rej files.",
+            err=True,
+        )
+        typer.echo("Preview only — no changes written.", err=True)
+        raise typer.Exit(1)
 
     if unmerged:
         typer.echo("", err=True)
@@ -684,12 +816,15 @@ def validate(
         for line in format_migration_hints(inspect_adoption_context(path)):
             typer.echo(line, err=True)
 
-    if not issues:
-        typer.echo("Treaty validation passed.")
-        return
-
     for issue in issues:
         typer.echo(format_issue(issue, path), err=True)
+
+    errors = [issue for issue in issues if issue.is_error]
+    if not errors:
+        warnings = len(issues)
+        suffix = f" ({warnings} warning(s))" if warnings else ""
+        typer.echo(f"Treaty validation passed{suffix}.")
+        return
 
     if not warn_only:
         raise typer.Exit(1)

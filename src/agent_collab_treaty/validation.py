@@ -16,6 +16,11 @@ DATE_HEADING_RE = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$")
 SESSION_HEADING_RE = re.compile(r"^### (.+?)\s*$")
 SESSION_METADATA_RE = re.compile(r"^### .+\([^()]+\)\s*$")
 MARKDOWN_LINK_ANCHOR_RE = re.compile(r"\[[^\]]+\]\(#([^)]+)\)")
+# Claude Code's import syntax: `@path` as its own token. A line merely asking
+# the agent to read AGENTS.md is a request it can skip, not an import.
+AGENTS_IMPORT_RE = re.compile(r"(?:^|\s)@(?:\./)?AGENTS\.md(?=\s|$)")
+
+CLAUDE_POINTER = "CLAUDE.md"
 
 # Docs that always live at the repo root. AGENTS.md is fixed there by the
 # AGENTS.md convention itself (agents resolve the *nearest* file up the tree, so
@@ -61,6 +66,13 @@ def resolve_docs_dir(root: Path) -> str:
 def _recorded_docs_dir(root: Path) -> str | None:
     """Read ``docs_dir`` out of the project's Copier answers file, if present."""
 
+    value = _recorded_answer(root, "docs_dir")
+    return value if isinstance(value, str) and value else None
+
+
+def _recorded_answer(root: Path, key: str) -> object:
+    """Read one key out of the project's Copier answers file, if present."""
+
     answers = root / ANSWERS_FILE
     if not answers.exists():
         return None
@@ -72,8 +84,7 @@ def _recorded_docs_dir(root: Path) -> str | None:
         return None
     if not isinstance(data, dict):
         return None
-    value = data.get("docs_dir")
-    return value if isinstance(value, str) and value else None
+    return data.get(key)
 
 
 def required_paths(docs_dir: str) -> tuple[str, ...]:
@@ -93,6 +104,12 @@ class ValidationIssue:
     line: int
     code: str
     message: str
+    #: "error" fails `treaty validate`; "warning" is printed but does not.
+    severity: str = "error"
+
+    @property
+    def is_error(self) -> bool:
+        return self.severity == "error"
 
 
 @dataclass(frozen=True)
@@ -120,6 +137,8 @@ def validate_project(root: Path, today: date | None = None) -> list[ValidationIs
     states = _inspect_required_paths(root, paths)
     issues.extend(_validate_required_paths(states))
     issues.extend(_validate_answers_file(root))
+    issues.extend(_validate_cli_version(root))
+    issues.extend(_validate_claude_pointer(root))
     issues.extend(_validate_docs_not_ignored(root, states))
 
     docs_prefix = "" if docs_dir in (".", "") else f"{docs_dir.rstrip('/')}/"
@@ -143,7 +162,60 @@ def format_issue(issue: ValidationIssue, root: Path) -> str:
         path = issue.path.resolve().relative_to(root)
     except ValueError:
         path = issue.path
-    return f"{path}:{issue.line}: {issue.code}: {issue.message}"
+    label = issue.code if issue.is_error else f"warning: {issue.code}"
+    return f"{path}:{issue.line}: {label}: {issue.message}"
+
+
+def claude_pointer_lacks_import(root: Path) -> bool:
+    """True when ``CLAUDE.md`` exists at ``root`` but never imports AGENTS.md.
+
+    Claude Code loads CLAUDE.md on its own but not AGENTS.md, so without an
+    ``@AGENTS.md`` import the treaty only reaches the agent if it chooses to go
+    and read it — and in a long session it may never read it in full.
+    """
+
+    pointer = root / CLAUDE_POINTER
+    if not pointer.is_file():
+        return False
+    try:
+        text = pointer.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return False
+    return not any(AGENTS_IMPORT_RE.search(line) for line in text.splitlines())
+
+
+CLAUDE_POINTER_FIX = (
+    "Claude Code loads CLAUDE.md automatically but not AGENTS.md, so the "
+    "treaty only reaches Claude if it decides to read it. Add `@AGENTS.md` on "
+    "its own line to import it."
+)
+
+
+def _validate_claude_pointer(root: Path) -> Iterable[ValidationIssue]:
+    if claude_pointer_lacks_import(root):
+        yield ValidationIssue(
+            path=root / CLAUDE_POINTER,
+            line=1,
+            code="claude-pointer-missing-import",
+            message=f"CLAUDE.md does not import AGENTS.md. {CLAUDE_POINTER_FIX}",
+            severity="warning",
+        )
+
+
+def _validate_cli_version(root: Path) -> Iterable[ValidationIssue]:
+    """Warn when this CLI predates the template version the project pins."""
+
+    from .versions import cli_older_than, skew_message
+
+    commit = _recorded_answer(root, "_commit")
+    if cli_older_than(commit):
+        yield ValidationIssue(
+            path=root / ANSWERS_FILE,
+            line=1,
+            code="cli-older-than-template",
+            message=skew_message(commit),
+            severity="warning",
+        )
 
 
 def answers_file_ignored(root: Path) -> bool:

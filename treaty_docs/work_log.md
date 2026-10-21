@@ -39,6 +39,21 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-10-21
+
+### Issue triage by ROI, then the zero-disruption batch: #25, #27, #28, half of #26, version skew (claude-opus-5-5, high)
+
+- **Triage first.** Ranked the 10 open issues by urgency and by ROI weighted toward non-disruptive fixes. The disruption scale used, cheapest first: CLI-only → `treaty_conventions.md` prose (merges cleanly downstream) → content of adopter-edited docs (costs a conflict) → new files or Copier questions. This session shipped everything in the first two tiers; the ranking and remainder are in `next_steps.md`.
+- **#25 root cause, reproduced on macOS:** Copier's update re-renders the new template over the project, applies the adopter's own edits as a patch with `git apply --reject`, then finds rejected hunks *through `git status`* and turns each into inline markers. The reporter had set `status.showUntrackedFiles=no` to get past the dirty-tree check, so Copier never saw its own `AGENTS.md.rej`: the live file stayed pristine-template, the adopter's edits sat only in the `.rej`, and the update exited 0. The dry run had predicted the conflict because the setting did not reach the preview. In the reproduction it was repo-local config, which `git clone` does not copy. A gitignored `*.rej` hides the reject the same way.
+- **Fix: refuse before, detect after.** `update` (both modes) now refuses when either setting is in effect and points at `.git/info/exclude` for unrelated untracked files. That is the safe way to hide them, because Copier excludes ignored paths from the patch. As a backstop, it lists new `*.rej` files via `git ls-files --others` without `--exclude-standard`, which neither setting can hide, and exits 1 without the commit handoff. Not done: keeping the adopter's version as the live file, as the issue suggested. Copier owns that step, and refusing up front makes it unreachable in every case we know of.
+- **Reproduction trap worth knowing:** setting `GIT_CONFIG_*` via `os.environ` inside a test does *not* reach Copier. plumbum snapshots the environment at import time, so the first reproduction attempt falsely "passed". Use repo-local `git config` in tests instead.
+- **`validate` gained a warning tier** (`severity` on `ValidationIssue`; warnings print as `warning: <code>` and never fail). First two warnings: `claude-pointer-missing-import` (#27; `init`'s adoption preflight reports the same thing, since init skips an existing `CLAUDE.md`) and `cli-older-than-template` (#22/#23). `update` warns about skew too, against both the old pin and the version it just applied. This repo's own local `CLAUDE.md` trips the #27 warning: it is exactly the request-not-import line the issue describes.
+- **#28 and the free half of #26 went into `treaty_conventions.md` only:** check the log before push/merge (also pointed to from Branch Handoff, which is what agents read at push time), content-editing decisions count, and `next_steps.md`'s heading-level rule stated in prose. `template/AGENTS.md.jinja`'s session-end wording and the contradicting line in `template/{{ docs_dir }}/next_steps.md` were deliberately left alone: both are adopter-edited files, so changing them costs conflicts and belongs in a batched release.
+- Verification:
+  - `python -m unittest discover -s tests` — 128 tests, OK (1 skipped). New: refusal under each setting on both update paths, the backstop against a real Copier-left reject (mutation-tested: fails with detection disabled), pre-existing rejects not blamed, warning tier in `validate` and the CLI, version parsing, the adoption notice.
+  - `git diff --check`; `treaty --help`, `treaty --version`, `treaty validate .` (passes with the one expected warning); import smoke.
+  - Rendered the working-tree template into scratch dirs at `docs_dir` nested and `.`; new conventions prose renders in both, and `treaty validate` passes on the nested render.
+
 ## 2026-08-13
 
 ### `treaty update --data` for questions new in the target version — issues #23/#17 (claude-opus-5)

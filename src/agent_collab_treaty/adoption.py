@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .validation import REQUIRED_PATHS
+from .validation import (
+    CLAUDE_POINTER,
+    CLAUDE_POINTER_FIX,
+    REQUIRED_PATHS,
+    claude_pointer_lacks_import,
+)
 
 
 OVERLAPPING_DOC_NAMES = (
@@ -110,6 +115,20 @@ def inspect_adoption_context(root: Path) -> list[AdoptionNotice]:
                 message=(
                     "Existing project or agent docs may overlap with treaty planning "
                     "or logging; they are preserved as-is."
+                ),
+            )
+        )
+
+    # Init skips an existing CLAUDE.md even when `claude-code` is selected, so a
+    # hand-written pointer that never imports AGENTS.md would survive silently.
+    if claude_pointer_lacks_import(root):
+        notices.append(
+            AdoptionNotice(
+                code="claude-pointer-missing-import",
+                paths=(CLAUDE_POINTER,),
+                message=(
+                    "Existing CLAUDE.md does not import AGENTS.md and will be "
+                    f"kept as-is. {CLAUDE_POINTER_FIX}"
                 ),
             )
         )
