@@ -82,6 +82,34 @@ class TreatyValidationTests(unittest.TestCase):
         self.assertIn("work-log-missing-session-metadata", codes)
         self.assertIn("work-log-missing-verification", codes)
 
+    def test_inline_verification_evidence_gets_a_specific_fix(self) -> None:
+        """#15 follow-up: the words '- Verification:' were visibly present, so
+        the generic 'should include a subsection' message read as wrong."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "work_log.md").write_text(
+                "\n".join(
+                    [
+                        "# Work Log",
+                        "",
+                        "## 2026-05-27",
+                        "",
+                        "### Entry (gpt-5)",
+                        "",
+                        "- Did a thing.",
+                        "- Verification: inspected the calculation; ran git diff --check.",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            issues = validate_project(root)
+
+        self.assertEqual(["work-log-missing-verification"], [i.code for i in issues])
+        self.assertEqual(8, issues[0].line, "should point at the inline line itself")
+        self.assertIn("on its own line", issues[0].message)
+
     def test_wrong_case_work_log_reports_one_path_issue_only(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

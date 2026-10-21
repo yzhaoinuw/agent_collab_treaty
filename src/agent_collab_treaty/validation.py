@@ -15,6 +15,7 @@ ANSWERS_FILE = ".copier-answers.yml"
 DATE_HEADING_RE = re.compile(r"^## (\d{4}-\d{2}-\d{2})\s*$")
 SESSION_HEADING_RE = re.compile(r"^### (.+?)\s*$")
 SESSION_METADATA_RE = re.compile(r"^### .+\([^()]+\)\s*$")
+INLINE_VERIFICATION_RE = re.compile(r"^\s*- Verification[^:]*:\s*\S")
 MARKDOWN_LINK_ANCHOR_RE = re.compile(r"\[[^\]]+\]\(#([^)]+)\)")
 # Claude Code's import syntax: `@path` as its own token. A line merely asking
 # the agent to read AGENTS.md is a request it can skip, not an import.
@@ -446,14 +447,34 @@ def _validate_work_log(path: Path, today: date) -> Iterable[ValidationIssue]:
             if index + 1 < len(session_headings)
             else len(content)
         )
-        segment = [line for _, line in content[content_index + 1 : next_content_index]]
-        if not any(_is_verification_heading(line) for line in segment):
+        segment = content[content_index + 1 : next_content_index]
+        if any(_is_verification_heading(line) for _, line in segment):
+            continue
+        inline = next(
+            (n for n, line in segment if INLINE_VERIFICATION_RE.match(line)), None
+        )
+        if inline is not None:
+            # The words are visibly there, so say exactly what is wrong (#15).
             yield ValidationIssue(
                 path=path,
-                line=line_number,
+                line=inline,
                 code="work-log-missing-verification",
-                message="Session entry should include a '- Verification:' subsection.",
+                message=(
+                    "Put '- Verification:' on its own line and indent the "
+                    "evidence below it; evidence on the same line is not "
+                    "recognized."
+                ),
             )
+            continue
+        yield ValidationIssue(
+            path=path,
+            line=line_number,
+            code="work-log-missing-verification",
+            message=(
+                "Session entry should include a '- Verification:' subsection: "
+                "the heading on its own line, with the commands run indented below it."
+            ),
+        )
 
 
 def _validate_next_steps(path: Path) -> Iterable[ValidationIssue]:

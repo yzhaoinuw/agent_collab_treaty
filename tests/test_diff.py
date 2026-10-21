@@ -109,6 +109,25 @@ class CompareFileTests(unittest.TestCase):
         self.assertTrue(result.adopter_owned)
         self.assertEqual(0, result.at_risk)
 
+    def test_adopter_owned_files_carry_no_risk_in_any_docs_dir(self) -> None:
+        """Issue #30: the exemption only matched root paths, so every project
+        on the nested layout had its own work log counted as conflict risk."""
+        local = "## Startup Rule\n\nrewritten\n"
+        for name in ("work_log.md", "next_steps.md"):
+            for path in (name, f"treaty_docs/{name}", f"docs/agents/{name}"):
+                with self.subTest(path=path):
+                    result = compare_file(path, PRISTINE, local)
+                    self.assertTrue(result.adopter_owned)
+                    self.assertEqual(0, result.at_risk)
+
+    def test_maintained_docs_stay_at_risk_in_any_docs_dir(self) -> None:
+        local = PRISTINE.replace("Read this first.", "Read me first.")
+        for path in ("treaty_conventions.md", "treaty_docs/treaty_conventions.md"):
+            with self.subTest(path=path):
+                result = compare_file(path, PRISTINE, local)
+                self.assertFalse(result.adopter_owned)
+                self.assertEqual(1, result.at_risk)
+
 
 class DetectRenamesTests(unittest.TestCase):
     def test_ignores_unrelated_removals_and_additions(self) -> None:
@@ -149,6 +168,24 @@ class CompareTreesTests(unittest.TestCase):
         self.assertEqual({"AGENTS.md", "work_log_archive/README.md"}, set(diffs))
         self.assertEqual(0, diffs["AGENTS.md"].at_risk)
         self.assertTrue(diffs["work_log_archive/README.md"].missing_locally)
+
+
+    def test_nested_layout_exempts_owned_docs_end_to_end(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pristine, local = root / "pristine", root / "local"
+            changed = PRISTINE.replace("Read this first.", "Our own words.")
+            for base, body in ((pristine, PRISTINE), (local, changed)):
+                (base / "treaty_docs").mkdir(parents=True)
+                for name in ("work_log.md", "next_steps.md", "treaty_conventions.md"):
+                    (base / "treaty_docs" / name).write_text(body, encoding="utf-8")
+
+            diffs = compare_trees(pristine, local)
+            report = "\n".join(format_report(diffs, "v0.9.1"))
+
+        self.assertIn("Conflict exposure: 1 section(s) across 1 file(s)", report)
+        self.assertEqual(2, report.count("(your content by design"))
+        self.assertIn("~ modified: '## Startup Rule'", report)
 
 
 class FormatReportTests(unittest.TestCase):

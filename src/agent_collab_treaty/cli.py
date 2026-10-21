@@ -92,7 +92,9 @@ def _reject_recovery_blockers(dest: Path) -> list[str]:
     if ignored.returncode == 0:
         blockers.append(
             "git ignores *.rej files here (see `git check-ignore -v --no-index "
-            f"{_REJECT_PROBE}`). Remove that rule for the update."
+            f"{_REJECT_PROBE}`). Add a `!*.rej` line after that rule in "
+            ".gitignore; a narrow exception is enough, so a deny-all rule "
+            "can stay."
         )
     return blockers
 

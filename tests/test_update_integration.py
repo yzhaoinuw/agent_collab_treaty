@@ -462,6 +462,16 @@ class UpdateIntegrationTests(unittest.TestCase):
 
         self.assertEqual(1, result.exit_code, result.output)
         self.assertIn("git ignores *.rej files", result.output)
+        self.assertIn("!*.rej", result.output)
+
+        # The narrow exception the hint suggests is enough: the refusal clears
+        # and the conflict surfaces as markers, as it should (#25 follow-up).
+        (dest / ".git" / "info" / "exclude").write_text("*.rej\n!*.rej\n", encoding="utf-8")
+        result = self.update(dest)
+
+        self.assertEqual(1, result.exit_code, result.output)
+        self.assertNotIn("Refusing to update", result.output)
+        self.assertIn("Conflicts (unresolved):", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_a_reject_copier_left_behind_fails_the_update(self) -> None:

@@ -12,7 +12,7 @@ from __future__ import annotations
 import difflib
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Iterable, Sequence
 
 SECTION_HEADING_RE = re.compile(r"^(## .+?)\s*$", re.MULTILINE)
@@ -23,7 +23,10 @@ RENAME_SIMILARITY = 0.6
 PREAMBLE_KEY = "(preamble)"
 
 #: Files whose content is the adopter's own from day one. Their sections drift
-#: by design, so reporting them as risk would bury the signal.
+#: by design, so reporting them as risk would bury the signal. Matched by file
+#: name, because they live under ``docs_dir`` (``treaty_docs/work_log.md``) in
+#: every layout but the flat one. That is safe only because ``compare_trees``
+#: walks the template's own render, never arbitrary project files.
 ADOPTER_OWNED = frozenset({"work_log.md", "next_steps.md"})
 
 
@@ -116,7 +119,7 @@ def detect_renames(
 def compare_file(path: str, pristine_text: str, local_text: str | None) -> FileDiff:
     """Classify one file's sections as untouched, modified, removed, or added."""
 
-    result = FileDiff(path=path, adopter_owned=path in ADOPTER_OWNED)
+    result = FileDiff(path=path, adopter_owned=PurePosixPath(path).name in ADOPTER_OWNED)
     if local_text is None:
         result.missing_locally = True
         return result

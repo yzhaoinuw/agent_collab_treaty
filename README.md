@@ -283,7 +283,7 @@ After merging, `treaty update` prints a summary: old → new template version, a
 
 The project must be **git-tracked with a clean working tree** — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't.
 
-To keep unrelated untracked files (data, scratch output) from tripping the clean-tree check, list them in `.git/info/exclude`. **Don't hide them with `status.showUntrackedFiles=no`, and don't gitignore `*.rej`:** Copier finds each conflict through the `.rej` file it leaves in `git status`, so with either setting a conflicting file would be silently replaced by the template version. `treaty update` refuses to run under either one, and fails if a merge leaves a `.rej` behind anyway.
+To keep unrelated untracked files (data, scratch output) from tripping the clean-tree check, list them in `.git/info/exclude`. **Don't hide them with `status.showUntrackedFiles=no`, and make sure `*.rej` isn't gitignored** (a repo that ignores everything with `*` can add a `!*.rej` exception): Copier finds each conflict through the `.rej` file it leaves in `git status`, so with either setting a conflicting file would be silently replaced by the template version. `treaty update` refuses to run under either one, and fails if a merge leaves a `.rej` behind anyway.
 
 </details>
 
