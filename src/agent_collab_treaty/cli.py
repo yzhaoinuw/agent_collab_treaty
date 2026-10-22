@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 import subprocess
 from pathlib import Path
 from typing import List, Optional
@@ -48,6 +49,37 @@ def _classify_status(porcelain: str) -> tuple[list[str], list[str]]:
         else:
             changed.add(path)
     return sorted(changed), sorted(unmerged)
+
+
+def _update_status(dest: Path) -> tuple[list[str], list[str], list[str]]:
+    """Split an updated tree into (changed, unmerged, line-ending-only) files.
+
+    ``git status`` alone over-reports under ``core.autocrlf=true``: Copier
+    rewrites files it touches, Git leaves them with CRLF endings, and status
+    keeps flagging them although ``git add`` stages nothing (#31). ``git diff
+    HEAD`` compares content after line-ending conversion, so a file counts as
+    changed only when a commit would change it.
+    """
+    porcelain = _git_output(dest, "status", "--porcelain") or ""
+    flagged, unmerged = _classify_status(porcelain)
+    diffed = _git_output(dest, "diff", "--name-only", "HEAD")
+    if diffed is None:
+        return flagged, unmerged, []
+    untracked = {line[3:] for line in porcelain.splitlines() if line.startswith("?? ")}
+    content = (set(diffed.splitlines()) | untracked) - set(unmerged)
+    changed = [path for path in flagged if path in content]
+    eol_only = [path for path in flagged if path not in content]
+    return changed, unmerged, eol_only
+
+
+def _stage_command(paths: list[str]) -> str:
+    """A commit command naming exactly ``paths``, not ``git add -A``.
+
+    Adopters often keep unrelated untracked files (datasets, scratch work) out
+    of the way with a temporary ``.git/info/exclude`` entry just for the
+    update; ``git add -A`` would stage them once the entry is gone (#22).
+    """
+    return f"git add {' '.join(shlex.quote(path) for path in paths)} && git commit"
 
 
 def _reject_files(dest: Path) -> set[str]:
@@ -160,9 +192,11 @@ def _format_update_summary(
     changed: list[str],
     unmerged: list[str],
     rejected: Optional[list[str]] = None,
+    eol_only: Optional[list[str]] = None,
 ) -> list[str]:
     """Build the human-readable post-update summary lines."""
     rejected = rejected or []
+    eol_only = eol_only or []
     lines: list[str] = []
 
     old_v = old_answers.get("_commit")
@@ -197,6 +231,12 @@ def _format_update_summary(
     if rejected:
         lines.append("Rejected merges (your edits are only in the .rej file):")
         lines.extend(f"  - {path}  (see {path}.rej)" for path in rejected)
+    if eol_only:
+        lines.append(
+            "Line endings rewritten, content unchanged (git status may list "
+            "these; committing them changes nothing):"
+        )
+        lines.extend(f"  - {path}" for path in eol_only)
     if not changed and not unmerged and not rejected:
         lines.append("No file changes.")
 
@@ -441,14 +481,12 @@ def update(
     if new_answers.get("_commit") != old_answers.get("_commit"):
         _warn_if_cli_older(new_answers.get("_commit"))
 
-    changed, unmerged = _classify_status(
-        _git_output(destination, "status", "--porcelain") or ""
-    )
+    changed, unmerged, eol_only = _update_status(destination)
     new_rejects = _reject_files(destination) - rejects_before
     rejected = _rejected_targets(new_rejects)
     changed = [path for path in changed if path not in new_rejects]
     for line in _format_update_summary(
-        old_answers, new_answers, changed, unmerged, rejected
+        old_answers, new_answers, changed, unmerged, rejected, eol_only
     ):
         typer.echo(line)
 
@@ -484,13 +522,17 @@ def update(
             "'>>>>>>> after updating'), then:",
             err=True,
         )
-        typer.echo(f"    git add {' '.join(unmerged)} && git commit", err=True)
+        # Every file the update touched, not only the conflicted ones: leaving
+        # .copier-answers.yml out commits merged docs under the old version pin.
+        typer.echo(
+            f"    {_stage_command(unmerged + changed + eol_only)}", err=True
+        )
         raise typer.Exit(1)
 
     if changed:
         typer.echo("")
         typer.echo("Review the changes, then:")
-        typer.echo("    git add -A && git commit")
+        typer.echo(f"    {_stage_command(changed + eol_only)}")
 
 
 def _update_data(answers: dict, overrides: dict[str, str]) -> dict:
@@ -591,16 +633,14 @@ def _preview_update(
         new_answers = _read_answers(preview)
         if new_answers.get("_commit") != old_answers.get("_commit"):
             _warn_if_cli_older(new_answers.get("_commit"))
-        changed, unmerged = _classify_status(
-            _git_output(preview, "status", "--porcelain") or ""
-        )
+        changed, unmerged, eol_only = _update_status(preview)
         # A fresh clone has no rejects of its own, so every one is new.
         new_rejects = _reject_files(preview)
         rejected = _rejected_targets(new_rejects)
         changed = [path for path in changed if path not in new_rejects]
 
     for line in _format_update_summary(
-        old_answers, new_answers, changed, unmerged, rejected
+        old_answers, new_answers, changed, unmerged, rejected, eol_only
     ):
         typer.echo(line)
 

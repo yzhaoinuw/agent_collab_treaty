@@ -39,6 +39,21 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-10-22
+
+### v0.9.2 test drive on `fp_analysis`: #31 line-ending summary, and a conflict hint that dropped the version pin (claude-opus-5-5, high)
+
+- **Codex (GPT-6) updated `fp_analysis` on Windows (v0.6.0 → v0.9.2, flat layout):** no conflicts, nothing lost. Field-confirmed: the #25 refusals in preview and apply, the `!*.rej` hint, `--data` for a newly introduced question (#17), the #30 diff fix (before/after on the same nested tree: 3 → 1 at-risk files), the inline-verification message (#15), and the `claude-pointer-missing-import` warning firing as non-fatal (#27). #28's guidance arrived cleanly, but nobody trialed agent behavior.
+- **#31 root cause, reproduced on macOS from the issue's steps:** with `core.autocrlf=true` and LF working copies, Copier's `git apply` of the adopter's diff rewrites every *customized* file with CRLF. Untouched files such as `treaty_conventions.md` stay LF. `git status` then flags the rewritten files and keeps flagging them, even after `git update-index --refresh`. `git diff HEAD` and `git add` treat them as unchanged. The dry run never shows it, because its clone doesn't carry the repo-local `autocrlf` (the same clone gap as #25). On macOS the apply listed 6 updated files and the preview 2. This corrects the 2026-08-13 guess in `next_steps.md`: the trigger is LF working copies under `autocrlf=true`, not stored line endings that differ.
+- **Fix:** a file counts as updated only when `git diff HEAD` (plus untracked files) sees a content change. Files whose only change is line endings get their own summary line, so a `git status` that still lists them doesn't read as treaty leaving work behind. Passing the repo's `autocrlf` into the preview clone was considered and skipped: once the summary compares content, preview and apply agree without it.
+- **Found while checking the conflict path, unreported:** after a conflict, Copier leaves `.copier-answers.yml` unstaged, and the hint printed `git add AGENTS.md && git commit`. Following it committed the merged docs under the *old* version pin, so the next update would re-apply the same merge. The hint now names every touched path, the pin included. The clean-update hint now names paths instead of `git add -A`, so files hidden with a temporary `.git/info/exclude` entry stay out of the commit (#22 follow-up). `relocate` keeps `git add -A`: it moves whole directories, and nobody has reported the exclude workflow there.
+- Verification:
+  - `python -m unittest discover -s tests` — 134 tests OK (1 skipped)
+  - mutation: disabling the `git diff HEAD` check fails the new integration test (AGENTS.md listed as updated) and the new CLI test
+  - real-merge probe before the fix: conflicting update left ` M .copier-answers.yml` / `UU AGENTS.md`, and the hint staged only AGENTS.md
+  - the issue's reproduction on a disposable `fp_analysis` clone at e7b3f7a, with `core.autocrlf=true` and LF working copies: apply now reports the same 2 updated files as the preview, lists the 4 line-ending files separately, and its printed `git add` line staged exactly `.copier-answers.yml` and `treaty_conventions.md` and left status clean
+  - `git diff --check`, `treaty validate .`
+
 ## 2026-10-21
 
 ### v0.9.1 test drive findings, released as v0.9.2: #30 and two wording fixes (claude-opus-5-5, high)

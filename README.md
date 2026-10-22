@@ -275,11 +275,13 @@ Cost depends on *what* you edit, not how much:
 Where your edits overlap a changed region, the merge leaves standard markers (`<<<<<<< before updating` / `>>>>>>> after updating`) in an unmerged file. Resolve them like any `git merge` — keep your content, fold in the new sections — and don't commit unresolved markers:
 
 ```bash
-# after resolving what treaty update listed:
-git add -A && git commit
+# after resolving, stage every file treaty update listed, conflicted or not:
+git add AGENTS.md .copier-answers.yml && git commit
 ```
 
-After merging, `treaty update` prints a summary: old → new template version, answer changes, updated files, conflicted files. Your recorded answers are reused by default; pass `--interactive` only to re-answer the template questions.
+Stage `.copier-answers.yml` along with the resolved files: it records the new template version, and committing the merge without it leaves the project pinned to the old one. `treaty update` prints the exact `git add` line for you; it names files rather than using `git add -A`, so untracked files you kept out of the way during the update stay out of the commit.
+
+After merging, `treaty update` prints a summary: old → new template version, answer changes, updated files, conflicted files. "Updated files" counts content changes only. Under `core.autocrlf=true`, Git can keep listing files whose line endings were rewritten during the merge; the summary lists those separately, and committing them changes nothing. Your recorded answers are reused by default; pass `--interactive` only to re-answer the template questions.
 
 The project must be **git-tracked with a clean working tree** — Copier uses git for the three-way merge and to show a reviewable diff. Run `git init && git add . && git commit -m "treaty baseline"` once if you haven't.
 

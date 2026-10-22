@@ -185,6 +185,33 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertIn("Updated files:", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_line_ending_rewrites_are_not_reported_as_updates(self) -> None:
+        """#31, reproduced 2026-10-22 on macOS as well as Windows: under
+        core.autocrlf=true, Copier's merge leaves a customized file it did not
+        change with CRLF endings. git status keeps listing it; git add stages
+        nothing. The dry run (a clone without the repo config) never saw it."""
+        dest = self.install()
+        agents = dest / "AGENTS.md"
+        agents.write_text(
+            agents.read_text().replace("[fill me in]", "conda activate demo"), encoding="utf-8"
+        )
+        commit_all(dest, "fill in the runtime")
+        git(dest, "config", "core.autocrlf", "true")
+        self.revise_template(V1_AGENTS, extra={"treaty_conventions.md": "# Conventions\n"})
+
+        preview = self.runner.invoke(app, ["update", str(dest), "--dry-run"])
+        result = self.update(dest)
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn(b"\r\n", agents.read_bytes(), "fixture no longer rewrites endings")
+        for output in (preview.output, result.output):
+            updated = output.split("Updated files:")[1].split("\n\n")[0]
+            self.assertIn("treaty_conventions.md", updated)
+            self.assertNotIn("AGENTS.md", updated.split("Line endings")[0])
+        self.assertIn("Line endings rewritten, content unchanged", result.output)
+        self.assertIn("conda activate demo", agents.read_text())
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_local_edits_outside_the_changed_region_survive(self) -> None:
         dest = self.install()
         agents = dest / "AGENTS.md"
@@ -220,6 +247,9 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertIn("AGENTS.md", result.output)
         self.assertIn("did NOT complete cleanly", result.output)
         self.assertIn("<<<<<<<", agents.read_text())
+        # Copier leaves the new pin unstaged next to the conflict; a hint that
+        # stages only AGENTS.md commits the merge under the old version.
+        self.assertIn("git add AGENTS.md .copier-answers.yml && git commit", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_file_added_upstream_lands_in_an_older_project(self) -> None:

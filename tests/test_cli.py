@@ -21,6 +21,19 @@ def _git(cwd: Path, *args: str) -> None:
     subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, check=True)
 
 
+def _fake_git(porcelain: str, diffed: str):
+    """Stand-in for cli._git_output: `status` and `diff` answer separately."""
+
+    def run(dest, *args):
+        if args[:1] == ("status",):
+            return porcelain
+        if args[:1] == ("diff",):
+            return diffed
+        return ""
+
+    return run
+
+
 class TreatyCliTests(unittest.TestCase):
     def setUp(self) -> None:
         self.runner = CliRunner()
@@ -66,7 +79,10 @@ class TreatyCliTests(unittest.TestCase):
             "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
         ), patch(
             "agent_collab_treaty.cli._git_output",
-            return_value="UU AGENTS.md\n M work_log.md\n",
+            side_effect=_fake_git(
+                "UU AGENTS.md\n M .copier-answers.yml\n",
+                "AGENTS.md\n.copier-answers.yml\n",
+            ),
         ):
             result = self.runner.invoke(app, ["update", "/some/dest"])
 
@@ -75,7 +91,9 @@ class TreatyCliTests(unittest.TestCase):
         self.assertIn("Conflicts (unresolved):", result.output)
         self.assertIn("AGENTS.md", result.output)
         self.assertIn("did NOT complete cleanly", result.output)
-        self.assertIn("git add AGENTS.md", result.output)
+        # The pin must be committed with the resolved docs, or the next update
+        # re-applies this one from the old version.
+        self.assertIn("git add AGENTS.md .copier-answers.yml && git commit", result.output)
 
     def test_update_clean_reports_summary_and_exits_zero(self) -> None:
         old = {"_commit": "v0.3.2", "include_treaty_badge": True}
@@ -84,15 +102,45 @@ class TreatyCliTests(unittest.TestCase):
             "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
         ), patch(
             "agent_collab_treaty.cli._git_output",
-            return_value=" M AGENTS.md\n M .copier-answers.yml\n",
+            side_effect=_fake_git(
+                " M AGENTS.md\n M .copier-answers.yml\n",
+                ".copier-answers.yml\nAGENTS.md\n",
+            ),
         ):
             result = self.runner.invoke(app, ["update", "/some/dest"])
 
         self.assertEqual(0, result.exit_code)
         self.assertIn("Template version: v0.3.2 -> v0.3.3", result.output)
         self.assertIn("Updated files:", result.output)
-        self.assertIn("git add -A && git commit", result.output)
+        # Named paths, not -A: unrelated untracked files may be lying around (#22).
+        self.assertIn("git add .copier-answers.yml AGENTS.md && git commit", result.output)
+        self.assertNotIn("git add -A", result.output)
         self.assertNotIn("Conflicts", result.output)
+
+    def test_update_separates_line_ending_only_rewrites(self) -> None:
+        """#31: under core.autocrlf=true, git status flags files Copier rewrote
+        with CRLF although their content, and what git add stages, is unchanged."""
+        old = {"_commit": "v0.3.2"}
+        new = {"_commit": "v0.3.3"}
+        with patch("copier.run_update"), patch(
+            "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+        ), patch(
+            "agent_collab_treaty.cli._git_output",
+            side_effect=_fake_git(
+                " M .copier-answers.yml\n M work_log.md\n?? notes/\n",
+                ".copier-answers.yml\n",
+            ),
+        ):
+            result = self.runner.invoke(app, ["update", "/some/dest"])
+
+        self.assertEqual(0, result.exit_code, result.output)
+        updated = result.output.split("Updated files:")[1].split("Line endings")[0]
+        self.assertIn(".copier-answers.yml", updated)
+        self.assertIn("notes/", updated, "untracked files are content changes")
+        self.assertNotIn("work_log.md", updated)
+        self.assertIn("Line endings rewritten, content unchanged", result.output)
+        # Staging it changes nothing but clears the stale status entry.
+        self.assertIn("work_log.md && git commit", result.output)
 
     def test_update_preserves_answers_by_default_and_reanswers_on_interactive(
         self,
