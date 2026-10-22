@@ -53,6 +53,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - real-merge probe before the fix: conflicting update left ` M .copier-answers.yml` / `UU AGENTS.md`, and the hint staged only AGENTS.md
   - the issue's reproduction on a disposable `fp_analysis` clone at e7b3f7a, with `core.autocrlf=true` and LF working copies: apply now reports the same 2 updated files as the preview, lists the 4 line-ending files separately, and its printed `git add` line staged exactly `.copier-answers.yml` and `treaty_conventions.md` and left status clean
   - `git diff --check`, `treaty validate .`
+- **Released as v0.9.3** (2026-10-22): `dev` fast-forwarded into `main` (no bot commits to reconcile), tag `v0.9.3` pushed. Closed #31 and #27 (field-confirmed); commented on #22. #28 stays open pending a behavioral trial.
 
 ## 2026-10-21
 
