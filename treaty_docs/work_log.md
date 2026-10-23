@@ -41,6 +41,20 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-23
 
+### glucose_ne_spectra feedback: fresh-install cleanup in `init`, CLI-first step, release notes and `--diff`; released v0.10.1 (claude-opus-5-5, high)
+
+- **Field result (Claude on `glucose_ne_spectra`, Linux, v0.9.0 → v0.10.0):** clean update. `work-log-first-run-text` and `next-steps-stale-background-line` each pointed at the exact line, and following their message cleared them. `treaty diff` confirmed #30 on Linux (17/4 → 12/2).
+- **#26 fresh-install gap:** a fresh install tripped the stale-line warning on day one. Codex's proposed `{% if _copier_operation == "update" %}` wrap **does not work**. Copier exposes `_copier_operation` only to tasks and `_exclude`, not to file content (`copier/_main.py`). Swept as variant E, the line vanished from update renders and all 19 adopters conflicted in `next_steps.md`. Instead, `treaty init` deletes the line from a `next_steps.md` it just created, and leaves a pre-existing one alone. The lifecycle check (init at v0.10.0, add a thread, ship a conventions change as v0.10.1, update) merged cleanly, and the line stayed gone. `copier copy` users still get the line and the warning.
+- **#23 old-CLI gap:** an adopter updating with CLI 0.9.0 gets step 7 ("run `treaty validate`") but a `validate` with none of the new checks, so it passes silently. Conventions' update procedure now starts with "upgrade the CLI first". Renumbering conventions was swept anyway: conflicts identical to the control in all 20 adopters.
+- **#32:** the release notes were empty because GitHub generates them from merged PRs, and the boss agent opens none. `scripts/release_notes.py` now builds them from commit subjects and body bullets since the previous tag, plus the template files that changed and what each costs an adopter. `release.yml` runs it with `fetch-depth: 0`. The four empty releases (v0.9.1–v0.10.0) are backfilled with the same script. `treaty update --dry-run --diff` prints each file's unified diff from the disposable clone; new files show up via intent-to-add.
+- Verification:
+  - `python -m unittest discover -s tests` — 148 tests OK (1 skipped)
+  - variant E (`_copier_operation` wrap) and variant F (renumbered conventions) swept over 20 adopter clones against the control
+  - fresh-init lifecycle check in the scratch template clone; `treaty init` smoke at both layouts, plus a pre-existing `next_steps.md`
+  - `treaty update --dry-run --diff` on a `wake-ne-analysis` clone, with the working tree unchanged afterward
+  - `python scripts/release_notes.py` for v0.9.1, v0.9.2, v0.9.3, v0.10.0
+  - `git diff --check`, `treaty validate .`
+
 ### #23.2, #23.3 and #26 as `validate` warnings instead of template edits (claude-opus-5-5, high)
 
 - **Why warnings:** the 2026-10-22 sweep showed the `work_log.md`/`next_steps.md` templates can't change, so the fix for leftover template text goes to the adopter's own copy. Four new warnings, all non-fatal:
