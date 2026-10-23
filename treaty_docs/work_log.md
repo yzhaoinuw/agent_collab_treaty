@@ -39,6 +39,25 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-10-23
+
+### #23.2, #23.3 and #26 as `validate` warnings instead of template edits (claude-opus-5-5, high)
+
+- **Why warnings:** the 2026-10-22 sweep showed the `work_log.md`/`next_steps.md` templates can't change, so the fix for leftover template text goes to the adopter's own copy. Four new warnings, all non-fatal:
+  - `work-log-first-run-text`: the first-run paragraph in a log that already has dated entries (#23.2).
+  - `next-steps-stale-background-line`: the "Other sections below…" line with `##` sections between it and Background / Paused (#26.1).
+  - `next-steps-hot-thread-paused`: a Currently Hot link into Background / Paused. This is #26's actual failure (two agents filing active threads as `###` there), which the stale-line check alone wouldn't catch.
+  - `unfilled-placeholder`: one per file, with a count, across `AGENTS.md`, `project_overview.md` and `next_steps.md` (#23.3). It strips code spans, fenced code, comments, links, reference definitions, checkboxes and footnotes before looking for `[...]`. Links to `path/to/...` count too.
+- **False-positive check against real docs:** validated all 20 adopters at their GitHub state. Every hit was real: the stale line in 5 repos, each above active threads; the first-run text in `glucose_ne_spectra`; placeholders only in `ai_crash_course`, whose overview on GitHub is still the starter. No placeholder false positives elsewhere. A fresh `init` passes with 4 warnings (3 placeholder files and the stale line), which reads as its to-do list.
+- **This repo tripped the stale-line warning too:** `treaty_docs/next_steps.md` had three paused or closed `##` sections above Background / Paused, against the layout rule v0.9.1 added to conventions. They're now `###` under the divider, the line is gone, and the Currently Hot link into them is plain text. The first warning text assumed `##` sections there are active threads, which this repo disproved, so it was reworded to cover both cases.
+- `treaty_conventions.md` "Updating The Treaty" gained a step 6: run `treaty validate` after updating, because that's when an update has just added placeholders. Free change: conventions is the one file adopters don't edit.
+- Considered and skipped: having `treaty update` print these warnings itself (#23's "even better" suggestion). Pre-existing placeholders would make every update summary noisy; the conventions step reaches the same moment.
+- Verification:
+  - `python -m unittest discover -s tests` — 144 tests OK (1 skipped), including a render of the real template at both layouts asserting warnings and no errors
+  - `treaty validate .` on 20 fresh adopter clones, with every hit inspected
+  - `treaty init` into a scratch dir with `--ref HEAD`; `treaty validate` there and here
+  - `git diff --check`
+
 ## 2026-10-22
 
 ### Adopter sweep: the work_log/next_steps templates can't change, so #23.2 and #26.1 move to the CLI (claude-opus-5-5, high)

@@ -6,7 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
-- **Open issues, ranked 2026-10-21 by ROI (non-disruptive first) and urgency (claude-opus-5-5, high).** **Shipped in v0.9.1 (2026-10-21):** #25 (hidden `.rej` refusal + backstop), #27 (`CLAUDE.md` import warning), #28 (push/merge trigger, conventions only), the conventions half of #26, the version-skew warning from #22/#23, and, from 2026-08-13, `--data` (closes #17 and #23.1). Nothing in it changes an adopter-edited doc. Field-confirmed on two adopters and closed 2026-10-21: #17, #25, #30. #23 stays open for #23.2/#23.3. #27's warning was field-confirmed on `fp_analysis` 2026-10-22. #28's guidance reached that adopter, but no behavioral trial has run yet. #31 (line-ending-only files listed as updated) and the conflict hint that dropped `.copier-answers.yml` shipped in v0.9.3; #27 and #31 closed 2026-10-22. **Next, in order (re-planned 2026-10-22 after the adopter sweep):** the `work_log.md` and `next_steps.md` templates are frozen (any edit conflicts 16–19 of 20 adopters; see the work log), so #23.2 and #26.1/#26.3 become **`validate` warnings** that tell the agent to fix its own copy: a first-run "Leave this file empty" paragraph in a log that already has dated entries, and an "Other sections below are background or paused" line followed by an active `##` thread. Bundle them with the #23.3 placeholder warning (unfilled `[brackets]`/`path/to/...`; must skip markdown links and `[ ]` checkboxes). Then relocate's external-reference line numbers and the `--force` wording (#22.2/#22.3, CLI-only). Then #28's push trigger in `template/AGENTS.md.jinja` if conventions alone prove too weak (`AGENTS.md` is still priced, not frozen). **Decision-gated:** #19 (is doc quality in scope?). **Hold:** #22.1/#22.4 (`--ignore-untracked` would mean getting around Copier's dirty check; `.git/info/exclude` is now the documented route), #29 (pre-push hook: new question and new files; wait to see whether #27/#28 suffice), #15's parked remainder.
+- **Open issues, ranked 2026-10-21 by ROI (non-disruptive first) and urgency (claude-opus-5-5, high).** **Shipped in v0.9.1 (2026-10-21):** #25 (hidden `.rej` refusal + backstop), #27 (`CLAUDE.md` import warning), #28 (push/merge trigger, conventions only), the conventions half of #26, the version-skew warning from #22/#23, and, from 2026-08-13, `--data` (closes #17 and #23.1). Nothing in it changes an adopter-edited doc. Field-confirmed on two adopters and closed 2026-10-21: #17, #25, #30. #23 stays open for #23.2/#23.3. #27's warning was field-confirmed on `fp_analysis` 2026-10-22. #28's guidance reached that adopter, but no behavioral trial has run yet. #31 (line-ending-only files listed as updated) and the conflict hint that dropped `.copier-answers.yml` shipped in v0.9.3; #27 and #31 closed 2026-10-22. **On `dev`, unreleased (2026-10-22/23):** the `work_log.md` conflict hint, the frozen-template guard, and four `validate` warnings covering #23.2, #23.3 and #26.1 (see the work log). Once released and seen working on an adopter, #23 and #26 can close. **Next, in order:** relocate's external-reference line numbers and the `--force` wording (#22.2/#22.3, CLI-only). Then #28's push trigger in `template/AGENTS.md.jinja` if conventions alone prove too weak (`AGENTS.md` is still priced, not frozen). **Decision-gated:** #19 (is doc quality in scope?). **Hold:** #22.1/#22.4 (`--ignore-untracked` would mean getting around Copier's dirty check; `.git/info/exclude` is now the documented route), #29 (pre-push hook: new question and new files; wait to see whether #27/#28 suffice), #15's parked remainder.
 - **The flat-rendering freeze is settled: paths frozen, content free (2026-08-13, claude-opus-5).** The blanket byte-identity assertion is gone, replaced by a path-set freeze plus behavioral merge tests. See the work-log entry for the measurements and the three-tier policy now in `AGENTS.md`. This unblocked #19, #23.2, and #23.3a.
 
 - **Current release: v0.9.3 (2026-10-22) — update summary counts content changes only (#31), and commit hints name every touched file, including `.copier-answers.yml` after a conflict (claude-opus-5-5).** v0.9.2 (2026-10-21) was the `treaty diff` nested-layout fix (#30) and two message fixes from the first v0.9.1 test drive. v0.9.1 (same day) was update safety and setup warnings; Codex test-drove it on two Windows adopters with no content lost. Watch for two things: `treaty update` refusing on a setup we didn't anticipate, and the `claude-pointer-missing-import` warning firing on a `CLAUDE.md` that actually imports `AGENTS.md` some other way.
@@ -15,13 +15,15 @@ Active threads — read these first to know what work is in flight:
 - **`treaty init` from an untagged local template still records an unresolvable `_commit` (claude-opus-5, 2026-08-12).** Half of this is fixed: `--source` is now absolutised at install time (`_resolve_source`), so `_src_path` no longer resolves to the adopter's own repo and git commands run against the real template. What remains is Copier's own recording of `_commit` as a `git describe` string (`v0.7.0-12-g462ff24`) when installing from an untagged commit; that is not a resolvable ref, so `treaty diff`/`treaty update` on such a project still fail — now in the *correct* repo, with a raw plumbum traceback rather than a clear message. Released adopters are unaffected (they pin a real tag). Proposed: before using a recorded `_commit`, verify it with `git rev-parse --verify <ref>^{commit}` against a local template source and, when it fails, print a clear instruction to pass `--ref` explicitly instead of letting the traceback surface. Deliberately not bundled into the `_src_path` fix — it is a distinct defect and was not part of the approved scope.
 - **Local adopter clones have drifted from their published state (claude-opus-5, 2026-08-12; re-confirmed 2026-08-13).** `desktop_app_source_updater` is still pinned v0.4.1 on GitHub but was v0.6.0 in the local working copy — a `treaty update` run locally and never pushed. `ai_crash_course` shows the same signature (identical pin, different conflict outcome between the GitHub-clone and local-clone sweeps). Worth a pass to push or discard the local-only treaty updates, because until then the pin survey above reads GitHub state that some local clones contradict.
 - **Adopters badge links to a search that disagrees with it** (open, small). The badge reads 14 — the correct public count — but its link goes to the GitHub code-search results page, which indexes only a fraction of those repos. Options: point the link at a maintained `ADOPTERS.md` list, at the README badge section, or leave it and accept the mismatch. Needs a decision before anyone treats the link as authoritative.
-- **Shipped, nothing outstanding on the releases themselves:** v0.5.0 (2026-07-30 — #12 template split into adopter-owned `AGENTS.md` and upstream `treaty_conventions.md`, opt-out questions, `treaty diff`; see [Issue #12 follow-ups](#issue-12-follow-ups-claude-opus-5)) · v0.6.0 (2026-08-01 — `treaty --version` #13, real Copier-merge tests #14, prompt-led README) · v0.7.0 (2026-08-01 — real `--dry-run` merge preview #16/#18, gitignored-answers detection from #15) · v0.8.0 (2026-08-12 — the `docs_dir` nested layout, verified non-migrating for existing adopters across 26 branch-vs-control runs on two operating systems). Full detail is in `work_log.md` and `work_log_archive/`; keep it out of this list.
+- **Shipped, nothing outstanding on the releases themselves:** v0.5.0 (2026-07-30 — #12 template split into adopter-owned `AGENTS.md` and upstream `treaty_conventions.md`, opt-out questions, `treaty diff`; see Issue #12 follow-ups under Background / Paused) · v0.6.0 (2026-08-01 — `treaty --version` #13, real Copier-merge tests #14, prompt-led README) · v0.7.0 (2026-08-01 — real `--dry-run` merge preview #16/#18, gitignored-answers detection from #15) · v0.8.0 (2026-08-12 — the `docs_dir` nested layout, verified non-migrating for existing adopters across 26 branch-vs-control runs on two operating systems). Full detail is in `work_log.md` and `work_log_archive/`; keep it out of this list.
 
 When an agent (or human) creates or significantly updates a thread/plan here, include model + version, effort/thinking mode, and token budget (if known) in parentheses after the thread name or at the end of the status line, using the same compact convention as `work_log.md`.
 
-Other sections below are background or paused; treat them as reference unless a new request reopens them.
+## Background / Paused
 
-## Parked: automated update notifications (claude-opus-5)
+Sections below this line are older threads kept for context. They're not the current focus, but recording the state they were left in saves the next agent from re-deriving it.
+
+### Parked: automated update notifications (claude-opus-5)
 
 Status: **designed, deliberately not built** (2026-08-01). Do not start this without a fresh decision.
 
@@ -33,7 +35,7 @@ The design considered: a composite action in this repo at `.github/actions/treat
 
 Revisit only if a future release makes older docs genuinely wrong rather than merely dated — a breaking rename, or guidance that becomes misleading. Open questions if it is ever picked up: whether a PR containing conflict markers is acceptable (it is what makes the branch agent-resolvable, but it breaks linters on that branch), and that `GITHUB_TOKEN`-created PRs do not trigger the adopter's other workflows.
 
-## Issue #12 follow-ups (claude-opus-5)
+### Issue #12 follow-ups (claude-opus-5)
 
 Status: P1, P2, P4, P5, P6, and the two P3-lite items shipped in **v0.5.0** (released 2026-07-30).
 
@@ -44,7 +46,7 @@ Open follow-ups:
 - **`treaty diff` could gain `--json`** for scripting, and could report *which lines* within a modified section drifted. Neither is needed yet.
 - **The 150-line guidance is now met by default (132 lines)** but is not enforced. A `treaty validate` check for it would close #11 mechanically; unclear whether that is welcome or annoying, since adopters legitimately add sections.
 
-## Conflict-safe treaty update: closed (claude-opus-4.8)
+### Conflict-safe treaty update: closed (claude-opus-4.8)
 
 Status: **issue #10 closed 2026-07-30.** Kept here as the record of how it was resolved.
 
@@ -57,15 +59,11 @@ Items 6 and 7 became standalone issues on 2026-07-30, and both closed on 2026-08
 - [**#13 `treaty --version`**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/13) — done. Eager top-level callback printing the CLI version plus, inside an installed project, the pinned `_commit` and `_src_path`.
 - [**#14 real Copier-merge tests**](https://github.com/yzhaoinuw/agent_collab_treaty/issues/14) — done. `tests/test_update_integration.py` runs genuine three-way merges over git-backed scratch projects, and `CopierConfigContractTests` guards the `copier.yml` declaration order the answer migration depends on. That guard was mutation-tested rather than just observed green.
 
-## Background / Paused
-
-Sections below this line are older threads kept for context. They're not the current focus, but recording the state they were left in saves the next agent from re-deriving it.
-
-## Adopters badge history
+### Adopters badge history
 
 The adoption-badge feature shipped in v0.3.1; a logo color/layout polish followed. The `ADOPTERS_TOKEN` PAT secret was added 2026-07-06, resolving the weekly workflow's code-search rate-limiting. On 2026-07-26 the counter was fixed to read `yzhaoinuw/*` repos directly, because code search indexes only a fraction of our repos; the badge went 6 -> 13, and reads 14 as of 2026-08-13. The one open decision is the badge's link target — see "Currently Hot".
 
-## Existing Docs Adoption (gpt-5)
+### Existing Docs Adoption (gpt-5)
 
 Status: implemented first pass; future explicit migration command deferred
 
@@ -74,7 +72,7 @@ Status: implemented first pass; future explicit migration command deferred
 - Blocks noncanonical treaty-looking paths before copying, because on Windows they can prevent canonical treaty files from being created.
 - Leaves broader migration tooling for later: a future explicit `treaty adopt` or `treaty migrate` command could summarize overlap, preserve originals in a user-approved archive or bridge, and create fresh canonical treaty files without silent rewrites.
 
-## Session Documentation Rules (gpt-5)
+### Session Documentation Rules (gpt-5)
 
 Status: implemented
 
@@ -82,7 +80,7 @@ Status: implemented
 - Clarified in `template/work_log.md` that agents should log substantive sessions by default, skip trivial/off-the-book exchanges, and preserve useful evidence from reverted experiments.
 - Updated README workflow guidance and Copier's post-copy message so downstream users see the same rule.
 
-## Legacy Overlap Validation (gpt-5)
+### Legacy Overlap Validation (gpt-5)
 
 Status: implemented
 

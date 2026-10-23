@@ -30,7 +30,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - The update summary counts a file as updated only when `git diff HEAD` sees a content change: under `core.autocrlf=true`, `git status` keeps flagging files the merge rewrote with CRLF (issue #31). Its commit hint names every touched path, `.copier-answers.yml` included, rather than `git add -A`.
 - When `work_log.md` conflicts, update and preview both say which side holds the history: the template's side is intro text, and adopters' newest entries sit on the other.
 - `treaty diff` renders the pinned template into a temp dir via `_render_pristine(...)` and reports section-level drift; read-only, and it needs no clean tree.
-- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default (issues marked `warning:` print but never fail); `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
+- `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default (issues marked `warning:` print but never fail; they cover setup problems, unfilled placeholders, and template text in `work_log.md`/`next_steps.md` that adopters must fix in their own copy, since those templates are frozen); `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
 
 ### 2b. Drift module

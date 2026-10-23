@@ -317,6 +317,191 @@ class WarningTests(unittest.TestCase):
                 self.assertEqual([], validate_project(root))
 
 
+
+NEXT_STEPS_WITH_BACKGROUND = """# Next Steps
+
+## Currently Hot
+
+- **Thread** - see [Thread](#thread-gpt-5).
+
+{stale}## Thread (gpt-5)
+
+Status: in progress
+
+## Background / Paused
+
+Sections below this line are older threads kept for context.
+
+### Old thread (gpt-5)
+
+Status: paused
+"""
+
+
+class AdopterCopyWarningTests(unittest.TestCase):
+    """Template text the adopter must fix in their own copy, because the
+    work_log.md / next_steps.md templates can't change upstream (2026-10-22)."""
+
+    def codes(self, root: Path) -> list[str]:
+        issues = validate_project(root)
+        self.assertTrue(all(not i.is_error for i in issues), issues)
+        return [i.code for i in issues]
+
+    def test_first_run_paragraph_in_a_log_with_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            log = root / "work_log.md"
+            log.write_text(
+                log.read_text().replace(
+                    "# Work Log\n",
+                    "# Work Log\n\n**Setting this up for the first time?** Leave this file empty.\n",
+                ),
+                encoding="utf-8",
+            )
+            issues = validate_project(root)
+
+        self.assertEqual(["work-log-first-run-text"], [i.code for i in issues])
+        self.assertEqual(3, issues[0].line)
+        self.assertFalse(issues[0].is_error)
+
+    def test_first_run_paragraph_in_an_empty_log_is_fine(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "work_log.md").write_text(
+                "# Work Log\n\n**Setting this up for the first time?** Leave this file empty.\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], self.codes(root))
+
+    def test_stale_background_line_above_active_threads(self) -> None:
+        """Issue #26: the line contradicts the layout it ships in."""
+        stale = "Other sections below are background or paused; treat them as reference.\n\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "next_steps.md").write_text(
+                NEXT_STEPS_WITH_BACKGROUND.format(stale=stale), encoding="utf-8"
+            )
+            issues = validate_project(root)
+
+        self.assertEqual(["next-steps-stale-background-line"], [i.code for i in issues])
+        self.assertEqual(7, issues[0].line)
+
+    def test_background_line_is_fine_without_threads_between(self) -> None:
+        cases = {
+            "no stale line": NEXT_STEPS_WITH_BACKGROUND.format(stale=""),
+            # True as written: nothing sits between it and the divider.
+            "right above the divider": (
+                "# Next Steps\n\n## Currently Hot\n\n- none\n\n"
+                "Other sections below are background or paused.\n\n"
+                "## Background / Paused\n\n### Old\n"
+            ),
+            # No divider to judge against.
+            "no divider": (
+                "# Next Steps\n\n## Currently Hot\n\n- none\n\n"
+                "Other sections below are background or paused.\n\n## Parked\n"
+            ),
+        }
+        for name, body in cases.items():
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                write_valid_project(root)
+                (root / "next_steps.md").write_text(body, encoding="utf-8")
+                self.assertEqual([], self.codes(root))
+
+    def test_currently_hot_thread_filed_under_background(self) -> None:
+        """Issue #26: two agents, weeks apart, filed active threads as ###
+        entries under Background / Paused."""
+        body = NEXT_STEPS_WITH_BACKGROUND.format(stale="").replace(
+            "- **Thread** - see [Thread](#thread-gpt-5).",
+            "- **Thread** - see [Thread](#thread-gpt-5).\n- **Old** - see [Old](#old-thread-gpt-5).",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "next_steps.md").write_text(body, encoding="utf-8")
+            issues = validate_project(root)
+
+        self.assertEqual(["next-steps-hot-thread-paused"], [i.code for i in issues])
+        self.assertIn("#old-thread-gpt-5", issues[0].message)
+
+    def test_placeholders_are_counted_once_per_file(self) -> None:
+        """Issue #23: an update can add a section of placeholders to a doc the
+        adopter finished long ago."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "project_overview.md").write_text(
+                "# Project Overview\n\nA real summary.\n\n## Authored vs. Derived\n\n"
+                "- [`path/to/source_of_truth`](path/to/source_of_truth) — [what it generates]\n",
+                encoding="utf-8",
+            )
+            issues = validate_project(root)
+
+        self.assertEqual(["unfilled-placeholder"], [i.code for i in issues])
+        self.assertEqual(7, issues[0].line)
+        self.assertIn("2 template placeholder(s)", issues[0].message)
+
+    def test_brackets_that_are_not_placeholders(self) -> None:
+        body = "\n".join(
+            [
+                "# Guidelines",
+                "",
+                "See [Documentation](#documentation) and [pre-commit](https://pre-commit.com).",
+                "Reference-style [docs][ref] and an image ![logo](logo.png).",
+                "",
+                "[ref]: https://example.com",
+                "",
+                "- [ ] open task",
+                "- [x] done task",
+                "A footnote.[^1]",
+                "Inline code: `rg -n '^## [0-9]{4}'` and `a[i]`.",
+                "",
+                "```",
+                "matrix[row][col] = [fill me in]",
+                "```",
+                "<!-- [commented placeholder] -->",
+            ]
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "AGENTS.md").write_text(body, encoding="utf-8")
+            self.assertEqual([], self.codes(root))
+
+    @unittest.skipIf(
+        __import__("os").environ.get("TREATY_SKIP_INTEGRATION") == "1",
+        "TREATY_SKIP_INTEGRATION=1",
+    )
+    def test_fresh_install_gets_warnings_and_no_errors(self) -> None:
+        """A fresh init must still pass validate; the warnings are its to-do list."""
+        import copier
+
+        repo = Path(__file__).resolve().parents[1]
+        for docs_dir in (".", "treaty_docs"):
+            with self.subTest(docs_dir=docs_dir), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                copier.run_copy(
+                    str(repo), str(root), vcs_ref="HEAD", defaults=True,
+                    data={"docs_dir": docs_dir}, quiet=True,
+                )
+                issues = validate_project(root)
+
+                self.assertEqual([], [i for i in issues if i.is_error])
+                self.assertEqual(
+                    sorted(
+                        [
+                            "next-steps-stale-background-line",
+                            "unfilled-placeholder",
+                            "unfilled-placeholder",
+                            "unfilled-placeholder",
+                        ]
+                    ),
+                    sorted(i.code for i in issues),
+                )
+
 def write_valid_project(root: Path) -> None:
     (root / "work_log_archive").mkdir()
     (root / "AGENTS.md").write_text("# Guidelines\n", encoding="utf-8")

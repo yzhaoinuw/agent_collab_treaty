@@ -17,6 +17,22 @@ SESSION_HEADING_RE = re.compile(r"^### (.+?)\s*$")
 SESSION_METADATA_RE = re.compile(r"^### .+\([^()]+\)\s*$")
 INLINE_VERIFICATION_RE = re.compile(r"^\s*- Verification[^:]*:\s*\S")
 MARKDOWN_LINK_ANCHOR_RE = re.compile(r"\[[^\]]+\]\(#([^)]+)\)")
+
+# Template text that adopters must fix in their own copy. The work_log.md and
+# next_steps.md templates are frozen (any upstream edit conflicts in nearly
+# every adopter, measured 2026-10-22), so validate points at it instead.
+FIRST_RUN_PREFIX = "**Setting this up for the first time?**"
+STALE_BACKGROUND_PREFIX = "Other sections below are background or paused"
+BACKGROUND_HEADING_RE = re.compile(r"^## Background\b", re.IGNORECASE)
+
+# Placeholders: links to `path/to/...`, and bracketed prose such as
+# `[what it does]` once code spans, links and checkboxes are stripped out.
+PLACEHOLDER_LINK_RE = re.compile(r"\]\(path/to/")
+CODE_SPAN_RE = re.compile(r"`[^`]*`")
+LINK_RE = re.compile(r"!?\[[^\]]*\](?:\([^)]*\)|\[[^\]]*\])")
+REFERENCE_DEFINITION_RE = re.compile(r"^\s*\[[^\]]+\]:")
+BRACKET_RE = re.compile(r"\[([^\[\]]+)\]")
+NOT_PLACEHOLDER_RE = re.compile(r"^(?:\s|x|X|\^.*)$")
 # Claude Code's import syntax: `@path` as its own token. A line merely asking
 # the agent to read AGENTS.md is a request it can skip, not an import.
 AGENTS_IMPORT_RE = re.compile(r"(?:^|\s)@(?:\./)?AGENTS\.md(?=\s|$)")
@@ -151,6 +167,11 @@ def validate_project(root: Path, today: date | None = None) -> list[ValidationIs
     next_steps = states[f"{docs_prefix}next_steps.md"].exact
     if next_steps is not None:
         issues.extend(_validate_next_steps(next_steps))
+
+    for relative in ("AGENTS.md", "project_overview.md", f"{docs_prefix}next_steps.md"):
+        found = states[relative].exact
+        if found is not None:
+            issues.extend(_validate_placeholders(found))
 
     return issues
 
@@ -432,6 +453,24 @@ def _validate_work_log(path: Path, today: date) -> Iterable[ValidationIssue]:
                 ),
             )
 
+    if date_headings:
+        first_run = next(
+            (n for n, line in content if line.startswith(FIRST_RUN_PREFIX)), None
+        )
+        if first_run is not None:
+            yield ValidationIssue(
+                path=path,
+                line=first_run,
+                code="work-log-first-run-text",
+                severity="warning",
+                message=(
+                    "This paragraph is for a brand-new log, and this one already "
+                    "has entries: delete it from your copy. It stays in the "
+                    "template because removing it upstream would conflict with "
+                    "every adopter's own edits."
+                ),
+            )
+
     if len(date_headings) > 5:
         line_number, date_value = date_headings[5]
         yield ValidationIssue(
@@ -501,6 +540,11 @@ def _validate_next_steps(path: Path) -> Iterable[ValidationIssue]:
         )
         return
 
+    background = next(
+        (i for i, (_, line) in enumerate(content) if BACKGROUND_HEADING_RE.match(line)),
+        None,
+    )
+
     for line_number, line in content[current_hot_start:current_hot_end]:
         for anchor in MARKDOWN_LINK_ANCHOR_RE.findall(line):
             if anchor not in anchors:
@@ -510,12 +554,90 @@ def _validate_next_steps(path: Path) -> Iterable[ValidationIssue]:
                     code="next-steps-broken-hot-link",
                     message=f"Currently Hot link points to missing anchor: #{anchor}",
                 )
+            elif background is not None and anchors[anchor] > background:
+                # Issue #26: two agents, weeks apart, filed active threads
+                # as ### entries under Background / Paused.
+                yield ValidationIssue(
+                    path=path,
+                    line=line_number,
+                    code="next-steps-hot-thread-paused",
+                    severity="warning",
+                    message=(
+                        f"Currently Hot lists #{anchor}, but that section is filed "
+                        "under Background / Paused. An active thread is a '##' "
+                        "section above that heading; move it there."
+                    ),
+                )
+
+    if background is not None:
+        stale = next(
+            (
+                i
+                for i, (_, line) in enumerate(content[:background])
+                if line.startswith(STALE_BACKGROUND_PREFIX)
+            ),
+            None,
+        )
+        if stale is not None and any(
+            line.startswith("## ") for _, line in content[stale + 1 : background]
+        ):
+            yield ValidationIssue(
+                path=path,
+                line=content[stale][0],
+                code="next-steps-stale-background-line",
+                severity="warning",
+                message=(
+                    "This line calls every section below it background, but "
+                    "'##' sections follow it before Background / Paused, and that "
+                    "is where active threads go. Delete the line, and file any "
+                    "paused thread as a '###' under Background / Paused."
+                ),
+            )
 
 
-def _heading_anchors(lines: Iterable[tuple[int, str]]) -> set[str]:
-    anchors: set[str] = set()
+def _validate_placeholders(path: Path) -> Iterable[ValidationIssue]:
+    """One warning per file that still carries template placeholders (#23).
+
+    An update can add a section full of placeholders to a doc the adopter
+    finished long ago, under a doc map that tells agents to rely on it.
+    """
+    found: list[tuple[int, str]] = []
+    in_fence = False
+    for line_number, line in _without_html_comments(_read_lines(path)):
+        if line.lstrip().startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if in_fence or REFERENCE_DEFINITION_RE.match(line):
+            continue
+        if PLACEHOLDER_LINK_RE.search(line):
+            found.append((line_number, "path/to/..."))
+        prose = LINK_RE.sub("", CODE_SPAN_RE.sub("", line))
+        for text in BRACKET_RE.findall(prose):
+            if not NOT_PLACEHOLDER_RE.match(text):
+                found.append((line_number, f"[{text}]"))
+    if not found:
+        return
+    first_line, example = found[0]
+    if len(example) > 60:
+        example = example[:57] + "...]"
+    yield ValidationIssue(
+        path=path,
+        line=first_line,
+        code="unfilled-placeholder",
+        severity="warning",
+        message=(
+            f"{len(found)} template placeholder(s) left unfilled, starting with "
+            f"{example}. Fill them in with this project's details, or delete "
+            "what doesn't apply."
+        ),
+    )
+
+
+def _heading_anchors(lines: Iterable[tuple[int, str]]) -> dict[str, int]:
+    """Map each heading's GitHub anchor to its index in ``lines``."""
+    anchors: dict[str, int] = {}
     counts: dict[str, int] = {}
-    for _, line in lines:
+    for index, (_, line) in enumerate(lines):
         if not line.startswith("#"):
             continue
         match = re.match(r"^#{2,6}\s+(.+?)\s*$", line)
@@ -524,7 +646,7 @@ def _heading_anchors(lines: Iterable[tuple[int, str]]) -> set[str]:
         base = _github_anchor(match.group(1))
         count = counts.get(base, 0)
         counts[base] = count + 1
-        anchors.add(base if count == 0 else f"{base}-{count}")
+        anchors[base if count == 0 else f"{base}-{count}"] = index
     return anchors
 
 

@@ -96,6 +96,7 @@ All of it runs off `.copier-answers.yml` at the repo root — Copier's record of
 3. `treaty update --dry-run` previews the merge without writing.
 4. `treaty update` performs a **three-way merge**, so edits that do not overlap upstream changes are kept automatically. Where a local edit overlaps a changed region, it leaves conflict markers (`<<<<<<< before updating` / `=======` / `>>>>>>> after updating`) and an unmerged file, exactly like `git merge`. Resolve each one — keep your content, fold in the new template material — then `git add` the file.
 5. Review `git diff`, confirm no conflict markers survive, then commit.
+6. Run `treaty validate`. Its warnings name template text that only your copy can fix: placeholders a new section brought in, or first-run text that no longer applies. Upstream can't remove that text from `work_log.md` or `next_steps.md` without conflicting with every adopter, so delete it yourself.
 
 ## Customizing These Docs
 

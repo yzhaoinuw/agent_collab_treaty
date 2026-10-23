@@ -299,7 +299,14 @@ treaty validate --migration-hints     # plus overlap hints for legacy docs
 
 It checks canonical filenames, `work_log.md` structure, live-log rotation, session verification sections, `next_steps.md` "Currently Hot" links, and whether git would ignore the treaty docs themselves. Exits non-zero when issues are found; `--warn-only` keeps it advisory.
 
-Two checks are warnings, which print but never fail: a `CLAUDE.md` that doesn't import `AGENTS.md` (a line asking Claude to read it isn't an import; `@AGENTS.md` is), and a `treaty` CLI older than the template your project is pinned to.
+Some checks are warnings, which print but never fail:
+
+- a `CLAUDE.md` that doesn't import `AGENTS.md` (a line asking Claude to read it isn't an import; `@AGENTS.md` is);
+- a `treaty` CLI older than the template your project is pinned to;
+- template placeholders still unfilled, such as `[what it does]` or links to `path/to/...`. A fresh install has plenty, and an update can add a section full of them to a doc you finished long ago;
+- template text that only your copy can fix: the "Setting this up for the first time?" paragraph in a work log that already has entries, an "Other sections below are background or paused" line sitting above active threads in `next_steps.md`, and a Currently Hot thread filed under Background / Paused.
+
+The template keeps that text because changing `work_log.md` or `next_steps.md` upstream would conflict with nearly every adopter's own edits. So `validate` points it out instead, and you delete it once.
 
 ## Wiring Up Your Agent
 
