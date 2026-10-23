@@ -476,31 +476,62 @@ class AdopterCopyWarningTests(unittest.TestCase):
         "TREATY_SKIP_INTEGRATION=1",
     )
     def test_fresh_install_gets_warnings_and_no_errors(self) -> None:
-        """A fresh init must still pass validate; the warnings are its to-do list."""
+        """A fresh install must still pass validate; the warnings are its to-do list.
+
+        `treaty init` removes the stale next_steps.md line itself (#26); a plain
+        `copier copy` keeps it, and the warning covers that route.
+        """
         import copier
+        from typer.testing import CliRunner
+
+        from agent_collab_treaty.cli import app
 
         repo = Path(__file__).resolve().parents[1]
+        placeholders = ["unfilled-placeholder"] * 3
         for docs_dir in (".", "treaty_docs"):
-            with self.subTest(docs_dir=docs_dir), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                copier.run_copy(
-                    str(repo), str(root), vcs_ref="HEAD", defaults=True,
-                    data={"docs_dir": docs_dir}, quiet=True,
-                )
-                issues = validate_project(root)
+            for route in ("treaty init", "copier copy"):
+                with self.subTest(docs_dir=docs_dir, route=route), tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    if route == "treaty init":
+                        result = CliRunner().invoke(
+                            app,
+                            ["init", str(root), "--source", str(repo), "--ref", "HEAD",
+                             "--defaults", "--data", f"docs_dir={docs_dir}"],
+                        )
+                        self.assertEqual(0, result.exit_code, result.output)
+                        expected = placeholders
+                    else:
+                        copier.run_copy(
+                            str(repo), str(root), vcs_ref="HEAD", defaults=True,
+                            data={"docs_dir": docs_dir}, quiet=True,
+                        )
+                        expected = placeholders + ["next-steps-stale-background-line"]
+                    issues = validate_project(root)
 
-                self.assertEqual([], [i for i in issues if i.is_error])
-                self.assertEqual(
-                    sorted(
-                        [
-                            "next-steps-stale-background-line",
-                            "unfilled-placeholder",
-                            "unfilled-placeholder",
-                            "unfilled-placeholder",
-                        ]
-                    ),
-                    sorted(i.code for i in issues),
-                )
+                    self.assertEqual([], [i for i in issues if i.is_error])
+                    self.assertEqual(sorted(expected), sorted(i.code for i in issues))
+
+    @unittest.skipIf(
+        __import__("os").environ.get("TREATY_SKIP_INTEGRATION") == "1",
+        "TREATY_SKIP_INTEGRATION=1",
+    )
+    def test_init_leaves_an_existing_next_steps_alone(self) -> None:
+        """Copier skips a next_steps.md that already exists; so must the cleanup."""
+        from typer.testing import CliRunner
+
+        from agent_collab_treaty.cli import app
+
+        repo = Path(__file__).resolve().parents[1]
+        mine = "# Next Steps\n\n## Currently Hot\n\nOther sections below are background or paused; mine.\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "treaty_docs").mkdir()
+            (root / "treaty_docs" / "next_steps.md").write_text(mine, encoding="utf-8")
+            result = CliRunner().invoke(
+                app, ["init", str(root), "--source", str(repo), "--ref", "HEAD", "--defaults"]
+            )
+            self.assertEqual(0, result.exit_code, result.output)
+            self.assertEqual(mine, (root / "treaty_docs" / "next_steps.md").read_text(encoding="utf-8"))
 
 def write_valid_project(root: Path) -> None:
     (root / "work_log_archive").mkdir()

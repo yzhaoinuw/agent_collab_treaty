@@ -91,12 +91,13 @@ Pulling upstream treaty refinements into this project is a maintainer's call —
 
 All of it runs off `.copier-answers.yml` at the repo root — Copier's record of the answers this project was installed with and the template version it is pinned to. It stays at the root whatever layout the docs use, because it is the file that records the layout. Keep it committed: if git ignores it, `treaty update` and `treaty diff` have nothing to read and cannot run.
 
-1. Commit or stash local changes first. `treaty update` requires a clean, git-tracked working tree and refuses to run on a dirty one.
-2. `treaty diff` shows, section by section, how far this project has drifted from the template version it is pinned to — that is the conflict exposure before you touch anything.
-3. `treaty update --dry-run` previews the merge without writing.
-4. `treaty update` performs a **three-way merge**, so edits that do not overlap upstream changes are kept automatically. Where a local edit overlaps a changed region, it leaves conflict markers (`<<<<<<< before updating` / `=======` / `>>>>>>> after updating`) and an unmerged file, exactly like `git merge`. Resolve each one — keep your content, fold in the new template material — then `git add` the file.
-5. Review `git diff`, confirm no conflict markers survive, then commit.
-6. Run `treaty validate`. Its warnings name template text that only your copy can fix: placeholders a new section brought in, or first-run text that no longer applies. Upstream can't remove that text from `work_log.md` or `next_steps.md` without conflicting with every adopter, so delete it yourself.
+1. Upgrade the CLI first: `python -m pip install -U agent-collab-treaty`, then check `treaty --version`. Template fixes often depend on CLI checks, and an older CLI runs without complaint, so its `treaty validate` passes without knowing what the new template expects.
+2. Commit or stash local changes. `treaty update` requires a clean, git-tracked working tree and refuses to run on a dirty one.
+3. `treaty diff` shows, section by section, how far this project has drifted from the template version it is pinned to — that is the conflict exposure before you touch anything.
+4. `treaty update --dry-run` previews the merge without writing.
+5. `treaty update` performs a **three-way merge**, so edits that do not overlap upstream changes are kept automatically. Where a local edit overlaps a changed region, it leaves conflict markers (`<<<<<<< before updating` / `=======` / `>>>>>>> after updating`) and an unmerged file, exactly like `git merge`. Resolve each one — keep your content, fold in the new template material — then `git add` the file.
+6. Review `git diff`, confirm no conflict markers survive, then commit.
+7. Run `treaty validate`. Its warnings name template text that only your copy can fix: placeholders a new section brought in, or first-run text that no longer applies. Upstream can't remove that text from `work_log.md` or `next_steps.md` without conflicting with every adopter, so delete it yourself.
 
 ## Customizing These Docs
 

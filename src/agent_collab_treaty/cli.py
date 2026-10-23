@@ -9,7 +9,12 @@ from typing import List, Optional
 
 import typer
 
-from .validation import ANSWERS_FILE, answers_file_ignored
+from .validation import (
+    ANSWERS_FILE,
+    STALE_BACKGROUND_PREFIX,
+    answers_file_ignored,
+    resolve_docs_dir,
+)
 
 
 def _git_output(dest: Path, *args: str) -> Optional[str]:
@@ -88,6 +93,38 @@ def _conflict_notes(unmerged: list[str]) -> list[str]:
         "every dated entry from the 'before updating' side: dropping that side "
         "deletes history.",
     ]
+
+
+def _next_steps_candidates(dest: Path) -> set[Path]:
+    """Every next_steps.md that could be the treaty's, at either layout."""
+    return {
+        path.resolve()
+        for path in (dest / "next_steps.md", *dest.glob("*/next_steps.md"))
+        if path.is_file()
+    }
+
+
+def _drop_stale_background_line(dest: Path, existing: set[Path]) -> None:
+    """Remove the template's self-contradicting line from a fresh next_steps.md.
+
+    "Other sections below are background or paused" sits above the active
+    thread examples it contradicts (#26). The template can't drop it: any edit
+    to next_steps.md conflicts in nearly every adopter (measured 2026-10-22).
+    Copier's ``_copier_operation`` is not visible to file content, so a
+    copy-only render is not possible either. Deleting it in the new copy is the
+    edit most adopters already made by hand, and their updates merge cleanly.
+    A next_steps.md that existed before init was skipped by Copier; leave it.
+    """
+    path = (dest / resolve_docs_dir(dest) / "next_steps.md").resolve()
+    if path in existing or not path.is_file():
+        return
+    lines = path.read_text(encoding="utf-8").split("\n")
+    for index, line in enumerate(lines):
+        if line.startswith(STALE_BACKGROUND_PREFIX):
+            end = index + 2 if index + 1 < len(lines) and not lines[index + 1].strip() else index + 1
+            del lines[index:end]
+            path.write_text("\n".join(lines), encoding="utf-8")
+            return
 
 
 def _stage_command(paths: list[str]) -> str:
@@ -393,6 +430,7 @@ def init(
         raise typer.Exit(1)
 
     typer.echo(f"Installing the Agent Collab Treaty into {destination}")
+    existing_next_steps = _next_steps_candidates(destination)
     copier.run_copy(
         src_path=_resolve_source(source),
         dst_path=str(destination),
@@ -401,6 +439,7 @@ def init(
         data=_parse_data(data),
         skip_if_exists=INIT_SKIP_IF_EXISTS,
     )
+    _drop_stale_background_line(destination, existing_next_steps)
 
     if answers_file_ignored(destination):
         typer.echo(
@@ -445,6 +484,15 @@ def update(
             "are, since they are supplied on the command line."
         ),
     ),
+    show_diff: bool = typer.Option(
+        False,
+        "--diff",
+        help=(
+            "With --dry-run, also print the full diff of every file the "
+            "preview would change, so you can read what an update does before "
+            "applying it. After a real update, use git diff."
+        ),
+    ),
     defaults: bool = typer.Option(
         False,
         "--defaults",
@@ -473,6 +521,13 @@ def update(
             "Pass --interactive to re-answer questions.",
             err=True,
         )
+    if show_diff and not dry_run:
+        typer.echo(
+            "--diff works with --dry-run. After a real update, review the "
+            "changes with git diff.",
+            err=True,
+        )
+        raise typer.Exit(2)
     use_defaults = not interactive
     overrides = _parse_data(data)
     _reject_layout_override(overrides)
@@ -482,7 +537,7 @@ def update(
     _refuse_if_rejects_hidden(destination)
 
     if dry_run:
-        _preview_update(destination, use_defaults, overrides)
+        _preview_update(destination, use_defaults, overrides, show_diff)
         return
 
     old_answers = _read_answers(destination)
@@ -590,7 +645,10 @@ def _reject_layout_override(overrides: dict[str, str]) -> None:
 
 
 def _preview_update(
-    destination: Path, use_defaults: bool, overrides: Optional[dict[str, str]] = None
+    destination: Path,
+    use_defaults: bool,
+    overrides: Optional[dict[str, str]] = None,
+    show_diff: bool = False,
 ) -> None:
     """Run the real update in a disposable clone and report what it would do.
 
@@ -658,11 +716,15 @@ def _preview_update(
         new_rejects = _reject_files(preview)
         rejected = _rejected_targets(new_rejects)
         changed = [path for path in changed if path not in new_rejects]
+        diff_text = _preview_diff(preview, changed + unmerged) if show_diff else ""
 
     for line in _format_update_summary(
         old_answers, new_answers, changed, unmerged, rejected, eol_only
     ):
         typer.echo(line)
+    if diff_text:
+        typer.echo("")
+        typer.echo(diff_text.rstrip("\n"))
 
     if rejected:
         typer.echo("", err=True)
@@ -688,6 +750,19 @@ def _preview_update(
 
     typer.echo("")
     typer.echo("Preview only — no changes written. Re-run without --dry-run to apply.")
+
+
+def _preview_diff(preview: Path, paths: list[str]) -> str:
+    """The unified diff of ``paths`` in the preview clone, new files included."""
+    if not paths:
+        return ""
+    # Intent-to-add makes files the update created show up in `git diff`.
+    subprocess.run(
+        ["git", "-C", str(preview), "add", "--intent-to-add", "--", *paths],
+        capture_output=True,
+        check=False,
+    )
+    return _git_output(preview, "diff", "--no-color", "HEAD", "--", *paths) or ""
 
 
 def _render_pristine(

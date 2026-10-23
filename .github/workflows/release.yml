@@ -26,6 +26,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v7
+        with:
+          # Full history and tags, so the release notes can find the previous tag.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -41,8 +44,15 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
+      - name: Write release notes from the commits since the previous tag
+        # GitHub's generated notes list merged PRs only, and most changes here
+        # land without one (#32), so build the notes from commit messages.
+        run: python scripts/release_notes.py "$GITHUB_REF_NAME" > release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: release_notes.md
+          # Appends GitHub's "Full Changelog" compare link below the notes.
           generate_release_notes: true
           files: dist/*

@@ -29,6 +29,8 @@ The product is not an agent runtime. It is the coordination layer agents read be
 - `treaty update` calls `copier.run_update(...)` with `overwrite=True`; the target must be a git-tracked Copier subproject. It refuses to start when `status.showUntrackedFiles=no` or a `*.rej` ignore rule would hide Copier's rejected hunks from it (issue #25), and fails if a new `.rej` survives the merge anyway.
 - The update summary counts a file as updated only when `git diff HEAD` sees a content change: under `core.autocrlf=true`, `git status` keeps flagging files the merge rewrote with CRLF (issue #31). Its commit hint names every touched path, `.copier-answers.yml` included, rather than `git add -A`.
 - When `work_log.md` conflicts, update and preview both say which side holds the history: the template's side is intro text, and adopters' newest entries sit on the other.
+- `treaty update --dry-run --diff` prints the unified diff of every file the preview changed, new files included (intent-to-add in the disposable clone).
+- `treaty init` deletes the "Other sections below are background or paused" line from a `next_steps.md` it just created (#26). The template keeps the line because it is frozen, and Copier's `_copier_operation` is not visible to file content (measured 2026-10-23), so a copy-only render isn't possible. A `next_steps.md` that existed before init is left alone.
 - `treaty diff` renders the pinned template into a temp dir via `_render_pristine(...)` and reports section-level drift; read-only, and it needs no clean tree.
 - `treaty validate` reports line-numbered treaty-doc issues and exits non-zero by default (issues marked `warning:` print but never fail; they cover setup problems, unfilled placeholders, and template text in `work_log.md`/`next_steps.md` that adopters must fix in their own copy, since those templates are frozen); `--warn-only` keeps it advisory, and `--migration-hints` prints non-destructive overlap hints for legacy project docs.
 - `_parse_data(...)` turns repeatable `--data key=value` arguments into the dict passed to Copier.
@@ -86,6 +88,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - TestPyPI dry-runs are manual via `workflow_dispatch`.
 - Real PyPI releases happen on `v*` tag pushes.
+- The GitHub Release body comes from [`scripts/release_notes.py`](scripts/release_notes.py): commit messages since the previous tag plus the template files that changed (#32). GitHub's generated notes list merged PRs only, and most changes land without one.
 - Both workflows use PyPI Trusted Publishing (OIDC); no API token should be added to repo secrets.
 
 ## Repo Structure Map
@@ -110,6 +113,9 @@ project_root/
 |     |- next_steps.md
 |     |- work_log.md
 |     `- work_log_archive/
+|- scripts/
+|  |- count_adopters.sh
+|  `- release_notes.py
 |- treaty_docs/
 |  |- next_steps.md
 |  |- work_log.md
@@ -167,6 +173,7 @@ The committed test suite:
 - [`tests/test_validation.py`](tests/test_validation.py) - temporary project fixtures for valid docs, missing metadata/verification, work-log rotation, and broken Currently Hot anchors.
 - [`tests/test_diff.py`](tests/test_diff.py) - section splitting, classification, rename detection, and report formatting; all pure, no Copier or network.
 - [`tests/test_cli.py`](tests/test_cli.py) - Typer runner tests with Copier and git mocked out.
+- [`tests/test_release_notes.py`](tests/test_release_notes.py) - `scripts/release_notes.py` against a real past tag.
 - [`tests/test_docs_dir.py`](tests/test_docs_dir.py) - both layouts: the flat rendering's frozen path set (against v0.7.0), the frozen `work_log.md`/`next_steps.md` templates (against v0.9.3), link rewriting, and behavioral merge tests for flat-layout content changes.
 - [`tests/test_update_integration.py`](tests/test_update_integration.py) - **real** Copier three-way merges over git-backed scratch projects: clean updates, surviving local edits, conflicts with non-zero exit, upstream file additions, answer reuse, the hidden-alias migration, the hidden-`.rej` refusal and backstop, and line-ending-only rewrites under `core.autocrlf`. Uses a synthetic throwaway template, not this repo's own, so the tests do not depend on release history or on tags surviving a shallow CI checkout. `CopierConfigContractTests` in the same file asserts the properties of our real `copier.yml` that the migration depends on.
 

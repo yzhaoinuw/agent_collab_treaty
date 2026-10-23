@@ -224,12 +224,15 @@ treaty --version                      # CLI version, and the template you're pin
 treaty diff                           # which sections would conflict?
 git add -A && git commit -m "wip"     # update refuses a dirty tree
 treaty update --dry-run               # preview: answer changes, updated files, conflicts
+treaty update --dry-run --diff        # ...plus the full diff of each file
 treaty update                         # apply
 ```
 
 `treaty update` does a **three-way merge** from your pinned version up to the latest release, so edits that don't overlap upstream changes are kept automatically. If any file is left conflicted, the command names it and **exits non-zero** — a conflicted update is never reported as a success.
 
-`treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply. Because the clone is of your *committed* state, uncommitted edits aren't previewed — but `--data` values are, since they come from the command line.
+`treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply. Because the clone is of your *committed* state, uncommitted edits aren't previewed — but `--data` values are, since they come from the command line. Add `--diff` to see what changes inside each file, not just which files; the [release notes](https://github.com/yzhaoinuw/agent_collab_treaty/releases) list the CLI changes and which template files each release touches.
+
+Upgrade the CLI before updating. Template fixes often lean on CLI checks, and an old CLI runs without complaint: its `treaty validate` passes without knowing what the new template expects.
 
 **Answering questions that are new in the target version.** Recorded answers are reused, and any question added since your pinned version silently takes the template default. Name the ones you care about with `--data`, repeatable:
 

@@ -72,7 +72,7 @@ The `update-adopters-badge` workflow runs weekly and, when the count changes, pu
 Treat commit + push + tag (or "cut a release" / "publish version X") as a release. Clear this doc gate **before** creating or pushing the tag:
 
 - Version bumped in `pyproject.toml` **and** `src/agent_collab_treaty/__init__.py`, consistent with the tag. Update `version:` and `date-released:` in `CITATION.cff` in the same pass — but **leave its `identifiers:` DOI alone**: that is the Zenodo *concept* DOI, which already resolves to the newest archive. Swapping in the per-release version DOI would pin every future citation to one release.
-- User-facing docs updated when behavior changed. (No changelog file; release history lives in `treaty_docs/work_log.md` plus the GitHub Release body.)
+- User-facing docs updated when behavior changed. (No changelog file; release history lives in `treaty_docs/work_log.md` plus the GitHub Release body, which `scripts/release_notes.py` builds from the commit messages since the previous tag. So the commit bodies are the release notes: keep their bullets user-facing.)
 - `treaty_docs/work_log.md` updated with the summary, verification commands run, and release/branch/tag state, using the verified local date.
 
 Then create the annotated tag and push. Pushing a `v*` tag triggers `.github/workflows/release.yml` (PyPI trusted publishing + GitHub Release). Afterward verify refs with `git ls-remote --tags origin` and `git ls-remote --heads origin <branch>`. `test-publish.yml` is a manual TestPyPI dry-run.

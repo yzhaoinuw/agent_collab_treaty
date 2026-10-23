@@ -39,7 +39,7 @@ The template is the product — what `treaty init` installs into other people's 
 
 Two GitHub Actions workflows handle publishing, both via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo:
 
-- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release.
+- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release. The release body comes from `scripts/release_notes.py`: commit subjects and body bullets since the previous tag, plus the template files that changed. GitHub's own generated notes list merged PRs only, and most changes land without one. Preview it with `python scripts/release_notes.py vX.Y.Z` after tagging locally.
 - `.github/workflows/test-publish.yml` — manual `workflow_dispatch`, publishes to TestPyPI for dry-runs.
 
 Cutting a release (doc gate first — see `AGENTS.md` § Release / Tag Checklist):

@@ -540,6 +540,30 @@ class UpdateIntegrationTests(unittest.TestCase):
         self.assertNotIn("Rejected merges", result.output)
 
     @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
+    def test_dry_run_diff_shows_what_changes_inside_each_file(self) -> None:
+        """#32: file names alone don't say what an update does."""
+        dest = self.install()
+        self.revise_template(
+            V1_AGENTS.replace("Read this file first.", "Read this file first, always."),
+            extra={"treaty_conventions.md": "# Conventions\n\nMechanics.\n"},
+        )
+        status_before = git(dest, "status", "--porcelain")
+
+        result = self.runner.invoke(app, ["update", str(dest), "--dry-run", "--diff"])
+
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("+Read this file first, always.", result.output)
+        self.assertIn("-Read this file first.", result.output)
+        self.assertIn("+++ b/treaty_conventions.md", result.output, "new files are diffed too")
+        self.assertIn("+_commit: v2.0.0", result.output)
+        self.assertEqual(status_before, git(dest, "status", "--porcelain"))
+
+    def test_diff_without_dry_run_is_refused(self) -> None:
+        result = self.runner.invoke(app, ["update", str(self.tmp), "--diff"])
+        self.assertEqual(2, result.exit_code, result.output)
+        self.assertIn("--diff works with --dry-run", result.output)
+
+    @unittest.skipIf(SKIP, "TREATY_SKIP_INTEGRATION=1")
     def test_dry_run_predicts_conflicts_and_new_files_without_mutating(self) -> None:
         """Issues #16/#18: the preview must show the merge plan, not just run quietly."""
         dest = self.install()
