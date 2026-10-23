@@ -53,6 +53,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - fresh-init lifecycle check in the scratch template clone; `treaty init` smoke at both layouts, plus a pre-existing `next_steps.md`
   - `treaty update --dry-run --diff` on a `wake-ne-analysis` clone, with the working tree unchanged afterward
   - `python scripts/release_notes.py` for v0.9.1, v0.9.2, v0.9.3, v0.10.0
+- After the release, the backfilled v0.9.1 notes included the weekly badge bot's commit. The script now skips `[bot]` authors, and v0.9.1 was re-backfilled. That fix is on `dev` and takes effect at the next tag.
   - `git diff --check`, `treaty validate .`
 
 ### #23.2, #23.3 and #26 as `validate` warnings instead of template edits (claude-opus-5-5, high)

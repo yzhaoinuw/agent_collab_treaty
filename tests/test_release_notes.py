@@ -36,6 +36,18 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertNotIn("`{{`", notes, "paths with spaces stay whole")
         self.assertIn("python -m pip install -U agent-collab-treaty", notes)
 
+    def test_bot_commits_are_left_out(self) -> None:
+        """v0.9.1's range includes the weekly adopters-badge bot commit."""
+        cwd = os.getcwd()
+        os.chdir(REPO_ROOT)
+        try:
+            notes = _load().main("v0.9.1")
+        finally:
+            os.chdir(cwd)
+
+        self.assertIn("Stop treaty update from hiding rejected merges", notes)
+        self.assertNotIn("Update adopters badge count", notes)
+
 
 if __name__ == "__main__":
     unittest.main()

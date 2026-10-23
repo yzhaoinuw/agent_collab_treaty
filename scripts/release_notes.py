@@ -44,10 +44,11 @@ def previous_tag(tag: str) -> str | None:
 
 def commit_entries(span: str) -> list[str]:
     entries = []
-    log = git("log", "--reverse", "--no-merges", "--format=%s%x1f%b%x1e", span)
+    log = git("log", "--reverse", "--no-merges", "--format=%an%x1f%s%x1f%b%x1e", span)
     for record in filter(str.strip, log.split("\x1e")):
-        subject, _, body = record.strip("\n").partition("\x1f")
-        if re.match(r"^Release v\d", subject):
+        author, subject, body = record.strip("\n").split("\x1f", 2)
+        # Release bumps and the weekly adopters-badge bot are not changes.
+        if re.match(r"^Release v\d", subject) or author.endswith("[bot]"):
             continue
         bullets = [
             line
