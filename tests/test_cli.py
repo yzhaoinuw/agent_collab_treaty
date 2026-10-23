@@ -95,6 +95,35 @@ class TreatyCliTests(unittest.TestCase):
         # re-applies this one from the old version.
         self.assertIn("git add AGENTS.md .copier-answers.yml && git commit", result.output)
 
+    def test_work_log_conflict_says_which_side_holds_the_history(self) -> None:
+        """In real adopters the 'before updating' side of a work_log.md conflict
+        held whole session entries; taking the template side deletes them."""
+        old = {"_commit": "v0.5.0"}
+        new = {"_commit": "v0.9.3"}
+        for args, path in (
+            (["update", "/some/dest"], "work_log.md"),
+            (["update", "/some/dest"], "treaty_docs/work_log.md"),
+        ):
+            with self.subTest(path=path), patch("copier.run_update"), patch(
+                "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+            ), patch(
+                "agent_collab_treaty.cli._git_output",
+                side_effect=_fake_git(f"UU {path}\n", f"{path}\n"),
+            ):
+                result = self.runner.invoke(app, args)
+
+            self.assertEqual(1, result.exit_code)
+            self.assertIn("Keep every dated entry from the 'before updating' side", result.output)
+
+        with patch("copier.run_update"), patch(
+            "agent_collab_treaty.cli._read_answers", side_effect=[old, new]
+        ), patch(
+            "agent_collab_treaty.cli._git_output",
+            side_effect=_fake_git("UU AGENTS.md\n", "AGENTS.md\n"),
+        ):
+            result = self.runner.invoke(app, ["update", "/some/dest"])
+        self.assertNotIn("dated entry", result.output)
+
     def test_update_clean_reports_summary_and_exits_zero(self) -> None:
         old = {"_commit": "v0.3.2", "include_treaty_badge": True}
         new = {"_commit": "v0.3.3", "include_treaty_badge": True}

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import shlex
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import List, Optional
 
 import typer
@@ -70,6 +70,24 @@ def _update_status(dest: Path) -> tuple[list[str], list[str], list[str]]:
     changed = [path for path in flagged if path in content]
     eol_only = [path for path in flagged if path not in content]
     return changed, unmerged, eol_only
+
+
+def _conflict_notes(unmerged: list[str]) -> list[str]:
+    """File-specific advice for resolving conflicts, where a wrong pick is costly.
+
+    Adopters rewrite the work log's intro text and then prepend entries right
+    below it, so the template's intro and their newest entries land in the same
+    conflict hunk. Taking the template side there deletes history: in one real
+    adopter the "before updating" side held two whole session entries.
+    """
+    if not any(PurePosixPath(path).name == "work_log.md" for path in unmerged):
+        return []
+    return [
+        "In work_log.md, the 'after updating' side is the template's intro "
+        "text, and treaty_conventions.md already carries that guidance. Keep "
+        "every dated entry from the 'before updating' side: dropping that side "
+        "deletes history.",
+    ]
 
 
 def _stage_command(paths: list[str]) -> str:
@@ -517,6 +535,8 @@ def update(
             "unresolved conflicts.",
             err=True,
         )
+        for note in _conflict_notes(unmerged):
+            typer.echo(note, err=True)
         typer.echo(
             "Resolve the conflict markers ('<<<<<<< before updating' / "
             "'>>>>>>> after updating'), then:",
@@ -661,6 +681,8 @@ def _preview_update(
             "unresolved conflicts.",
             err=True,
         )
+        for note in _conflict_notes(unmerged):
+            typer.echo(note, err=True)
         typer.echo("Preview only — no changes written.", err=True)
         raise typer.Exit(1)
 

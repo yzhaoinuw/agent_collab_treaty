@@ -41,6 +41,19 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-22
 
+### Adopter sweep: the work_log/next_steps templates can't change, so #23.2 and #26.1 move to the CLI (claude-opus-5-5, high)
+
+- **Codex field-confirmed v0.9.3 on two Windows conflicting upgrades:** `ai_crash_course` (v0.3.1) and `career_dev` (v0.5.0, private). Preview and apply agreed, line-ending-only files were listed separately, and the conflict hint included `.copier-answers.yml`. Item 2 of #23 (the first-run paragraph) reproduced in both, and both kept #26's stale "Other sections below…" line. Codex fixed both by hand.
+- **Sweep of all 20 adopters (dry run, v0.9.3):** 9 clean, 1 refusal (`vessel_diameter_respiration`, deny-all ignore), 10 conflicting. Four of those conflict in `work_log.md`, and all four are the same hunk: the template's intro paragraphs against the adopter's newest entries. In `preprocess_sleep_data` the adopter side holds two whole session entries.
+- **Planned fix measured and dropped.** Harness: a scratch clone of this repo with each candidate template tagged `v0.10.0`, and every adopter clone's `_src_path` pointed at it, then a real `treaty update`. `work_log.md` conflicts were 4 in the control. Removing both intro paragraphs: 18. Removing only the first-run paragraph: 16. Restoring the v0.5.0 paragraph: 10 (clears the old four, breaks the newer ones). Removing #26's line from `next_steps.md` conflicted **19 of 19**, including the 6 adopters that still have the line. Cause: adopters rewrite or delete the intro text (`wake-ne-analysis` starts entries at line 3) and edit right below it every session, so any upstream edit there collides. The August `FlatWorkLogMergeTests` synthetic adopters didn't trim the preamble, which is why they priced this as cheap.
+- **Decisions:** both templates are frozen. A new `AdopterLoggedDocsTests` pins them to v0.9.3, with an escape hatch that requires re-running the sweep, and the `AGENTS.md` pricing tier is corrected. #23.2 and #26.1/#26.3 are to be fixed through CLI hints, not template edits. Shipped now: when `work_log.md` conflicts, update and preview say the template side is intro text and to keep every dated entry from the "before updating" side.
+- A first harness run was invalid: the variant commits stacked on the clone's `dev`, so "reset to dev" kept them and all three runs measured variant A. Rerun from the release commit on a throwaway branch.
+- Verification:
+  - control run reproduced the dry-run sweep exactly; variants A/B/C/D as above
+  - `python -m unittest discover -s tests` — 136 tests in 56.279s OK (1 skipped)
+  - mutation: appending one newline to the template `work_log.md` fails `AdopterLoggedDocsTests`
+  - a fresh `career_dev` clone updated with the dev CLI prints the `work_log.md` note above the resolve instructions
+
 ### v0.9.2 test drive on `fp_analysis`: #31 line-ending summary, and a conflict hint that dropped the version pin (claude-opus-5-5, high)
 
 - **Codex (GPT-6) updated `fp_analysis` on Windows (v0.6.0 → v0.9.2, flat layout):** no conflicts, nothing lost. Field-confirmed: the #25 refusals in preview and apply, the `!*.rej` hint, `--data` for a newly introduced question (#17), the #30 diff fix (before/after on the same nested tree: 3 → 1 at-risk files), the inline-verification message (#15), and the `claude-pointer-missing-import` warning firing as non-fatal (#27). #28's guidance arrived cleanly, but nobody trialed agent behavior.

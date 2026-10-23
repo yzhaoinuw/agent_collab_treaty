@@ -497,5 +497,41 @@ class FlatWorkLogMergeTests(_FlatContentChangeCase):
         self.assertHistorySurvived(project)
 
 
+
+#: Last release whose work_log.md / next_steps.md templates were measured
+#: against every adopter. Move it only with a new sweep in the work log.
+LOGGED_DOCS_BASELINE_REF = "v0.9.3"
+
+
+class AdopterLoggedDocsTests(unittest.TestCase):
+    def test_work_log_and_next_steps_templates_are_frozen(self) -> None:
+        """Any edit to these two templates conflicts in nearly every adopter.
+
+        Agents rewrite both files' intro text and edit right below it every
+        session, so "only adopters who edited the same region" is all of them.
+        Measured 2026-10-22 with real updates of all 20 yzhaoinuw adopters:
+        dropping the work log's first-run paragraph took work_log.md conflicts
+        from 4 to 16, and dropping one line of next_steps.md conflicted 19 of
+        19. New guidance belongs in treaty_conventions.md.
+
+        If a change is unavoidable, rerun that sweep first, record the result
+        in the work log, then move LOGGED_DOCS_BASELINE_REF.
+        """
+        for name in ("work_log.md", "next_steps.md"):
+            path = f"template/{{{{ docs_dir }}}}/{name}"
+            with self.subTest(name=name):
+                baseline = subprocess.run(
+                    ["git", "-C", str(REPO_ROOT), "show", f"{LOGGED_DOCS_BASELINE_REF}:{path}"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                ).stdout
+                current = (REPO_ROOT / path).read_text(encoding="utf-8")
+                self.assertEqual(
+                    baseline,
+                    current,
+                    f"{path} changed; every adopter would get a conflict in it.",
+                )
+
 if __name__ == "__main__":
     unittest.main()
