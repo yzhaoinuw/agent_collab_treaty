@@ -57,6 +57,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - `treaty validate .` on 20 fresh adopter clones, with every hit inspected
   - `treaty init` into a scratch dir with `--ref HEAD`; `treaty validate` there and here
   - `git diff --check`
+- **Released as v0.10.0** (2026-10-23), bundling this with the 2026-10-22 `work_log.md` conflict hint and frozen-template guard. `dev` fast-forwarded into `main` (no bot commits to reconcile), tag `v0.10.0` pushed. Minor bump because `validate` gained new checks. #23 and #26 stay open until an adopter confirms the warnings in the field.
 
 ## 2026-10-22
 

@@ -30,5 +30,5 @@ identifiers:
       Concept DOI for Agent Collab Treaty. It always resolves to the latest
       archived release, so it stays correct across versions and must not be
       replaced with a version-specific DOI.
-version: 0.9.3
-date-released: "2026-10-22"
+version: 0.10.0
+date-released: "2026-10-23"
