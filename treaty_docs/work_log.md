@@ -55,6 +55,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - anchors compared against GitHub's HTML rendering of `treaty_docs/next_steps.md`, `treaty_docs/work_log.md` and `project_overview.md`
   - old vs new `_validate_next_steps` over 22 adopters' `next_steps.md`
   - `treaty init` into a scratch dir with `--ref HEAD`; `treaty validate .`; `git diff --check`
+- **Released as v0.10.2** (2026-10-26), with the release-notes bot filter from 2026-10-23. `main` had the weekly badge bot's commit (adopters 14 → 16), so the maintainer chose to merge `origin/main` into `dev` (clean, no force-push), and `main` then fast-forwarded to `dev`. Patch bump: the CLI changes are fixes and messages, and the template change is one conventions sentence.
 
 ## 2026-10-23
 
