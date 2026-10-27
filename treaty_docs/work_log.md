@@ -39,6 +39,23 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-10-26
+
+### Issue triage, Grok's fresh-install feedback (#33, #34), a heading-anchor bug, and #22's relocate polish (claude-opus-5-5, high)
+
+- **Closed after field confirmation on `preprocess_sleep_data` (Codex, Windows, v0.3.2 → v0.10.1):** #23 and #26. Every fix behaved in preview and apply, and no new defects turned up. Only `next-steps-hot-thread-paused` is still unit-tested only.
+- **Triage of what was left.** Closed #28 as done: everything it asked for shipped in v0.9.1, and on Grok's fresh `good_stocks` install that conventions sentence is what triggered a log entry before the first push. Closed #29 (pre-push hook) as not planned. The miss behind it predates #28, and none has happened since. If it comes back, build it as a CLI subcommand that installs a local hook: a template hook file would add a path to the frozen flat layout. Closed #15's parked remainder (`adopt`/`doctor`, diff risk classes, `--version` provenance). Every known adopter is Copier-managed now, and each ask was reported once, in August. #19 stays open as the maintainer's scope decision.
+- **#15's one live item:** three upgrades in a row had to label old sessions `unknown` to pass `work-log-missing-session-metadata`. The cost is bounded (validate reads only the live log), so the fix is the message, not the rule. It now says `(model unknown)` is enough for entries that predate the rule.
+- **#34 led to a real bug.** Grok's dotted-version link was correctly rejected (GitHub drops the `.` too), but checking our slug against GitHub's rendered anchors for this repo's own docs showed `_github_anchor` disagreed in two ways. It stripped `_` (GitHub keeps it) and merged runs of `-` (GitHub keeps them: `Background / Paused` is `#background--paused`). So validate could reject a working link or pass a broken one. It now matches GitHub exactly, and a broken link names the closest real anchor. Swept the 22 adopters' `next_steps.md` from GitHub before and after: zero new errors, so no adopter has to change anything. The `next_steps.md` template itself puts the model on the heading, and it's frozen, so the guidance went into conventions instead.
+- **#33:** macOS's `/usr/bin/python3` is 3.9. Its pip hides releases that need ≥3.10 and says "No matching distribution". The README prompt and install section now state the 3.10 floor, and a 3.13 classifier was added (the suite runs on 3.13 here).
+- **#22 relocate polish:** external references now come with line numbers. `relocate` stages its own rewrites, so a moved-then-rewritten file is no longer `RM` next to fully staged moves. Its hint names the earlier changes it left unstaged instead of `git add -A`. `--force` and the dirty-tree refusal now say that relocating right after `treaty update` is the normal case. The README's relocate recipe ran plain `relocate` on the update's dirty tree, which refuses; it now commits first or uses `--force`. Not doing `--ignore-untracked` (#22.1): the `.git/info/exclude` route works. #22.5 was already covered by the version-skew warning and the CLI-first update step.
+- Verification:
+  - `python -m unittest discover -s tests` — 155 tests OK (1 skipped)
+  - the new staging test fails with the `git add` disabled (mutation check)
+  - anchors compared against GitHub's HTML rendering of `treaty_docs/next_steps.md`, `treaty_docs/work_log.md` and `project_overview.md`
+  - old vs new `_validate_next_steps` over 22 adopters' `next_steps.md`
+  - `treaty init` into a scratch dir with `--ref HEAD`; `treaty validate .`; `git diff --check`
+
 ## 2026-10-23
 
 ### glucose_ne_spectra feedback: fresh-install cleanup in `init`, CLI-first step, release notes and `--diff`; released v0.10.1 (claude-opus-5-5, high)

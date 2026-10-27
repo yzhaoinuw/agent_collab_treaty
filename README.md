@@ -56,9 +56,11 @@ Handing the install to your agent is the intended path, and how these docs are m
 
 **Prompt — type this into your agent's chat:**
 
-> pip install agent-collab-treaty, then run `treaty init` in this repo.
+> pip install agent-collab-treaty (needs Python 3.10+), then run `treaty init` in this repo.
 
 The agent installs the CLI, runs `treaty init`, and answers its questions with you. Nothing needs to be installed on your side first.
+
+The CLI needs **Python 3.10 or newer**. On macOS, `python3` and `pip3` are often Apple's 3.9, and its pip answers "No matching distribution found" rather than saying Python is too old. If `python3 --version` is below 3.10, install with a newer interpreter (`python3.13 -m pip install …`, or conda's `python -m pip install …`).
 
 <details>
 <summary>Prefer to run it yourself?</summary>
@@ -171,11 +173,14 @@ To move an existing project into a folder, use `treaty relocate`:
 
 ```bash
 treaty update                       # first: records docs_dir
+git commit -am "Update the treaty"  # or skip this and pass --force below
 treaty relocate --dry-run           # see the plan
 treaty relocate                     # apply it
 ```
 
-It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. `--to` picks a different folder, and `--to .` flattens everything back to the root.
+`treaty relocate` wants a clean tree, so the relocation is one change you can undo on its own. To relocate on top of the update's uncommitted changes and commit both together, pass `--force`; that is what it is for.
+
+It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone. `--to` picks a different folder, and `--to .` flattens everything back to the root.
 
 Two things it will not do silently:
 
@@ -185,7 +190,7 @@ Two things it will not do silently:
 Links pointing in **both** directions are handled, but differently:
 
 - **Out of a moved doc, at your own files** — a `[demo](media/README.md)` in `next_steps.md` — is **rewritten** to `../media/README.md` so it still resolves. URLs, bare anchors, absolute paths, and links that were already broken are left exactly as written. The dry run lists these before it touches anything.
-- **Into the treaty docs, from files the treaty does not own** — your README, CHANGELOG, CI config — is **reported but never rewritten**. Those are yours to update.
+- **Into the treaty docs, from files the treaty does not own** — your README, CHANGELOG, CI config — is **reported, with line numbers, but never rewritten**. Those are yours to update.
 
 </details>
 

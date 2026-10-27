@@ -57,7 +57,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 [`src/agent_collab_treaty/validation.py`](src/agent_collab_treaty/validation.py)
 
-- Checks required treaty paths with canonical casing, `work_log.md` session metadata, verification subsections, date rotation, duplicate dates, and `next_steps.md` Currently Hot anchors.
+- Checks required treaty paths with canonical casing, `work_log.md` session metadata, verification subsections, date rotation, duplicate dates, and `next_steps.md` Currently Hot anchors (built the way GitHub builds them, which keeps `_` and runs of `-`; a broken link names the closest real anchor).
 - Reports case-only legacy path mismatches or collisions before validating file contents, so older files such as `Work_Log.md` do not produce noisy work-log format errors.
 - Returns structured issues with file, line, code, and message fields for CLI output and tests.
 
@@ -136,7 +136,7 @@ project_root/
 
 - [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py) - active CLI implementation.
 - [`src/agent_collab_treaty/versions.py`](src/agent_collab_treaty/versions.py) - compares the CLI version with a project's pinned `_commit`; `update` and `validate` warn when the CLI is older.
-- [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check).
+- [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check), then stages its own rewrites so the index never mixes staged moves with unstaged edits (#22).
 - [`copier.yml`](copier.yml) - active Copier configuration and template questions.
 - [`template/`](template/) - active installable treaty content.
 - [`README.md`](README.md) - public user documentation.

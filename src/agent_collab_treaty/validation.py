@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import difflib
 from datetime import date
 from pathlib import Path, PurePosixPath
 import re
@@ -424,7 +425,12 @@ def _validate_work_log(path: Path, today: date) -> Iterable[ValidationIssue]:
                     path=path,
                     line=line_number,
                     code="work-log-missing-session-metadata",
-                    message="Session heading should end with '(model + version, effort/thinking mode, token budget if known)'.",
+                    message=(
+                        "Session heading should end with '(model + version, "
+                        "effort/thinking mode, token budget if known)'. For an "
+                        "entry written before this rule, '(model unknown)' is "
+                        "enough: don't guess."
+                    ),
                 )
 
     seen_dates: set[str] = set()
@@ -552,7 +558,15 @@ def _validate_next_steps(path: Path) -> Iterable[ValidationIssue]:
                     path=path,
                     line=line_number,
                     code="next-steps-broken-hot-link",
-                    message=f"Currently Hot link points to missing anchor: #{anchor}",
+                    message=(
+                        f"Currently Hot link points to missing anchor: #{anchor}. "
+                        + (
+                            f"Did you mean #{likely}? "
+                            if (likely := _likely_anchor(anchor, anchors))
+                            else ""
+                        )
+                        + ANCHOR_RULE
+                    ),
                 )
             elif background is not None and anchors[anchor] > background:
                 # Issue #26: two agents, weeks apart, filed active threads
@@ -658,11 +672,30 @@ def _is_verification_heading(line: str) -> bool:
 
 
 def _github_anchor(text: str) -> str:
-    text = text.replace("`", "").lower()
-    text = re.sub(r"[^a-z0-9 \-]", "", text)
-    text = re.sub(r"\s+", "-", text.strip())
-    text = re.sub(r"-+", "-", text)
-    return text
+    """The anchor GitHub gives a heading: lowercase, punctuation dropped except
+    '-' and '_', then each space becomes '-'. Runs of '-' are kept, so
+    'Background / Paused' is '#background--paused' (checked against GitHub's
+    rendered docs, 2026-10-26)."""
+    text = text.replace("`", "").strip().lower()
+    text = re.sub(r"[^\w\- ]", "", text)
+    return text.replace(" ", "-")
+
+
+ANCHOR_RULE = (
+    "GitHub builds the anchor from the heading: lowercase, each space becomes "
+    "'-', and punctuation other than '-' and '_' is dropped, so 'v4.7' becomes "
+    "'v47' and ' / ' becomes '--'."
+)
+
+
+def _likely_anchor(anchor: str, anchors: Iterable[str]) -> str | None:
+    """The heading a broken link most likely meant, if one stands out."""
+    anchors = list(anchors)
+    normalized = _github_anchor(anchor)
+    if normalized in anchors:
+        return normalized
+    close = difflib.get_close_matches(anchor, anchors, n=1, cutoff=0.8)
+    return close[0] if close else None
 
 
 def _without_html_comments(lines: Iterable[str]) -> Iterable[tuple[int, str]]:

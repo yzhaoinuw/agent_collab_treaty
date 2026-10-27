@@ -287,6 +287,40 @@ class RelocateTests(unittest.TestCase):
         status = _git(root, "status", "--porcelain").stdout
         self.assertIn("R", status, f"expected renames, got:\n{status}")
 
+    def test_relocation_is_fully_staged(self) -> None:
+        """#22: `git mv` staged the moves but not the link rewrites after them,
+        so rewritten files showed as `RM` next to fully staged moves."""
+        root = self._project(".")
+        apply_relocation(plan_relocation(root, "treaty_docs"))
+        status = _git(root, "status", "--porcelain").stdout.splitlines()
+        half_staged = [line for line in status if line[1] not in " ?"]
+        self.assertEqual([], half_staged, "\n".join(status))
+        self.assertTrue(any(line.startswith("R ") for line in status))
+
+    def test_cli_names_unstaged_leftovers_instead_of_git_add_all(self) -> None:
+        """After `treaty update`, `--force` relocates on top of its changes. The
+        update's files that relocate didn't touch stay unstaged, so the hint
+        names them, and never `git add -A` (it would sweep up excluded files)."""
+        from typer.testing import CliRunner
+
+        from agent_collab_treaty.cli import app
+
+        root = self._project(".")
+        (root / "README.md").write_text("changed by the update\n", encoding="utf-8")
+        _git(root, "add", "README.md")
+        _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "r")
+        (root / "README.md").write_text("changed again\n", encoding="utf-8")
+
+        refused = CliRunner().invoke(app, ["relocate", str(root)])
+        self.assertEqual(1, refused.exit_code)
+        self.assertIn("re-run with --force", refused.output)
+
+        result = CliRunner().invoke(app, ["relocate", str(root), "--force"])
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("The relocation is staged", result.output)
+        self.assertIn("git add README.md && git commit", result.output)
+        self.assertNotIn("git add -A", result.output)
+
     def test_noop_when_already_in_the_target_layout(self) -> None:
         root = self._project("treaty_docs")
         plan = plan_relocation(root, "treaty_docs")
@@ -336,8 +370,11 @@ class RelocateTests(unittest.TestCase):
         _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "c")
 
         plan = plan_relocation(root, "treaty_docs")
-        named = {p.name for p, _ in plan.external_refs}
+        named = {p.name: lines for p, lines in plan.external_refs}
         self.assertIn("CONTRIBUTING.md", named)
+        # #22: line numbers, so the adopter doesn't need a grep to find them.
+        self.assertEqual([1], named["CONTRIBUTING.md"])
+        self.assertIn("  - CONTRIBUTING.md: line 1", format_plan(plan))
 
         apply_relocation(plan)
         # Reported, deliberately not rewritten: it is not a treaty-owned doc.

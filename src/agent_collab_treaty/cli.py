@@ -859,7 +859,11 @@ def relocate(
     force: bool = typer.Option(
         False,
         "--force",
-        help="Relocate even with uncommitted changes (you lose the easy undo).",
+        help=(
+            "Relocate with uncommitted changes. This is the normal step right after "
+            "`treaty update`, whose changes are still uncommitted; otherwise "
+            "commit first, so the relocation can be undone on its own."
+        ),
     ),
 ) -> None:
     """Move this project's treaty working docs into (or out of) a subfolder.
@@ -890,8 +894,10 @@ def relocate(
             raise typer.Exit(1)
         if porcelain.strip():
             typer.echo(
-                "Working tree is not clean. Commit or stash first so the "
-                "relocation is a single reviewable change, or pass --force.",
+                "Working tree is not clean. If these are the changes `treaty update` "
+                "just made, re-run with --force to relocate in the same commit. "
+                "Otherwise commit or stash first, so the relocation is a single "
+                "reviewable change.",
                 err=True,
             )
             raise typer.Exit(1)
@@ -922,8 +928,20 @@ def relocate(
             "moved docs will not stay tracked.",
             err=True,
         )
-    typer.echo("Review the changes, then:")
-    typer.echo("    git add -A && git commit")
+    leftover = _git_output(destination, "diff", "--name-only")
+    if leftover is None:
+        typer.echo("Not a git repository, so nothing was staged. Review the moved files.")
+        return
+    leftover_paths = leftover.splitlines()
+    typer.echo("The relocation is staged. Review it with git diff --cached, then:")
+    typer.echo("    git commit")
+    if leftover_paths:
+        typer.echo("")
+        typer.echo(
+            "Changes from before the relocation are not staged. "
+            "If they belong in this commit (for example, the update you just ran):"
+        )
+        typer.echo(f"    {_stage_command(leftover_paths)}")
 
 
 @app.command()

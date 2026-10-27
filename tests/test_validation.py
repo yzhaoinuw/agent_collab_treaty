@@ -81,6 +81,9 @@ class TreatyValidationTests(unittest.TestCase):
         codes = {issue.code for issue in issues}
         self.assertIn("work-log-missing-session-metadata", codes)
         self.assertIn("work-log-missing-verification", codes)
+        # Old adopters' history predates the rule; say what to write (#15).
+        metadata = next(i for i in issues if i.code == "work-log-missing-session-metadata")
+        self.assertIn("'(model unknown)' is enough", metadata.message)
 
     def test_inline_verification_evidence_gets_a_specific_fix(self) -> None:
         """#15 follow-up: the words '- Verification:' were visibly present, so
@@ -265,6 +268,67 @@ class TreatyValidationTests(unittest.TestCase):
             issues = validate_project(root)
 
         self.assertIn("next-steps-broken-hot-link", {issue.code for issue in issues})
+
+
+class HeadingAnchorTests(unittest.TestCase):
+    """Currently Hot links must match the anchors GitHub renders (#34)."""
+
+    def _issues(self, heading: str, link: str) -> list:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_valid_project(root)
+            (root / "next_steps.md").write_text(
+                "\n".join(
+                    [
+                        "# Next Steps",
+                        "",
+                        "## Currently Hot",
+                        "",
+                        f"- see [thread](#{link}).",
+                        "",
+                        f"## {heading}",
+                        "",
+                        "Status: open",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            return [
+                i for i in validate_project(root) if i.code == "next-steps-broken-hot-link"
+            ]
+
+    def test_anchors_match_github(self) -> None:
+        # Each pair was read off GitHub's rendering of this repo's docs, 2026-10-26.
+        cases = {
+            "Background / Paused": "background--paused",
+            "Conflict-safe treaty update: closed (claude-opus-4.8)": (
+                "conflict-safe-treaty-update-closed-claude-opus-48"
+            ),
+            "glucose_ne_spectra feedback: notes and `--diff`; released v0.10.1": (
+                "glucose_ne_spectra-feedback-notes-and---diff-released-v0101"
+            ),
+        }
+        for heading, anchor in cases.items():
+            with self.subTest(heading=heading):
+                self.assertEqual([], self._issues(heading, anchor))
+
+    def test_a_dotted_version_link_names_the_real_anchor(self) -> None:
+        issues = self._issues(
+            "Score the book against SPY (grok-4.7)", "score-the-book-against-spy-grok-4.7"
+        )
+        self.assertEqual(1, len(issues))
+        self.assertIn("Did you mean #score-the-book-against-spy-grok-47?", issues[0].message)
+
+    def test_a_link_with_collapsed_hyphens_names_the_real_anchor(self) -> None:
+        issues = self._issues("Background / Paused", "background-paused")
+        self.assertEqual(1, len(issues))
+        self.assertIn("Did you mean #background--paused?", issues[0].message)
+
+    def test_an_unrelated_link_explains_the_rule_without_guessing(self) -> None:
+        issues = self._issues("Background / Paused", "something-else")
+        self.assertEqual(1, len(issues))
+        self.assertNotIn("Did you mean", issues[0].message)
+        self.assertIn("punctuation other than '-' and '_' is dropped", issues[0].message)
 
 
 class WarningTests(unittest.TestCase):

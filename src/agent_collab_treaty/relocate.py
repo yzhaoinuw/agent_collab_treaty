@@ -50,7 +50,7 @@ class RelocationPlan:
     outbound_edits: list[tuple[Path, int]] = field(default_factory=list)
     answers_update: bool = False
     blockers: list[str] = field(default_factory=list)
-    external_refs: list[tuple[Path, int]] = field(default_factory=list)
+    external_refs: list[tuple[Path, list[int]]] = field(default_factory=list)
     gitignore_risk: list[str] = field(default_factory=list)
 
     @property
@@ -400,9 +400,14 @@ def _plan_external_refs(root: Path, plan: RelocationPlan) -> None:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
-        hits = sum(len(re.findall(r"(?<![A-Za-z0-9_./-])" + re.escape(n), text)) for n in needles)
-        if hits:
-            plan.external_refs.append((path, hits))
+        patterns = [re.compile(r"(?<![A-Za-z0-9_./-])" + re.escape(n)) for n in needles]
+        line_numbers = [
+            number
+            for number, line in enumerate(text.splitlines(), start=1)
+            if any(pattern.search(line) for pattern in patterns)
+        ]
+        if line_numbers:
+            plan.external_refs.append((path, line_numbers))
 
 
 def _plan_gitignore(root: Path, plan: RelocationPlan) -> None:
@@ -429,6 +434,7 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
 
     root = plan.root
     actions: list[str] = []
+    written: list[Path] = []
 
     for source, destination in plan.moves:
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -454,6 +460,7 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
             total += count
         if text != original:
             path.write_text(text, encoding="utf-8")
+            written.append(path)
             actions.append(f"rewrote {total} doc link(s) in {name}")
 
     old_rp, new_rp = root_prefix(plan.old_docs_dir), root_prefix(plan.new_docs_dir)
@@ -469,6 +476,7 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
                 total += count
             if text != original:
                 path.write_text(text, encoding="utf-8")
+                written.append(path)
                 rel = path.relative_to(root).as_posix()
                 actions.append(f"rewrote {total} root link(s) in {rel}")
 
@@ -482,6 +490,7 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
         )
         if count:
             new_path.write_text(updated, encoding="utf-8")
+            written.append(new_path)
             rel = new_path.relative_to(root).as_posix()
             actions.append(f"rewrote {count} project link(s) in {rel}")
 
@@ -507,7 +516,17 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
         )
         if count:
             answers_path.write_text(updated, encoding="utf-8")
+            written.append(answers_path)
             actions.append(f"recorded docs_dir: {plan.new_docs_dir} in {ANSWERS_FILE}")
+
+    # `git mv` stages each move, so a file it then rewrote would be half staged
+    # (`RM`) next to fully staged moves (#22). Stage the rewrites too, so the
+    # whole relocation sits in the index. Untracked files stay untracked.
+    staged = sorted(
+        {p.relative_to(root).as_posix() for p in written if _is_tracked(root, p)}
+    )
+    if staged and _git(root, "add", "--", *staged).returncode == 0:
+        actions.append(f"staged the relocation ({len(staged)} rewritten file(s) plus the moves)")
 
     return actions
 
@@ -556,8 +575,9 @@ def format_plan(plan: RelocationPlan) -> list[str]:
     if plan.external_refs:
         lines.append("References outside the treaty docs (not rewritten - yours to fix):")
         lines.extend(
-            f"  - {p.relative_to(plan.root).as_posix()} ({n} reference(s))"
-            for p, n in plan.external_refs
+            f"  - {p.relative_to(plan.root).as_posix()}: "
+            f"line{'s' if len(numbers) > 1 else ''} {', '.join(map(str, numbers))}"
+            for p, numbers in plan.external_refs
         )
 
     if plan.blockers:
