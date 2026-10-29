@@ -9,7 +9,7 @@ A drop-in documentation contract for repositories worked on by agents, humans, o
 
 Language- and framework-agnostic — code repos, but also prose, research, and ops. Your agent can set it up in two prompts and maintain it unsupervised from there. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
 
-**How to read this README.** The blockquoted lines below — the ones introduced by *"Prompt — type this into your agent's chat"* — are **exactly that: sentences you type or paste into your AI coding agent** (Claude Code, Codex, Cursor, Gemini CLI, whichever you use). They are not shell commands, and you do not need anything installed before sending the first one: the agent installs the CLI and runs it for you. Every prompt is paired with a collapsed *"Prefer to run it yourself?"* section holding the equivalent terminal commands, for when you'd rather drive.
+**How to read this README.** Each blockquoted *"Prompt"* is a sentence you paste into your AI coding agent (Claude Code, Codex, Cursor, Gemini CLI, …), not a shell command. You need nothing installed first: the agent installs the CLI and runs it. Each prompt has a collapsed *"Prefer to run it yourself?"* section with the equivalent terminal commands.
 
 ## Contents
 
@@ -45,8 +45,8 @@ The working docs sit in `agent_worklog/` so they don't crowd your repo root; `AG
 
 Not samples — living docs, filled in by months of real sessions:
 
-- **[sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)** — sleep-staging app; 39 dated entries since April 2026, rotated across 8 archive chunks: [work_log.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/next_steps.md)
-- **[fp_analysis](https://github.com/yzhaoinuw/fp_analysis)** — fiber-photometry app; 20 dated entries since March 2026, 21 sessions in the live log alone: [work_log.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/next_steps.md)
+- **[sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)** — sleep-staging app, logged since April 2026 (folder layout): [agent_worklog/](https://github.com/yzhaoinuw/sleep_scoring/tree/main/agent_worklog) · [work_log.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/agent_worklog/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/agent_worklog/next_steps.md)
+- **[fp_analysis](https://github.com/yzhaoinuw/fp_analysis)** — fiber-photometry app, logged since March 2026 (flat layout): [work_log.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/next_steps.md)
 - **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/next_steps.md)
 
 Open any `work_log.md` and read one entry. It says *why* something was decided, not which files changed — that's what makes it worth reading months later, by an agent or by you.
@@ -61,7 +61,7 @@ Handing the install to your agent is the intended path, and how these docs are m
 
 The agent installs the CLI, runs `treaty init`, and answers its questions with you. Nothing needs to be installed on your side first.
 
-The CLI needs **Python 3.10 or newer**. On macOS, `python3` and `pip3` are often Apple's 3.9, and its pip answers "No matching distribution found" rather than saying Python is too old. If `python3 --version` is below 3.10, install with a newer interpreter (`python3.13 -m pip install …`, or conda's `python -m pip install …`).
+On macOS, `python3` is often Apple's 3.9, whose pip says "No matching distribution found" rather than "Python too old". If `python3 --version` is below 3.10, install with a newer interpreter (`python3.13 -m pip install …`, or conda's `python -m pip install …`).
 
 <details>
 <summary>Prefer to run it yourself?</summary>
@@ -102,7 +102,7 @@ Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `trea
 
 That's the whole setup. The agent reads the repo, replaces the placeholders, and records what's in flight — the installed docs tell it the rest.
 
-From there it's self-sustaining: sessions read `AGENTS.md` at startup, prepend to `work_log.md` before handoff, and keep `next_steps.md` honest, unprompted. The only recurring ask is the occasional [update](#update).
+From there it's self-sustaining: sessions read `AGENTS.md` at startup, prepend to `work_log.md` before handoff, and keep `next_steps.md` honest, unprompted. Agents also tell you when a treaty [update](#update) is out; saying yes is the only recurring ask.
 
 <details>
 <summary>Prefer to run it yourself?</summary>
@@ -163,17 +163,13 @@ your_repo/
 |  |- work_log_archive/
 ```
 
-The folder was `treaty_docs/` from v0.8.0 to v0.10.x. It was renamed because a reviewer or newcomer browsing a repo could not tell what a folder named after the tool held. Projects installed then keep `treaty_docs/`: the name is recorded in `.copier-answers.yml`, and `treaty update` never moves files. They get the folder README on their next update. To take the new name, run `treaty relocate --to agent_worklog`.
-
-The folder README is only rendered for folder layouts. In the flat layout that filename is your project's own README. If you already kept a `README.md` in your docs folder, the update shows it as a conflict: your version against the treaty's. Keep yours.
+Until v0.11.0 the default folder was `treaty_docs/`. Projects installed with it keep that name, because `treaty update` never moves files. They get the folder README on their next update, and `treaty relocate --to agent_worklog` renames the folder if you want. The README is only rendered for folder layouts, since in a flat layout the name belongs to your project's own README. If your docs folder already had a `README.md`, the update shows it as a conflict. Keep your version.
 
 `AGENTS.md` has to stay at the root: agents resolve the *nearest* `AGENTS.md` up the directory tree, so one nested inside `agent_worklog/` would apply only to files inside that folder — the opposite of what you want. `project_overview.md` stays with it as the human-facing entry point.
 
-**`.copier-answers.yml` stays at the root too, at every `docs_dir` value** — including after `treaty relocate` moves the working docs. It is Copier's bookkeeping, not a treaty doc: it records your answers and the template version you are pinned to, and `treaty update` / `treaty diff` read it from the repo root. It is also the file that records `docs_dir` itself, so it cannot live inside the folder it names. Commit it; a gitignored answers file breaks every later update, which is why `treaty init` warns about one and `treaty validate` flags it.
+**`.copier-answers.yml` stays at the root too, whatever `docs_dir` is.** It records your answers (including `docs_dir` itself) and the template version you're pinned to, and `treaty update` / `treaty diff` read it from there. Commit it: a gitignored answers file breaks every later update, which is why `treaty init` warns about one and `treaty validate` flags it.
 
-The `docs_dir` question controls the folder name. Answer `.` for the flat layout, or any other name (`docs/agents`, `.treaty`) to put them elsewhere.
-
-**Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. After updating a flat project, `treaty update` prints a one-line reminder that `treaty relocate` can move the docs; nothing moves unless you run it. Verified against every Copier-managed adopter we maintain: identical files touched, identical conflicts, versus the same update on v0.7.0.
+**Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. After updating a flat project, `treaty update` prints a one-line reminder that `treaty relocate` can move the docs; nothing moves unless you run it.
 
 To move an existing project into a folder, use `treaty relocate`:
 
@@ -186,7 +182,7 @@ treaty relocate                     # apply it
 
 `treaty relocate` wants a clean tree, so the relocation is one change you can undo on its own. To relocate on top of the update's uncommitted changes and commit both together, pass `--force`; that is what it is for.
 
-It moves the four working docs with `git mv` so history follows, carries the folder README along (writing one when leaving the root, and deleting an unedited one when flattening, where it would collide with your own `README.md`), rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone, including files it moved that git wasn't tracking yet. `--to` picks a different folder, and `--to .` flattens everything back to the root.
+In one pass it moves the working docs with `git mv` (so history follows), rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets links *inside* the moved docs for their new depth, and records the new `docs_dir`. It also handles the folder README: it writes one when leaving the root and removes an unedited one when flattening. When it finishes, everything it changed is staged, and it prints the `git add` for earlier changes it left alone. `--to` picks the folder; `--to .` flattens back to the root.
 
 Two things it will not do silently:
 
@@ -233,7 +229,7 @@ pipx upgrade agent-collab-treaty      # get the latest CLI first
 
 treaty --version                      # CLI version, and the template you're pinned to
 treaty diff                           # which sections would conflict?
-git add -A && git commit -m "wip"     # update refuses a dirty tree
+git status                            # update needs a clean tree: commit or stash first
 treaty update --dry-run               # preview: answer changes, updated files, conflicts
 treaty update --dry-run --diff        # ...plus the full diff of each file
 treaty update                         # apply
@@ -243,9 +239,9 @@ treaty update                         # apply
 
 `treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply. Because the clone is of your *committed* state, uncommitted edits aren't previewed — but `--data` values are, since they come from the command line. Add `--diff` to see what changes inside each file, not just which files; the [release notes](https://github.com/yzhaoinuw/agent_collab_treaty/releases) list the CLI changes and which template files each release touches.
 
-You don't have to remember to check. Since v0.11.0 the conventions have agents run `treaty update --dry-run` each time they rotate the work log (roughly every five working days) and tell you if a newer version is out. Updating stays your call.
+Upgrade the CLI first, as in the block above. An old CLI runs without complaint, and its `treaty validate` passes without knowing what the new template expects.
 
-Upgrade the CLI before updating. Template fixes often lean on CLI checks, and an old CLI runs without complaint: its `treaty validate` passes without knowing what the new template expects.
+You don't have to remember to check. Since v0.11.0, agents run `treaty update --dry-run` each time they rotate the work log (about every five working days) and tell you if a newer version is out. Updating stays your call.
 
 **Answering questions that are new in the target version.** Recorded answers are reused, and any question added since your pinned version silently takes the template default. Name the ones you care about with `--data`, repeatable:
 
@@ -253,7 +249,7 @@ Upgrade the CLI before updating. Template fixes often lean on CLI checks, and an
 treaty update --data uses_precommit=false --data verification_command="python -m pytest -q"
 ```
 
-That is the whole reason it exists: without it, a big version jump leaves you re-prompting for *every* question with `--interactive`, or hand-editing the `.copier-answers.yml` whose first line tells you not to. `--data docs_dir=…` is refused on purpose — changing the layout through Copier deletes your customized docs and writes pristine ones at the new path, which is what [`treaty relocate`](#where-the-docs-live) exists to do safely.
+Without it, a big version jump means re-answering *every* question with `--interactive`, or hand-editing `.copier-answers.yml`. `--data docs_dir=…` is refused on purpose — changing the layout through Copier deletes your customized docs and writes pristine ones at the new path, which is what [`treaty relocate`](#where-the-docs-live) exists to do safely.
 
 `treaty diff` writes nothing. It renders the template version you're pinned to into a temp directory and compares section by section:
 
@@ -349,9 +345,9 @@ When a new agent session opens, the agent:
 3. Reads the top of `work_log.md` for recent context.
 4. Checks `next_steps.md` → "Currently Hot" for active priorities.
 5. Does the work, following the conventions in `AGENTS.md`.
-6. At the end of substantive work: runs the pre-flight checklist, runs `treaty validate`, prepends an entry to `work_log.md`, and updates `next_steps.md` if follow-up changed.
+6. At the end of substantive work: runs the pre-flight checklist, runs `treaty validate`, prepends an entry to `work_log.md`, and updates `next_steps.md` if follow-up changed. When the log needs rotating, it also checks for a treaty update and tells you if one is out.
 
-Your only part in this is the occasional [update](#update) prompt.
+Your only part in this is saying yes to the occasional [update](#update).
 
 The rule that decides what goes in the log: **it records decisions about the project, not the content of the work produced.** The work itself is already in version control. "Implemented function X" and "drafted chapter 4" are noise for the same reason — the diff already says that. What belongs is the decision, the reversal, the approach tried and discarded and why, and evidence a future agent would otherwise have to rediscover.
 
