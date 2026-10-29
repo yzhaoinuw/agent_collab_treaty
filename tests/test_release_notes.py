@@ -32,7 +32,7 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertIn("  - When work_log.md conflicts", notes)
         self.assertNotIn("Release v0.10.0", notes)
         self.assertNotIn("Co-Authored-By", notes)
-        self.assertIn("- `treaty_conventions.md`: maintained upstream", notes)
+        self.assertIn("- `<docs_dir>/treaty_conventions.md`: maintained upstream", notes)
         self.assertNotIn("`{{`", notes, "paths with spaces stay whole")
         self.assertIn("python -m pip install -U agent-collab-treaty", notes)
 
@@ -63,3 +63,18 @@ class ReleaseNotesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TemplateLabelTests(unittest.TestCase):
+    def test_labels_are_paths_an_adopter_would_recognise(self) -> None:
+        label = _load().template_label
+        self.assertEqual("copier.yml", label("copier.yml"))
+        self.assertEqual("AGENTS.md", label("template/AGENTS.md.jinja"))
+        self.assertEqual(
+            "<docs_dir>/work_log_archive/README.md",
+            label("template/{{ docs_dir }}/work_log_archive/README.md"),
+        )
+        self.assertEqual(
+            "<docs_dir>/README.md",
+            label("template/{{ docs_dir }}/{% if docs_dir not in ['.', ''] %}README.md{% endif %}.jinja"),
+        )

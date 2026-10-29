@@ -76,11 +76,16 @@ def template_changes(span_start: str | None, tag: str) -> list[str]:
     names = git("diff", "--name-only", span_start, tag, "--", "template/", "copier.yml").splitlines()
     lines = []
     for name in names:
-        short = name.split("/")[-1]
-        cost = FILE_COST.get(short)
-        label = short.removesuffix(".jinja")
-        lines.append(f"- `{label}`" + (f": {cost}" if cost else ""))
+        cost = FILE_COST.get(name.split("/")[-1])
+        lines.append(f"- `{template_label(name)}`" + (f": {cost}" if cost else ""))
     return lines
+
+
+def template_label(name: str) -> str:
+    """The path an adopter sees: `<docs_dir>/README.md`, not the Jinja filename."""
+    label = name.removeprefix("template/").removesuffix(".jinja")
+    label = re.sub(r"\{%.*?%\}", "", label)
+    return label.replace("{{ docs_dir }}", "<docs_dir>")
 
 
 def main(tag: str) -> str:
