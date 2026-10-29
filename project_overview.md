@@ -89,7 +89,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - TestPyPI dry-runs are manual via `workflow_dispatch`.
 - Real PyPI releases happen on `v*` tag pushes.
-- The GitHub Release body comes from [`scripts/release_notes.py`](scripts/release_notes.py): commit messages since the previous tag plus the template files that changed (#32). GitHub's generated notes list merged PRs only, and most changes land without one.
+- The GitHub Release body comes from [`scripts/release_notes.py`](scripts/release_notes.py): commit messages since the previous tag plus the template files that changed (#32). It leaves out release bumps, `[bot]` commits, and commits that touch only `treaty_docs/`. GitHub's generated notes list merged PRs only, and most changes land without one.
 - Both workflows use PyPI Trusted Publishing (OIDC); no API token should be added to repo secrets.
 
 ## Repo Structure Map

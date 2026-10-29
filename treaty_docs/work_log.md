@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### Release notes skip commits that only touch `treaty_docs/` (claude-opus-5-5, medium)
+
+- The v0.10.3 notes listed "Record #34's field confirmation in the treaty docs" as a change with no bullets. A commit that only edits this repo's own treaty docs changes nothing a user installs, so `scripts/release_notes.py` now skips it, alongside release bumps and `[bot]` commits. The check is on files changed, not the subject line, so a code commit that also updates the log still shows.
+- Backfilled with the new script: v0.10.3 and v0.9.1, which had "Re-anchor Currently Hot on what is actually in flight". The other v0.9.x/v0.10.x releases were unchanged. The workflow runs the script as of the tag being released, so the skip applies automatically from the next tag.
+- Verification:
+  - `python -m unittest discover -s tests` — full suite OK, including a test against v0.10.3
+  - entry counts compared between every published release body since v0.9.1 and the new script's output
+  - `treaty validate .`; `git diff --check`
+
 ### #22 field result, untracked files in relocate's hint, a flat-layout pointer in `treaty update`; released v0.10.3 (claude-opus-5-5, high)
 
 - **#22 on a real adopter (Codex, `ai_crash_course`, Windows, v0.10.2, committed as 521f84e there):** `relocate --force` straight after the update matched the new help text. Relocate staged its own rewrites and named the work log, edited beforehand, as a leftover, with no `git add -A`. 22.3 (line numbers) wasn't exercised: the repo has no outside references. It's unit-tested, which is enough to close #22.

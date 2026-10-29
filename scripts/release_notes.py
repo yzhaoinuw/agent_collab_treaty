@@ -21,6 +21,10 @@ UPGRADE = (
     "```"
 )
 
+# This repo's own treaty docs. A commit that only touches them changes nothing
+# a user installs, so it has no place in the release notes.
+OWN_DOCS = "treaty_docs/"
+
 # What each shipped file costs an adopter at update time.
 FILE_COST = {
     "treaty_conventions.md.jinja": "maintained upstream; merges cleanly unless you edited it",
@@ -44,11 +48,13 @@ def previous_tag(tag: str) -> str | None:
 
 def commit_entries(span: str) -> list[str]:
     entries = []
-    log = git("log", "--reverse", "--no-merges", "--format=%an%x1f%s%x1f%b%x1e", span)
+    log = git("log", "--reverse", "--no-merges", "--format=%H%x1f%an%x1f%s%x1f%b%x1e", span)
     for record in filter(str.strip, log.split("\x1e")):
-        author, subject, body = record.strip("\n").split("\x1f", 2)
+        sha, author, subject, body = record.strip("\n").split("\x1f", 3)
         # Release bumps and the weekly adopters-badge bot are not changes.
         if re.match(r"^Release v\d", subject) or author.endswith("[bot]"):
+            continue
+        if _only_own_docs(sha):
             continue
         bullets = [
             line
@@ -57,6 +63,11 @@ def commit_entries(span: str) -> list[str]:
         ]
         entries.append("\n".join([f"- **{subject}**", *("  " + b for b in bullets)]))
     return entries
+
+
+def _only_own_docs(sha: str) -> bool:
+    files = git("diff-tree", "--no-commit-id", "--name-only", "-r", sha).splitlines()
+    return bool(files) and all(f.startswith(OWN_DOCS) for f in files)
 
 
 def template_changes(span_start: str | None, tag: str) -> list[str]:

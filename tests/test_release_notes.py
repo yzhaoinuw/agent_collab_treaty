@@ -48,6 +48,18 @@ class ReleaseNotesTests(unittest.TestCase):
         self.assertIn("Stop treaty update from hiding rejected merges", notes)
         self.assertNotIn("Update adopters badge count", notes)
 
+    def test_commits_touching_only_our_own_treaty_docs_are_left_out(self) -> None:
+        """v0.10.3's range has a commit that only updated treaty_docs/."""
+        cwd = os.getcwd()
+        os.chdir(REPO_ROOT)
+        try:
+            notes = _load().main("v0.10.3")
+        finally:
+            os.chdir(cwd)
+
+        self.assertIn("Point flat projects at treaty relocate", notes)
+        self.assertNotIn("Record #34's field confirmation", notes)
+
 
 if __name__ == "__main__":
     unittest.main()
