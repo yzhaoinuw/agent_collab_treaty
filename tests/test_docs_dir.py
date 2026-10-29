@@ -131,6 +131,23 @@ class ResolveDocsDirTests(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP_INTEGRATION, "TREATY_SKIP_INTEGRATION=1")
+def _comparable(tree: dict[str, str]) -> dict[str, str]:
+    """Drop the starter diagram under project_overview.md's Repo Structure Map.
+
+    It is drawn per layout (flat lists the docs at the root, nested draws a
+    folder), and relocate rewrites the flat drawing line by line, so the two
+    differ in shape, never in a path that is wrong. Adopters replace it with
+    their own map, and redrawing the flat one would conflict for them.
+    """
+    out = dict(tree)
+    text = out.get("project_overview.md")
+    if text is not None:
+        out["project_overview.md"] = re.sub(
+            r"(## Repo Structure Map\n).*?(?=\n## )", r"\1", text, flags=re.S
+        )
+    return out
+
+
 class FlatRenderingCompatibilityTests(unittest.TestCase):
     """The flat rendering's *paths* must not drift from the last pre-docs_dir release."""
 
@@ -224,6 +241,32 @@ class FlatRenderingCompatibilityTests(unittest.TestCase):
                     (conventions.parent / f"{expected}AGENTS.md").resolve().is_file(),
                     f"{expected}AGENTS.md does not resolve from {conventions.parent}",
                 )
+
+    def test_relocating_a_fresh_install_matches_a_fresh_install_there(self) -> None:
+        """`treaty relocate` and the template must agree on every root-doc path.
+
+        Issue #35: one conventions sentence named `project_overview.md` without
+        `root_prefix`. Relocate correctly rewrote it to `../project_overview.md`,
+        so an unedited conventions file showed drift in `treaty diff` after a
+        supported move. Any reference the template forgets to prefix fails here.
+        """
+        from agent_collab_treaty.relocate import apply_relocation, plan_relocation
+
+        for docs_dir in ("treaty_docs", "docs/agents"):
+            with self.subTest(docs_dir=docs_dir):
+                slug = docs_dir.replace("/", "_")
+                moved = self.tmp / f"moved_{slug}"
+                pristine = self.tmp / f"pristine_{slug}"
+                _render(REPO_ROOT, "HEAD", moved, docs_dir=".")
+                _git("init", "-q", ".", cwd=moved)
+                _commit(moved, "flat install")
+                plan = plan_relocation(moved, docs_dir)
+                self.assertEqual([], plan.blockers)
+                apply_relocation(plan)
+                _render(REPO_ROOT, "HEAD", pristine, docs_dir=docs_dir)
+
+                shutil.rmtree(moved / ".git")
+                self.assertEqual(_comparable(_tree(pristine)), _comparable(_tree(moved)))
 
 
 @unittest.skipIf(SKIP_INTEGRATION, "TREATY_SKIP_INTEGRATION=1")

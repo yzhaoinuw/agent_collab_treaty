@@ -29,7 +29,7 @@ Each session entry records the model + version, effort/thinking mode, and token 
 
 When a session creates or changes future work, update `next_steps.md` in the same pass: add concrete follow-ups, remove completed items, and keep "Currently Hot" accurate.
 
-`next_steps.md` is laid out by heading level. An active thread is a `##` section between "Currently Hot" and "Background / Paused"; a paused one is a `###` under "Background / Paused". Moving a thread between the two means changing its heading level, not just where it sits. Keep the file to follow-ups: once a feature ships, its design detail belongs in `project_overview.md`. A Currently Hot link uses the heading's GitHub anchor, which drops punctuation other than `-` and `_`: `## Fit the model (gpt-5.5)` is `#fit-the-model-gpt-55`. `treaty validate` checks every such link and names the anchor it most likely meant.
+`next_steps.md` is laid out by heading level. An active thread is a `##` section between "Currently Hot" and "Background / Paused"; a paused one is a `###` under "Background / Paused". Moving a thread between the two means changing its heading level, not just where it sits. Keep the file to follow-ups: once a feature ships, its design detail belongs in `{{ root_prefix }}project_overview.md`. A Currently Hot link uses the heading's GitHub anchor, which drops punctuation other than `-` and `_`: `## Fit the model (gpt-5.5)` is `#fit-the-model-gpt-55`. `treaty validate` checks every such link and names the anchor it most likely meant.
 
 ## Work Log Rotation And Dating
 
