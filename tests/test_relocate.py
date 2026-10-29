@@ -310,6 +310,10 @@ class RelocateTests(unittest.TestCase):
         _git(root, "add", "README.md")
         _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "r")
         (root / "README.md").write_text("changed again\n", encoding="utf-8")
+        # An archive chunk from a rotation not yet committed moves with its
+        # folder and must be named; unrelated untracked data must not be.
+        (root / "work_log_archive" / "work_log_new.md").write_text("# a\n", encoding="utf-8")
+        (root / "data.csv").write_text("x\n", encoding="utf-8")
 
         refused = CliRunner().invoke(app, ["relocate", str(root)])
         self.assertEqual(1, refused.exit_code)
@@ -318,7 +322,11 @@ class RelocateTests(unittest.TestCase):
         result = CliRunner().invoke(app, ["relocate", str(root), "--force"])
         self.assertEqual(0, result.exit_code, result.output)
         self.assertIn("The relocation is staged", result.output)
-        self.assertIn("git add README.md && git commit", result.output)
+        self.assertIn(
+            "git add README.md treaty_docs/work_log_archive/work_log_new.md && git commit",
+            result.output,
+        )
+        self.assertNotIn("data.csv", result.output)
         self.assertNotIn("git add -A", result.output)
 
     def test_noop_when_already_in_the_target_layout(self) -> None:

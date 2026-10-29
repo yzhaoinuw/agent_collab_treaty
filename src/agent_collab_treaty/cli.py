@@ -608,6 +608,32 @@ def update(
         typer.echo("")
         typer.echo("Review the changes, then:")
         typer.echo(f"    {_stage_command(changed + eol_only)}")
+    for line in _flat_layout_hint(new_answers, after_update=True):
+        typer.echo(line)
+
+
+def _flat_layout_hint(answers: dict, *, after_update: bool) -> list[str]:
+    """Point a flat-layout project at `treaty relocate`, once per update.
+
+    `treaty update` never moves docs: Copier applies a move as delete-plus-create,
+    so projects installed before v0.8.0 stay flat. Without this line nothing
+    tells them the folder layout exists.
+    """
+    docs_dir = answers.get("docs_dir")
+    if docs_dir is None or str(docs_dir).strip() not in (".", ""):
+        return []
+    if after_update:
+        how = (
+            "To move them, preview with `treaty relocate --dry-run`, then run "
+            "`treaty relocate --force` to move them in the same commit as this update."
+        )
+    else:
+        how = "To move them after updating, see `treaty relocate --dry-run`."
+    return [
+        "",
+        "Your treaty docs are in the flat layout, at the repo root; new installs "
+        "keep them in treaty_docs/. Staying flat is fine. " + how,
+    ]
 
 
 def _update_data(answers: dict, overrides: dict[str, str]) -> dict:
@@ -748,6 +774,8 @@ def _preview_update(
         typer.echo("Preview only — no changes written.", err=True)
         raise typer.Exit(1)
 
+    for line in _flat_layout_hint(new_answers, after_update=False):
+        typer.echo(line)
     typer.echo("")
     typer.echo("Preview only — no changes written. Re-run without --dry-run to apply.")
 
@@ -933,6 +961,15 @@ def relocate(
         typer.echo("Not a git repository, so nothing was staged. Review the moved files.")
         return
     leftover_paths = leftover.splitlines()
+    # Untracked files that relocate itself moved (say, an archive chunk from a
+    # rotation not yet committed) are treaty docs, so name them too. Other
+    # untracked files stay out: they may be data hidden by .git/info/exclude.
+    moved_to = [d.relative_to(destination).as_posix() for _, d in plan.moves]
+    untracked = _git_output(
+        destination, "ls-files", "--others", "--exclude-standard", "--", *moved_to
+    )
+    if moved_to and untracked:
+        leftover_paths += [p for p in untracked.splitlines() if p not in leftover_paths]
     typer.echo("The relocation is staged. Review it with git diff --cached, then:")
     typer.echo("    git commit")
     if leftover_paths:

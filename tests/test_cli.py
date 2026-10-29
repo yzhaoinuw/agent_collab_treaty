@@ -477,3 +477,13 @@ class ResolveSourceTests(unittest.TestCase):
             with patch("copier.run_copy") as run_copy:
                 self.runner.invoke(app, ["init", tmp, "--source", ".", "--defaults"])
             self.assertTrue(Path(run_copy.call_args.kwargs["src_path"]).is_absolute())
+
+
+class FlatLayoutHintTests(unittest.TestCase):
+    def test_only_a_recorded_flat_layout_gets_the_hint(self) -> None:
+        from agent_collab_treaty.cli import _flat_layout_hint
+
+        self.assertTrue(_flat_layout_hint({"docs_dir": "."}, after_update=True))
+        self.assertEqual([], _flat_layout_hint({"docs_dir": "treaty_docs"}, after_update=True))
+        # No answer at all is a template without the question, not a flat project.
+        self.assertEqual([], _flat_layout_hint({}, after_update=False))

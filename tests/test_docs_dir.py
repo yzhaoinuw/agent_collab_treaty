@@ -347,6 +347,27 @@ class LegacyAdopterUpdateTests(unittest.TestCase):
         conflicted = [ln for ln in status.splitlines() if "U" in ln[:2]]
         self.assertEqual([], conflicted, f"update conflicted:\n{status}")
 
+    def test_cli_points_a_flat_project_at_relocate_without_moving_it(self) -> None:
+        """Update keeps old projects flat, so it says the folder layout exists."""
+        from typer.testing import CliRunner
+
+        from agent_collab_treaty.cli import app
+
+        project = self._build_adopter()
+        runner = CliRunner()
+
+        preview = runner.invoke(app, ["update", str(project), "--dry-run"])
+        self.assertEqual(0, preview.exit_code, preview.output)
+        self.assertIn("Your treaty docs are in the flat layout", preview.output)
+        self.assertIn("treaty relocate --dry-run", preview.output)
+
+        result = runner.invoke(app, ["update", str(project)])
+        self.assertEqual(0, result.exit_code, result.output)
+        self.assertIn("Your treaty docs are in the flat layout", result.output)
+        self.assertIn("treaty relocate --force", result.output)
+        self.assertTrue((project / "work_log.md").exists(), "the hint must not move anything")
+        self.assertFalse((project / "treaty_docs").exists())
+
 
 class _FlatContentChangeCase(unittest.TestCase):
     """Shared rig: publish a template with one prose edit, then update adopters.

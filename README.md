@@ -167,7 +167,7 @@ your_repo/
 
 The `docs_dir` question controls the folder name. Answer `.` for the flat layout, or any other name (`docs/agents`, `.treaty`) to put them elsewhere.
 
-**Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. Verified against every Copier-managed adopter we maintain: identical files touched, identical conflicts, versus the same update on v0.7.0.
+**Projects installed before v0.8.0 are not moved.** They have no recorded `docs_dir`, and `treaty update` pins those to the flat layout automatically, so updating changes nothing but adds `docs_dir: '.'` to `.copier-answers.yml`. After updating a flat project, `treaty update` prints a one-line reminder that `treaty relocate` can move the docs; nothing moves unless you run it. Verified against every Copier-managed adopter we maintain: identical files touched, identical conflicts, versus the same update on v0.7.0.
 
 To move an existing project into a folder, use `treaty relocate`:
 
@@ -180,7 +180,7 @@ treaty relocate                     # apply it
 
 `treaty relocate` wants a clean tree, so the relocation is one change you can undo on its own. To relocate on top of the update's uncommitted changes and commit both together, pass `--force`; that is what it is for.
 
-It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone. `--to` picks a different folder, and `--to .` flattens everything back to the root.
+It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone, including files it moved that git wasn't tracking yet. `--to` picks a different folder, and `--to .` flattens everything back to the root.
 
 Two things it will not do silently:
 

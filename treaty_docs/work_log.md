@@ -41,6 +41,16 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### #22 field result, untracked files in relocate's hint, a flat-layout pointer in `treaty update`; released v0.10.3 (claude-opus-5-5, high)
+
+- **#22 on a real adopter (Codex, `ai_crash_course`, Windows, v0.10.2, committed as 521f84e there):** `relocate --force` straight after the update matched the new help text. Relocate staged its own rewrites and named the work log, edited beforehand, as a leftover, with no `git add -A`. 22.3 (line numbers) wasn't exercised: the repo has no outside references. It's unit-tested, which is enough to close #22.
+- **Gap the run found:** an archive chunk from a rotation not yet committed moved with its folder, but the hint skipped it, because the hint listed only tracked files (`git diff --name-only`). It now also names untracked files under the paths relocate moved. Other untracked files stay out on purpose: they may be data hidden with `.git/info/exclude`, the #22 workflow that removed `git add -A`.
+- **Flat-layout pointer (maintainer's call, option 1 of three):** `treaty update` and `--dry-run` end with one line on a project whose recorded `docs_dir` is `.`: staying flat is fine, and `treaty relocate` moves the docs. It fires only on an explicit `.`. A missing answer means a template without the question, not a flat project. Rejected: `treaty update --relocate` (worth it only if most of the 13 flat repos are moving) and auto-moving (a move can break references in the adopter's own files that relocate only reports).
+- Verification:
+  - `python -m unittest discover -s tests` — full suite OK, including a CLI update of a real v0.7.0-era adopter asserting the pointer appears and nothing moves
+  - relocate CLI test with an untracked archive chunk (named) and an untracked `data.csv` (not named)
+  - `treaty validate .`; `git diff --check`
+
 ### #35: a conventions path missing its prefix, and a relocate-vs-template parity test (claude-opus-5-5, high)
 
 - **Field result (Codex on `ai_crash_course`, Windows, v0.9.3 → v0.10.2, flat):** clean update, preview and apply agreed, and the staging hint named exactly the two changed files. A controlled check exercised #34's fix on the cases Grok hadn't (`my_repo`, `Background / Paused`) and fired `next-steps-hot-thread-paused` for the first time outside unit tests. That repo was then relocated into `treaty_docs/`, which surfaced #35.
