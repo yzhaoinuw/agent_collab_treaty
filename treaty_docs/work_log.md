@@ -41,6 +41,20 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### Docs folder renamed to `agent_worklog/`, with a README; update check at each rotation (claude-opus-5-5, high)
+
+- **Why rename:** the maintainer noticed that a reader with no context, such as a JOSS reviewer following `sleep_scoring`'s AI disclosure, can't tell what `treaty_docs/` holds. Names considered: `agent_docs/` (describes the folder but not what humans go there for, the log), `ai_worklog/` (clearest to outsiders, but loses the visual pairing with `AGENTS.md`), `agent_log(s)/` (reads as an agent's runtime traces, and plural `logs/` collides with common `.gitignore` rules). The maintainer chose **`agent_worklog/`**. The conventions file living in a "worklog" folder was judged fine: humans come for the log, and agents follow the conventions.
+- **Only the default changes.** Existing folder adopters keep `treaty_docs/` because Copier reuses the recorded answer, and `treaty relocate --to agent_worklog` already handles folder-to-folder renames. This repo's own folder stays `treaty_docs/` for now: the PyPI READMEs of past releases link into it on `main`.
+- **Folder README** (`{{ docs_dir }}/{% if docs_dir not in ['.', ''] %}README.md{% endif %}.jinja`): it renders only for folder layouts, because in the flat layout the name belongs to the adopter's own README, and the flat path-freeze test stays green. Measured in a scratch template tagged v0.99.0 over v0.10.3 adopters: `treaty_docs` gets it as a new file, flat gets nothing, and `docs_dir: docs` with an existing `docs/README.md` gets a **visible whole-file conflict** (UU, both sides kept), not a silent overwrite. `_conflict_notes` now says which side is theirs. `_skip_if_exists` was rejected: it would freeze the README's text after the first install.
+- **Relocate carries the README:** it moves it folder to folder, writes it when leaving the root, deletes it when flattening if unedited, and reports and leaves an edited one. The package doesn't ship `template/`, so the text is duplicated in `relocate._FOLDER_README_TEXT`. The relocate-vs-fresh-install test now covers all four directions and catches any drift.
+- **Update reminder:** the maintainer asked for a check at each rotation, which happens about every five dates. It goes in conventions (free to change), the archive README, and the `work-log-rotation-needed` message. The `work_log.md` template is frozen (2026-10-22), so its intro is not touched. The agent runs `treaty update --dry-run`, which works on a dirty tree, and *reports* a newer version without applying it, because conventions keep updating the maintainer's call. This is the cheap version of the parked "automated update notifications" thread. The dry run on `sleep_scoring` showed `v0.9.0 -> v0.10.3`, exactly the drift it targets.
+- Not yet released: the version bump, tag and v0.11.0 notes wait for the maintainer.
+- Verification:
+  - `python -m unittest discover -s tests` — 167 tests OK (1 skipped), including real Copier renders of the folder README, link resolution, and relocate-vs-fresh-install for `.`→`agent_worklog`, `.`→`docs/agents`, `agent_worklog`→`docs/agents`, and `docs/agents`→`.`
+  - `treaty init proj --source . --ref HEAD --defaults` in a scratch dir: `agent_worklog/README.md` rendered with `../AGENTS.md` links; `treaty validate` passed
+  - `treaty update --dry-run` in `sleep_scoring` to confirm the `Template version:` line the reminder points at
+  - scratch Copier update experiment described above; `treaty validate .`; `git diff --check`
+
 ### Release notes skip commits that only touch `treaty_docs/` (claude-opus-5-5, medium)
 
 - The v0.10.3 notes listed "Record #34's field confirmation in the treaty docs" as a change with no bullets. A commit that only edits this repo's own treaty docs changes nothing a user installs, so `scripts/release_notes.py` now skips it, alongside release bumps and `[bot]` commits. The check is on files changed, not the subject line, so a code commit that also updates the log still shows.

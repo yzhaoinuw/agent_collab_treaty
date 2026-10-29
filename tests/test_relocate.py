@@ -18,6 +18,7 @@ import yaml
 from agent_collab_treaty.relocate import (
     apply_relocation,
     docs_prefix,
+    folder_readme_text,
     format_plan,
     plan_relocation,
     root_prefix,
@@ -169,6 +170,61 @@ class RelocateTests(unittest.TestCase):
             self.assertTrue((root / name).exists(), name)
         self.assertFalse((root / "treaty_docs").exists(), "empty folder left behind")
         self.assertEqual(before, (root / "AGENTS.md").read_text(encoding="utf-8"))
+
+    # --- the folder README ---------------------------------------------
+
+    def _with_folder_readme(self, docs_dir: str, text: str | None = None) -> Path:
+        root = self._project(docs_dir)
+        readme = root / docs_prefix(docs_dir) / "README.md"
+        readme.write_text(text or folder_readme_text(docs_dir), encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "readme")
+        return root
+
+    def test_leaving_the_root_writes_a_folder_readme_and_spares_the_project_one(self) -> None:
+        root = self._project(".")
+        (root / "README.md").write_text("# My project\n", encoding="utf-8")
+        apply_relocation(plan_relocation(root, "docs/agents"))
+
+        readme = root / "docs" / "agents" / "README.md"
+        self.assertEqual(folder_readme_text("docs/agents"), readme.read_text(encoding="utf-8"))
+        self.assertIn("](../../AGENTS.md)", readme.read_text(encoding="utf-8"))
+        self.assertEqual("# My project\n", (root / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("A  docs/agents/README.md", _git(root, "status", "--porcelain").stdout)
+
+    def test_an_existing_readme_in_the_target_folder_is_kept(self) -> None:
+        root = self._project(".")
+        (root / "docs").mkdir()
+        (root / "docs" / "README.md").write_text("# Our docs\n", encoding="utf-8")
+        plan = plan_relocation(root, "docs")
+        self.assertEqual([], plan.blockers)
+        self.assertIsNone(plan.readme_create)
+        self.assertTrue(any("is kept" in note for note in plan.readme_notes))
+        apply_relocation(plan)
+        self.assertEqual("# Our docs\n", (root / "docs" / "README.md").read_text(encoding="utf-8"))
+
+    def test_folder_to_folder_moves_the_readme_at_the_new_depth(self) -> None:
+        root = self._with_folder_readme("treaty_docs")
+        apply_relocation(plan_relocation(root, "docs/agents"))
+
+        self.assertFalse((root / "treaty_docs").exists(), "old folder left behind")
+        moved = root / "docs" / "agents" / "README.md"
+        self.assertEqual(folder_readme_text("docs/agents"), moved.read_text(encoding="utf-8"))
+
+    def test_flattening_removes_an_unedited_folder_readme(self) -> None:
+        root = self._with_folder_readme("treaty_docs")
+        apply_relocation(plan_relocation(root, "."))
+        self.assertFalse((root / "treaty_docs").exists())
+        self.assertFalse((root / "README.md").exists(), "must not land at the root")
+
+    def test_flattening_leaves_an_edited_folder_readme_and_says_so(self) -> None:
+        root = self._with_folder_readme("treaty_docs", "# Ours now\n")
+        plan = plan_relocation(root, ".")
+        self.assertIsNone(plan.readme_remove)
+        self.assertTrue(any("has your edits" in note for note in plan.readme_notes))
+        self.assertIn("Folder README (not changed", "\n".join(format_plan(plan)))
+        apply_relocation(plan)
+        self.assertEqual("# Ours now\n", (root / "treaty_docs" / "README.md").read_text(encoding="utf-8"))
 
     def test_multi_segment_target_gets_matching_link_depth(self) -> None:
         root = self._project(".")
@@ -323,7 +379,7 @@ class RelocateTests(unittest.TestCase):
         self.assertEqual(0, result.exit_code, result.output)
         self.assertIn("The relocation is staged", result.output)
         self.assertIn(
-            "git add README.md treaty_docs/work_log_archive/work_log_new.md && git commit",
+            "git add README.md agent_worklog/work_log_archive/work_log_new.md && git commit",
             result.output,
         )
         self.assertNotIn("data.csv", result.output)

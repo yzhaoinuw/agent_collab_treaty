@@ -10,7 +10,7 @@ At the start of a new session, read this file first; do not auto-read every mark
 
 ## What This Repo Maintains
 
-This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md` and `project_overview.md` at the repo root; `treaty_conventions.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/` under `treaty_docs/`, or flat at the root when `docs_dir` is `.`).
+This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md` and `project_overview.md` at the repo root; `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/`, or flat at the root, minus that README, when `docs_dir` is `.`). The default was `treaty_docs/` before v0.11.0, and this repo's own docs still live there.
 
 **Template split (since v0.5.0):** `template/AGENTS.md.jinja` holds what adopters customize; `template/treaty_conventions.md.jinja` holds the mechanics we maintain. New generic guidance goes in conventions, not AGENTS — that's what keeps `treaty update` close to conflict-free downstream. The root repo does not install a `treaty_conventions.md` of its own: its `AGENTS.md` already links straight to the docs below.
 

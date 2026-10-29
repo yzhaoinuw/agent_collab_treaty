@@ -2,7 +2,7 @@
 
 [![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty) [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21746757-6d81f1?style=flat-square)](https://doi.org/10.5281/zenodo.21746757) <!-- adopters-badge:start -->[![Public adopters](https://img.shields.io/badge/adopters-16-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)<!-- adopters-badge:end -->
 
-A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `treaty_docs/` — doing two jobs:
+A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `agent_worklog/` — doing two jobs:
 
 - **Agent handoff.** The next session picks up where the last one left off — less repeated reading, fewer lost decisions — whether it's the same agent, a different model, or a different machine.
 - **Planning and work log, for you.** The same files are a running record of what's in flight, what shipped, and what was decided and why. Plain Markdown in git: nothing to log into, diffable, and ready to lift straight into a status update.
@@ -31,14 +31,15 @@ Language- and framework-agnostic — code repos, but also prose, research, and o
 |---|---|
 | `AGENTS.md` | First-read contract: startup rule, doc map, runtime, common tasks, commit conventions, project reminders. **This is the file you customize.** |
 | `project_overview.md` | Orientation map: active vs. legacy code, authored vs. derived files, repo structure, where to look first. |
-| `treaty_docs/treaty_conventions.md` | The generic mechanics `AGENTS.md` links to: work-log criteria, rotation and dating rules, branch handoff, release gate, update procedure. **Maintained upstream — leave it alone** and `treaty update` keeps it current. |
-| `treaty_docs/next_steps.md` | Active roadmap. "Currently Hot" points agents at the threads that matter now. |
-| `treaty_docs/work_log.md` | Session journal, newest first. Agents prepend substantive work before handoff. |
-| `treaty_docs/work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
+| `agent_worklog/treaty_conventions.md` | The generic mechanics `AGENTS.md` links to: work-log criteria, rotation and dating rules, branch handoff, release gate, update procedure. **Maintained upstream — leave it alone** and `treaty update` keeps it current. |
+| `agent_worklog/next_steps.md` | Active roadmap. "Currently Hot" points agents at the threads that matter now. |
+| `agent_worklog/work_log.md` | Session journal, newest first. Agents prepend substantive work before handoff. |
+| `agent_worklog/work_log_archive/` | Rotated older work-log chunks, so the live log stays cheap to read. |
+| `agent_worklog/README.md` | Tells anyone browsing the repo — a reviewer, a new contributor — what the folder is, before they open a file. Maintained upstream. |
 
 `AGENTS.md` and `treaty_conventions.md` split along how they're maintained — your answers in one, shared mechanics in the other. That's what keeps `treaty update` close to conflict-free.
 
-The working docs sit in `treaty_docs/` so they don't crowd your repo root; `AGENTS.md` and `project_overview.md` stay at the root, where a newcomer and an agent both expect to find them. Set the `docs_dir` question to rename that folder, or to `.` to keep every file flat at the root. Projects installed before v0.8.0 stay flat automatically — see *Where the docs live* under [Install](#install).
+The working docs sit in `agent_worklog/` so they don't crowd your repo root; `AGENTS.md` and `project_overview.md` stay at the root, where a newcomer and an agent both expect to find them. Set the `docs_dir` question to rename that folder, or to `.` to keep every file flat at the root. Projects installed before v0.8.0 stay flat automatically — see *Where the docs live* under [Install](#install).
 
 ## See It In A Real Project
 
@@ -85,7 +86,7 @@ The CLI is a thin wrapper around [Copier](https://copier.readthedocs.io/), so yo
 pipx run copier copy gh:yzhaoinuw/agent_collab_treaty .
 ```
 
-Or copy the files by hand from [`template/`](template/) — not from this repo's root, which holds our own dogfooded docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files. The literal `{{ docs_dir }}` directory in there is the docs folder awaiting its name: copy its contents into `treaty_docs/` (or straight to the root for a flat layout).
+Or copy the files by hand from [`template/`](template/) — not from this repo's root, which holds our own dogfooded docs. Replace the Jinja placeholders in `template/AGENTS.md.jinja`, rename it to `AGENTS.md`, and fill in the bracket placeholders in the other files. The literal `{{ docs_dir }}` directory in there is the docs folder awaiting its name: copy its contents into `agent_worklog/` (or straight to the root for a flat layout, leaving out its `README.md`).
 
 Hand-copied projects have no `.copier-answers.yml`, so `treaty update` and `treaty diff` won't work on them — you'd copy new sections from [`template/`](template/) by hand instead.
 
@@ -138,7 +139,7 @@ Opting out beats deleting: a section that never rendered can never conflict, whi
 
 Three more worth knowing:
 
-- **`docs_dir`** is the folder the working docs live in, `treaty_docs` by default. Answer `.` to keep everything flat at the repo root. See *Where the docs live* below.
+- **`docs_dir`** is the folder the working docs live in, `agent_worklog` by default (`treaty_docs` before v0.11.0). Answer `.` to keep everything flat at the repo root. See *Where the docs live* below.
 - **`env_activation`** accepts `none` for projects that deliberately have no managed environment. `AGENTS.md` then says so explicitly, instead of leaving an agent to helpfully create a venv.
 - **`verification_command`** is whatever proves the repo is in good shape — `pytest`, `npm test`, a link checker, a lint pass, or `treaty validate .`. It replaced `test_command` in v0.5.0; older projects carry their recorded answer over automatically.
 
@@ -147,21 +148,26 @@ Three more worth knowing:
 <details>
 <summary>Where the docs live</summary>
 
-Since v0.8.0 the working docs install into `treaty_docs/`, leaving `AGENTS.md` and `project_overview.md` at the repo root:
+New installs put the working docs in `agent_worklog/`, leaving `AGENTS.md` and `project_overview.md` at the repo root:
 
 ```text
 your_repo/
 |- .copier-answers.yml
 |- AGENTS.md
 |- project_overview.md
-|- treaty_docs/
+|- agent_worklog/
+|  |- README.md
 |  |- treaty_conventions.md
 |  |- next_steps.md
 |  |- work_log.md
 |  |- work_log_archive/
 ```
 
-`AGENTS.md` has to stay at the root: agents resolve the *nearest* `AGENTS.md` up the directory tree, so one nested inside `treaty_docs/` would apply only to files inside that folder — the opposite of what you want. `project_overview.md` stays with it as the human-facing entry point.
+The folder was `treaty_docs/` from v0.8.0 to v0.10.x. It was renamed because a reviewer or newcomer browsing a repo could not tell what a folder named after the tool held. Projects installed then keep `treaty_docs/`: the name is recorded in `.copier-answers.yml`, and `treaty update` never moves files. They get the folder README on their next update. To take the new name, run `treaty relocate --to agent_worklog`.
+
+The folder README is only rendered for folder layouts. In the flat layout that filename is your project's own README. If you already kept a `README.md` in your docs folder, the update shows it as a conflict: your version against the treaty's. Keep yours.
+
+`AGENTS.md` has to stay at the root: agents resolve the *nearest* `AGENTS.md` up the directory tree, so one nested inside `agent_worklog/` would apply only to files inside that folder — the opposite of what you want. `project_overview.md` stays with it as the human-facing entry point.
 
 **`.copier-answers.yml` stays at the root too, at every `docs_dir` value** — including after `treaty relocate` moves the working docs. It is Copier's bookkeeping, not a treaty doc: it records your answers and the template version you are pinned to, and `treaty update` / `treaty diff` read it from the repo root. It is also the file that records `docs_dir` itself, so it cannot live inside the folder it names. Commit it; a gitignored answers file breaks every later update, which is why `treaty init` warns about one and `treaty validate` flags it.
 
@@ -180,7 +186,7 @@ treaty relocate                     # apply it
 
 `treaty relocate` wants a clean tree, so the relocation is one change you can undo on its own. To relocate on top of the update's uncommitted changes and commit both together, pass `--force`; that is what it is for.
 
-It moves the four working docs with `git mv` so history follows, rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone, including files it moved that git wasn't tracking yet. `--to` picks a different folder, and `--to .` flattens everything back to the root.
+It moves the four working docs with `git mv` so history follows, carries the folder README along (writing one when leaving the root, and deleting an unedited one when flattening, where it would collide with your own `README.md`), rewrites the doc links in `AGENTS.md` and `project_overview.md`, retargets the project-relative links *inside* the moved docs for their new depth, records the new `docs_dir`, and does it in one pass so the recorded answer and the files on disk never disagree. Everything it changes is staged when it finishes; it prints the `git add` for any earlier changes it left alone, including files it moved that git wasn't tracking yet. `--to` picks a different folder, and `--to .` flattens everything back to the root.
 
 Two things it will not do silently:
 
@@ -236,6 +242,8 @@ treaty update                         # apply
 `treaty update` does a **three-way merge** from your pinned version up to the latest release, so edits that don't overlap upstream changes are kept automatically. If any file is left conflicted, the command names it and **exits non-zero** — a conflicted update is never reported as a success.
 
 `treaty update --dry-run` runs that same merge in a disposable clone of your committed state and prints the summary a real apply would print — planned answer changes, files that update cleanly, files that would conflict — without writing anything to your project. It exits non-zero when the merge would conflict, so scripts can use it the same way as a real apply. Because the clone is of your *committed* state, uncommitted edits aren't previewed — but `--data` values are, since they come from the command line. Add `--diff` to see what changes inside each file, not just which files; the [release notes](https://github.com/yzhaoinuw/agent_collab_treaty/releases) list the CLI changes and which template files each release touches.
+
+You don't have to remember to check. Since v0.11.0 the conventions have agents run `treaty update --dry-run` each time they rotate the work log (roughly every five working days) and tell you if a newer version is out. Updating stays your call.
 
 Upgrade the CLI before updating. Template fixes often lean on CLI checks, and an old CLI runs without complaint: its `treaty validate` passes without knowing what the new template expects.
 

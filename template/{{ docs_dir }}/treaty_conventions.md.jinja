@@ -35,6 +35,7 @@ When a session creates or changes future work, update `next_steps.md` in the sam
 
 - The live `work_log.md` holds at most the 5 most recent unique calendar dates. Each file under `work_log_archive/` holds exactly 5.
 - When prepending a new date would push the live log past 5 unique dates, move the oldest 5 dates as a chunk into `work_log_archive/work_log_<earliest>_to_<latest>.md`.
+- **Each rotation is also the reminder to check for a treaty update.** Run `treaty update --dry-run`: it writes nothing and works with uncommitted changes, and its `Template version:` line shows whether the template would move (`v0.10.3 -> v0.11.0`) or not (`(unchanged)`). If a newer version is out, tell the user in your reply and leave the update itself to them — see [Updating The Treaty](#updating-the-treaty). If `treaty` isn't installed or the check can't reach GitHub, say that instead of skipping it silently.
 - If today's date already has a `## YYYY-MM-DD` header at the top, add a new `###` session subsection under it. Never open a second `## YYYY-MM-DD` header for the same date.
 - Before writing any dated entry, verify the local date (`date +%F` on macOS/Linux, `Get-Date -Format yyyy-MM-dd` on Windows) and use that. When the model-context date and the local environment disagree — which happens across a UTC midnight boundary — trust the local date. Never write a future-dated entry; `treaty validate` fails with `work-log-future-date`.
 

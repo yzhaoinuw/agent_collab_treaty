@@ -85,14 +85,26 @@ def _conflict_notes(unmerged: list[str]) -> list[str]:
     conflict hunk. Taking the template side there deletes history: in one real
     adopter the "before updating" side held two whole session entries.
     """
-    if not any(PurePosixPath(path).name == "work_log.md" for path in unmerged):
-        return []
-    return [
-        "In work_log.md, the 'after updating' side is the template's intro "
-        "text, and treaty_conventions.md already carries that guidance. Keep "
-        "every dated entry from the 'before updating' side: dropping that side "
-        "deletes history.",
-    ]
+    notes: list[str] = []
+    if any(PurePosixPath(path).name == "work_log.md" for path in unmerged):
+        notes.append(
+            "In work_log.md, the 'after updating' side is the template's intro "
+            "text, and treaty_conventions.md already carries that guidance. Keep "
+            "every dated entry from the 'before updating' side: dropping that side "
+            "deletes history."
+        )
+    # Since v0.11.0 the template ships a README.md in the docs folder. A project
+    # that already kept its own README there gets the whole file as one conflict.
+    for path in unmerged:
+        posix = PurePosixPath(path)
+        if posix.name == "README.md" and len(posix.parts) > 1 and posix.parent.name != "work_log_archive":
+            notes.append(
+                f"In {path}, the 'before updating' side is the README you already "
+                "had in that folder, and the 'after updating' side is the one the "
+                "treaty now ships there. Keep yours, fold in any of the template's "
+                "lines you want, and delete the markers."
+            )
+    return notes
 
 
 def _next_steps_candidates(dest: Path) -> set[Path]:
@@ -230,7 +242,7 @@ def _legacy_layout_data(answers: dict) -> dict[str, str]:
     """Pin projects installed before ``docs_dir`` existed to the flat root layout.
 
     Those projects have no recorded ``docs_dir``, so an unguarded update would
-    hand them the new ``treaty_docs`` default and Copier would relocate every
+    hand them the folder default (now ``agent_worklog``) and Copier would relocate every
     treaty doc. Copier implements that relocation as *delete the customized file
     and write a pristine one at the new path* — a silent loss of the adopter's
     entire work log. Answering ``.`` keeps their layout byte-identical, and the
@@ -632,7 +644,7 @@ def _flat_layout_hint(answers: dict, *, after_update: bool) -> list[str]:
     return [
         "",
         "Your treaty docs are in the flat layout, at the repo root; new installs "
-        "keep them in treaty_docs/. Staying flat is fine. " + how,
+        "keep them in agent_worklog/. Staying flat is fine. " + how,
     ]
 
 
@@ -875,7 +887,7 @@ def relocate(
         help="Project directory to relocate (defaults to the current directory).",
     ),
     to: str = typer.Option(
-        "treaty_docs",
+        "agent_worklog",
         "--to",
         help="Folder to hold the working docs. Use '.' to flatten them back to the root.",
     ),

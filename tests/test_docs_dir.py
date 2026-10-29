@@ -192,6 +192,19 @@ class FlatRenderingCompatibilityTests(unittest.TestCase):
             self.assertIn(f"treaty_docs/{name}", rendered)
             self.assertNotIn(name, rendered)
         self.assertIn("treaty_docs/work_log_archive/README.md", rendered)
+        # The folder's own README, for people browsing the repo. Its links must
+        # resolve: it is the first thing they click.
+        self.assertIn("treaty_docs/README.md", rendered)
+        readme = nested / "treaty_docs" / "README.md"
+        for target in re.findall(r"\]\(([^)#]+)\)", readme.read_text(encoding="utf-8")):
+            if not target.startswith("http"):
+                self.assertTrue((readme.parent / target).resolve().exists(), target)
+
+    def test_flat_layout_renders_no_folder_readme(self) -> None:
+        """At the root the name belongs to the adopter's own README.md."""
+        flat = self.tmp / "flat"
+        _render(REPO_ROOT, "HEAD", flat, docs_dir=".")
+        self.assertNotIn("README.md", _tree(flat))
 
     def test_nested_layout_rewrites_cross_document_links(self) -> None:
         nested = self.tmp / "nested"
@@ -252,12 +265,19 @@ class FlatRenderingCompatibilityTests(unittest.TestCase):
         """
         from agent_collab_treaty.relocate import apply_relocation, plan_relocation
 
-        for docs_dir in ("treaty_docs", "docs/agents"):
-            with self.subTest(docs_dir=docs_dir):
-                slug = docs_dir.replace("/", "_")
+        # Every direction relocate can move in, including the folder README it
+        # writes, moves, or removes along the way.
+        for start, docs_dir in (
+            (".", "agent_worklog"),
+            (".", "docs/agents"),
+            ("agent_worklog", "docs/agents"),
+            ("docs/agents", "."),
+        ):
+            with self.subTest(start=start, docs_dir=docs_dir):
+                slug = f"{start}_{docs_dir}".replace("/", "_").replace(".", "flat")
                 moved = self.tmp / f"moved_{slug}"
                 pristine = self.tmp / f"pristine_{slug}"
-                _render(REPO_ROOT, "HEAD", moved, docs_dir=".")
+                _render(REPO_ROOT, "HEAD", moved, docs_dir=start)
                 _git("init", "-q", ".", cwd=moved)
                 _commit(moved, "flat install")
                 plan = plan_relocation(moved, docs_dir)

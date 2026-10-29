@@ -483,7 +483,11 @@ def _validate_work_log(path: Path, today: date) -> Iterable[ValidationIssue]:
             path=path,
             line=line_number,
             code="work-log-rotation-needed",
-            message=f"Live work_log.md has more than 5 unique dates; rotate starting at {date_value}.",
+            message=(
+                f"Live work_log.md has more than 5 unique dates; rotate starting at {date_value}. "
+                "Then check for a treaty update with `treaty update --dry-run` and tell "
+                "the user if one is out."
+            ),
         )
 
     for index, (line_number, _, content_index) in enumerate(session_headings):

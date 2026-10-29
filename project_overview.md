@@ -6,7 +6,7 @@ This document orients a new agent or human collaborator to the Agent Collab Trea
 
 `agent-collab-treaty` is a small Python package that publishes the `treaty` CLI. The CLI installs and updates a Copier template containing a shared documentation contract for human + multi-agent collaboration on any codebase.
 
-The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md` and `project_overview.md` at the repo root, plus `treaty_conventions.md`, `next_steps.md`, `work_log.md`, and `work_log_archive/` under `treaty_docs/`.
+The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md` and `project_overview.md` at the repo root, plus `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/` (the `docs_dir` default; `treaty_docs/` before v0.11.0, and still this repo's own folder).
 
 ## Active Runtime Path
 
@@ -110,6 +110,7 @@ project_root/
 |  |- AGENTS.md.jinja
 |  |- project_overview.md.jinja
 |  `- {{ docs_dir }}/          <- literal dir name; Copier renders it
+|     |- README.md (folder layouts only; conditional filename)
 |     |- treaty_conventions.md.jinja
 |     |- next_steps.md
 |     |- work_log.md
@@ -137,7 +138,7 @@ project_root/
 
 - [`src/agent_collab_treaty/cli.py`](src/agent_collab_treaty/cli.py) - active CLI implementation.
 - [`src/agent_collab_treaty/versions.py`](src/agent_collab_treaty/versions.py) - compares the CLI version with a project's pinned `_commit`; `update` and `validate` warn when the CLI is older.
-- [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check), then stages its own rewrites so the index never mixes staged moves with unstaged edits (#22).
+- [`src/agent_collab_treaty/relocate.py`](src/agent_collab_treaty/relocate.py) - `treaty relocate`: moves the working docs between layouts in one pass (move, link rewrite, answers update, gitignore check), then stages its own rewrites so the index never mixes staged moves with unstaged edits (#22). It also carries the folder README: it moves it between folders, writes it when leaving the root, and deletes an unedited one when flattening. The README text lives twice, in the template and in `_FOLDER_README_TEXT`, and `test_relocating_a_fresh_install_matches_a_fresh_install_there` fails if they drift.
 - [`copier.yml`](copier.yml) - active Copier configuration and template questions.
 - [`template/`](template/) - active installable treaty content.
 - [`README.md`](README.md) - public user documentation.

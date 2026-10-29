@@ -487,3 +487,21 @@ class FlatLayoutHintTests(unittest.TestCase):
         self.assertEqual([], _flat_layout_hint({"docs_dir": "treaty_docs"}, after_update=True))
         # No answer at all is a template without the question, not a flat project.
         self.assertEqual([], _flat_layout_hint({}, after_update=False))
+
+
+class ConflictNotesTests(unittest.TestCase):
+    def test_names_the_sides_of_a_folder_readme_conflict(self) -> None:
+        """v0.11.0 ships docs_dir/README.md; a project that already had one
+        there gets the whole file as a conflict, and needs to know which side
+        is theirs."""
+        from agent_collab_treaty.cli import _conflict_notes
+
+        notes = _conflict_notes(["docs/README.md"])
+        self.assertEqual(1, len(notes))
+        self.assertIn("the README you already had", notes[0])
+
+    def test_leaves_other_readmes_alone(self) -> None:
+        from agent_collab_treaty.cli import _conflict_notes
+
+        self.assertEqual([], _conflict_notes(["README.md"]))
+        self.assertEqual([], _conflict_notes(["docs/work_log_archive/README.md"]))

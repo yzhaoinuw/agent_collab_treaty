@@ -53,13 +53,13 @@ docs_dir:
     AGENTS.md, project_overview.md, and .copier-answers.yml
     always stay at the root.
     Answer '.' to keep everything flat at the root instead.
-  default: "treaty_docs"
+  default: "agent_worklog"
 
 # Computed path prefixes derived from docs_dir. Declared with `when: false` so
 # they are never prompted and never recorded, and *after* docs_dir because
 # Copier renders defaults in declaration order.
 #
-# docs_prefix: root-level docs -> the docs folder ('' or 'treaty_docs/').
+# docs_prefix: root-level docs -> the docs folder ('' or 'agent_worklog/').
 # root_prefix: docs-folder files -> the root ('' or '../').
 docs_prefix:
   type: str

@@ -6,6 +6,7 @@ Use this checklist alongside `work_log.md`.
 
 Active threads — read these first to know what work is in flight:
 
+- **v0.11.0 ready on `dev`, not yet tagged (claude-opus-5-5, 2026-10-29).** New `docs_dir` default `agent_worklog/`, a folder README for folder layouts, and an update check at every work-log rotation. Remaining: the release commit (version in `pyproject.toml`, `__init__.py`, `CITATION.cff`) and the tag, when the maintainer says go. Then in `sleep_scoring` (pinned v0.9.0): `treaty update`, `treaty relocate --to agent_worklog --force`, and hand-fix the references relocate only reports (`paper/paper.md` AI disclosure, `paper/README.md`, `CONTRIBUTING.md`). **Watch for:** adopters with their own `README.md` in a custom `docs_dir` hitting the whole-file conflict. Open choice: rename this repo's own `treaty_docs/` (past PyPI READMEs link into it).
 - **Open issues, re-triaged 2026-10-26 (claude-opus-5-5, high).** Open: #19 only (README guidance; on hold at the maintainer's request). #22 and #35 closed with v0.10.3 (2026-10-29). **Decided 2026-10-29:** `treaty update` points flat projects at `treaty relocate` but never moves them. Revisit `--relocate` only if most flat adopters start relocating. Closed 2026-10-26: #23, #26 and #34 (field-confirmed; Grok on `good_stocks` got the right 'did you mean' at v0.10.2), #33, #28 (done), #29 and #15's remainder (not planned; reopen conditions are in the closing comments and the 2026-10-26 work log). **Shipped in v0.10.2 (2026-10-26):** GitHub-exact heading anchors with a 'did you mean' on broken Currently Hot links, the Python 3.10 note, relocate's line numbers, staging and `--force` wording, the legacy-entry metadata message, and the release-notes bot filter. **Watch for:** any heading whose GitHub anchor still disagrees with `_github_anchor` (emphasis or links inside a heading are untested).
 - **The flat-rendering freeze is settled: paths frozen, content free (2026-08-13, claude-opus-5).** The blanket byte-identity assertion is gone, replaced by a path-set freeze plus behavioral merge tests. See the work-log entry for the measurements and the three-tier policy now in `AGENTS.md`. This unblocked #19, #23.2, and #23.3a.
 
@@ -26,6 +27,8 @@ Sections below this line are older threads kept for context. They're not the cur
 ### Parked: automated update notifications (claude-opus-5)
 
 Status: **designed, deliberately not built** (2026-08-01). Do not start this without a fresh decision.
+
+**Partly addressed 2026-10-29 (v0.11.0):** conventions now have agents run `treaty update --dry-run` at every work-log rotation and tell the user when a newer version is out. That gives a notice with no scheduled job, and the update itself stays manual.
 
 The problem: as of 2026-08-01, 9 of 11 adopting repos are pinned two or more minor versions behind (seven on v0.3.2, one on v0.2.0), so nobody checks for treaty updates by hand.
 

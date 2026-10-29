@@ -37,6 +37,30 @@ MOVABLE_NAMES = (
 # Treaty docs that stay at the repo root and whose links need rewriting.
 ROOT_DOC_NAMES = ("AGENTS.md", "project_overview.md")
 
+# The folder's own README, which tells a human browsing the repo what the folder
+# is. Only folder layouts have one: in the flat layout the same name is the
+# project's README, so it never joins MOVABLE_NAMES. Instead relocate moves it
+# between folders, writes it when leaving the root, and deletes an unedited one
+# when flattening.
+FOLDER_README = "README.md"
+
+# Must match `template/{{ docs_dir }}/...README.md...jinja` rendered for the same
+# docs_dir; tests/test_docs_dir.py compares a relocated install against a fresh
+# one to keep the two in step.
+_FOLDER_README_TEXT = """\
+# Agent Work Log
+
+This folder is the working record of the AI coding agents on this project, kept under the [Agent Collab Treaty](https://github.com/yzhaoinuw/agent_collab_treaty) conventions.
+
+- [`work_log.md`](work_log.md) — the session log, newest first: decisions and why, approaches tried and dropped, and how each change was verified. Older entries are in [`work_log_archive/`](work_log_archive/).
+- [`next_steps.md`](next_steps.md) — unfinished work and open follow-ups.
+- [`treaty_conventions.md`](treaty_conventions.md) — the rules agents follow when writing these files.
+
+Agents start from [`AGENTS.md`]({root_prefix}AGENTS.md) at the repo root; [`project_overview.md`]({root_prefix}project_overview.md) maps the codebase.
+
+<!-- Maintained upstream: `treaty update` keeps this file current. Put project-specific notes in AGENTS.md instead. -->
+"""
+
 
 @dataclass
 class RelocationPlan:
@@ -49,6 +73,9 @@ class RelocationPlan:
     link_edits: list[tuple[Path, int]] = field(default_factory=list)
     outbound_edits: list[tuple[Path, int]] = field(default_factory=list)
     answers_update: bool = False
+    readme_create: Path | None = None
+    readme_remove: Path | None = None
+    readme_notes: list[str] = field(default_factory=list)
     blockers: list[str] = field(default_factory=list)
     external_refs: list[tuple[Path, list[int]]] = field(default_factory=list)
     gitignore_risk: list[str] = field(default_factory=list)
@@ -68,6 +95,15 @@ def root_prefix(docs_dir: str) -> str:
     if docs_dir in (".", ""):
         return ""
     return "../" * len(docs_dir.strip("/").split("/"))
+
+
+def is_flat(docs_dir: str) -> bool:
+    return docs_dir in (".", "")
+
+
+def folder_readme_text(docs_dir: str) -> str:
+    """The folder README the template renders for ``docs_dir``."""
+    return _FOLDER_README_TEXT.format(root_prefix=root_prefix(docs_dir))
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -221,6 +257,17 @@ def _plan_outbound_links(root: Path, plan: RelocationPlan) -> None:
             plan.outbound_edits.append((old_path, count))
 
 
+def _folder_names(plan: RelocationPlan) -> tuple[str, ...]:
+    """Docs-folder files whose links back to the root need the new depth.
+
+    The folder README counts only when it moves folder to folder; at the root it
+    would be the project's own README.
+    """
+    if any(source.name == FOLDER_README for source, _ in plan.moves):
+        return MOVABLE_NAMES + (FOLDER_README,)
+    return MOVABLE_NAMES
+
+
 def _doc_reference_pairs(old: str, new: str) -> list[tuple[str, str]]:
     """Old -> new reference strings for each movable doc, longest name first."""
     old_p, new_p = docs_prefix(old), docs_prefix(new)
@@ -247,6 +294,7 @@ def plan_relocation(root: Path, target: str) -> RelocationPlan:
     if _is_case_only_rename(root, plan):
         return plan
     _plan_moves(root, plan)
+    _plan_folder_readme(root, plan)
     _plan_link_edits(root, plan)
     _plan_outbound_links(root, plan)
     _plan_external_refs(root, plan)
@@ -345,6 +393,54 @@ def _plan_moves(root: Path, plan: RelocationPlan) -> None:
         )
 
 
+def _plan_folder_readme(root: Path, plan: RelocationPlan) -> None:
+    """Carry the folder README across the relocation, never touching the root one.
+
+    Folder to folder, it moves with the other docs. Flat to folder, there is no
+    README to move (the root one is the project's), so a fresh one is written —
+    the same file the template would render there, so the next `treaty update`
+    finds nothing to merge. Folder to flat, an unedited README is deleted; an
+    edited one is the adopter's to move, so it stays put and is reported.
+    """
+
+    old_flat, new_flat = is_flat(plan.old_docs_dir), is_flat(plan.new_docs_dir)
+    old_readme = root / docs_prefix(plan.old_docs_dir) / FOLDER_README
+    new_readme = root / docs_prefix(plan.new_docs_dir) / FOLDER_README
+
+    if not old_flat and not new_flat:
+        if not old_readme.is_file():
+            plan.readme_create = new_readme
+        elif new_readme.exists():
+            plan.readme_notes.append(
+                f"{_rel(root, new_readme)} already exists, so "
+                f"{_rel(root, old_readme)} stays where it is: merge the two yourself."
+            )
+        else:
+            plan.moves.append((old_readme, new_readme))
+    elif old_flat and not new_flat:
+        if new_readme.exists():
+            plan.readme_notes.append(
+                f"{_rel(root, new_readme)} already exists and is kept; the treaty's "
+                "folder README is not written over it."
+            )
+        else:
+            plan.readme_create = new_readme
+    elif not old_flat and new_flat and old_readme.is_file():
+        # Compared without CRLF, which Git on Windows may have checked it out with.
+        current = old_readme.read_text(encoding="utf-8").replace("\r\n", "\n")
+        if current == folder_readme_text(plan.old_docs_dir):
+            plan.readme_remove = old_readme
+        else:
+            plan.readme_notes.append(
+                f"{_rel(root, old_readme)} has your edits, so it is left in place: "
+                "the flat layout has no folder README. Move or delete it yourself."
+            )
+
+
+def _rel(root: Path, path: Path) -> str:
+    return path.relative_to(root).as_posix()
+
+
 def _plan_link_edits(root: Path, plan: RelocationPlan) -> None:
     """Count link rewrites in treaty-owned docs (root docs and the moved ones)."""
 
@@ -364,7 +460,7 @@ def _plan_link_edits(root: Path, plan: RelocationPlan) -> None:
     old_rp, new_rp = root_prefix(plan.old_docs_dir), root_prefix(plan.new_docs_dir)
     if old_rp != new_rp:
         old_p = docs_prefix(plan.old_docs_dir)
-        for name in MOVABLE_NAMES:
+        for name in _folder_names(plan):
             path = root / f"{old_p}{name}"
             if not path.is_file():
                 continue
@@ -465,7 +561,7 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
 
     old_rp, new_rp = root_prefix(plan.old_docs_dir), root_prefix(plan.new_docs_dir)
     if old_rp != new_rp:
-        for name in MOVABLE_NAMES:
+        for name in _folder_names(plan):
             path = root / f"{new_p}{name}"
             if not path.is_file():
                 continue
@@ -493,6 +589,20 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
             written.append(new_path)
             rel = new_path.relative_to(root).as_posix()
             actions.append(f"rewrote {count} project link(s) in {rel}")
+
+    if plan.readme_remove is not None:
+        rel = _rel(root, plan.readme_remove)
+        if not (_is_tracked(root, plan.readme_remove) and _git(root, "rm", "-q", "--", rel).returncode == 0):
+            plan.readme_remove.unlink()
+        actions.append(f"removed {rel} (the flat layout has no folder README)")
+
+    if plan.readme_create is not None:
+        plan.readme_create.parent.mkdir(parents=True, exist_ok=True)
+        plan.readme_create.write_text(folder_readme_text(plan.new_docs_dir), encoding="utf-8")
+        rel = _rel(root, plan.readme_create)
+        actions.append(f"wrote {rel}, which tells people browsing the repo what the folder holds")
+        # Staged with the moves: a new untracked file is easy to leave out of the commit.
+        _git(root, "add", "--", rel)
 
     # Drop the old docs folder once it is empty, so flattening does not leave a
     # stray directory behind. Anything the adopter put in there keeps it alive.
@@ -557,6 +667,13 @@ def format_plan(plan: RelocationPlan) -> list[str]:
             f"  - {p.relative_to(plan.root).as_posix()} ({n} link(s))"
             for p, n in plan.outbound_edits
         )
+    if plan.readme_create is not None:
+        lines.append(f"Folder README: write {_rel(plan.root, plan.readme_create)}")
+    if plan.readme_remove is not None:
+        lines.append(f"Folder README: remove {_rel(plan.root, plan.readme_remove)} (unedited)")
+    if plan.readme_notes:
+        lines.append("Folder README (not changed - yours to resolve):")
+        lines.extend(f"  - {note}" for note in plan.readme_notes)
     if plan.answers_update:
         lines.append(
             f"Answers: docs_dir -> {plan.new_docs_dir} "
