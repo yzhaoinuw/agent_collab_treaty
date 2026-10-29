@@ -50,6 +50,7 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
   - `python -m unittest discover -s tests` — full suite OK, including a CLI update of a real v0.7.0-era adopter asserting the pointer appears and nothing moves
   - relocate CLI test with an untracked archive chunk (named) and an untracked `data.csv` (not named)
   - `treaty validate .`; `git diff --check`
+- **Released as v0.10.3** (2026-10-29), bundling this with #35's conventions prefix fix. `main` was an ancestor of `dev` (no bot commits since v0.10.2), so it fast-forwarded. Patch bump: a template path fix, one new CLI hint, one hint fix.
 
 ### #35: a conventions path missing its prefix, and a relocate-vs-template parity test (claude-opus-5-5, high)
 
