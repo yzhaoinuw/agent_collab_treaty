@@ -2,12 +2,15 @@
 
 [![Agent Collab Treaty](./assets/treaty-adopted.svg)](https://github.com/yzhaoinuw/agent_collab_treaty) [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21746757-6d81f1?style=flat-square)](https://doi.org/10.5281/zenodo.21746757) <!-- adopters-badge:start -->[![Public adopters](https://img.shields.io/badge/adopters-16-6d81f1?style=flat-square)](https://github.com/search?q=%22yzhaoinuw%2Fagent_collab_treaty%22&type=code)<!-- adopters-badge:end -->
 
-A drop-in documentation contract for repositories worked on by agents, humans, or both. Five Markdown files and an archive folder — two at your repo root, the rest tucked into `agent_worklog/` — doing two jobs:
+A set of project docs that AI coding agents read before they work and write back to before they leave. Five Markdown files in your repo — two at the root, the rest in `agent_worklog/` — doing three jobs:
 
-- **Agent handoff.** The next session picks up where the last one left off — less repeated reading, fewer lost decisions — whether it's the same agent, a different model, or a different machine.
-- **Planning and work log, for you.** The same files are a running record of what's in flight, what shipped, and what was decided and why. Plain Markdown in git: nothing to log into, diffable, and ready to lift straight into a status update.
+- **Agent handoff.** The next session picks up where the last one left off, whether it's the same agent, a different model, or another machine.
+- **A project record for you.** What's in flight, what shipped, and what was decided and why. Plain Markdown in git, ready to lift into a status update.
+- **AI-use disclosure, already written.** Each session logs the model that did the work and what it decided, as it happens. When a journal, funder or reviewer asks how AI was used, point them at the folder — [sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)'s JOSS manuscript does exactly that.
 
-Language- and framework-agnostic — code repos, but also prose, research, and ops. Your agent can set it up in two prompts and maintain it unsupervised from there. Battle-tested across Codex, Claude Code / Cowork, and Grok Build with near-zero friction.
+**Doesn't my agent already have memory?** Yes, but only for itself. Built-in memory is tied to one tool and one account, and it's hard to review. These docs live in the repo: every agent and every collaborator reads the same record, and git keeps its history.
+
+Language- and framework-agnostic. Your agent sets it up in two prompts, maintains it unprompted, and tells you when an update is out. Battle-tested across Codex, Claude Code / Cowork, and Grok Build.
 
 **How to read this README.** Each blockquoted *"Prompt"* is a sentence you paste into your AI coding agent (Claude Code, Codex, Cursor, Gemini CLI, …), not a shell command. You need nothing installed first: the agent installs the CLI and runs it. Each prompt has a collapsed *"Prefer to run it yourself?"* section with the equivalent terminal commands.
 

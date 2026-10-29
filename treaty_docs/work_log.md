@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### README pitch repositioned after v0.11.0 (claude-opus-5-5, high)
+
+- **Decision:** the opening pitch now names three jobs, adding **AI-use disclosure** to handoff and the project record, and answers "doesn't my agent already have memory?". The maintainer raised both. Disclosure is a benefit built-in agent memory can't offer: the log is written during the work, so a maintainer cites it instead of reconstructing it, as sleep_scoring's JOSS manuscript does.
+- **Positioning against built-in memory: complementary, not competing.** Memory is per tool and per account and hard to review. The treaty is in the repo, shared by every agent and collaborator, and versioned. Memory holds facts about the user; the log holds the project's decisions.
+- **Wording kept deliberately modest:** "a record kept as the work happens", not "complete proof". Logs skip casual Q&A and cover only sessions after adoption, and sleep_scoring's own disclosure says its 2023–2025 model versions weren't recorded. "Update" and "validate" stay out of the pitch and are covered further down.
+- The disclosure bullet links the sleep_scoring repo, not the paper. Codex is relocating sleep_scoring and handling the paper on another machine; once that's done, the maintainer wants Claude to check it and swap in a paper link if one is public.
+- Verification:
+  - `treaty validate .`; `git diff --check`
+
 ### Docs folder renamed to `agent_worklog/`, with a README; update check at each rotation (claude-opus-5-5, high)
 
 - **Why rename:** the maintainer noticed that a reader with no context, such as a JOSS reviewer following `sleep_scoring`'s AI disclosure, can't tell what `treaty_docs/` holds. Names considered: `agent_docs/` (describes the folder but not what humans go there for, the log), `ai_worklog/` (clearest to outsiders, but loses the visual pairing with `AGENTS.md`), `agent_log(s)/` (reads as an agent's runtime traces, and plural `logs/` collides with common `.gitignore` rules). The maintainer chose **`agent_worklog/`**. The conventions file living in a "worklog" folder was judged fine: humans come for the log, and agents follow the conventions.
