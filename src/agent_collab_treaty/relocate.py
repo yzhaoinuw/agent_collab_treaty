@@ -257,6 +257,27 @@ def _plan_outbound_links(root: Path, plan: RelocationPlan) -> None:
             plan.outbound_edits.append((old_path, count))
 
 
+def _folder_pattern(plan: RelocationPlan) -> re.Pattern | None:
+    """A bare mention of the old folder (`treaty_docs/`), for folder-to-folder moves.
+
+    Doc file paths are handled by `_doc_reference_pairs`; this catches the folder
+    on its own, as in a link to it or the structure-map diagram the template
+    draws in project_overview.md. A path that continues past the slash is left
+    alone: it names a file of the adopter's own, and those do not move.
+    """
+    if is_flat(plan.old_docs_dir) or is_flat(plan.new_docs_dir):
+        return None
+    old = re.escape(docs_prefix(plan.old_docs_dir))
+    return re.compile(r"(?<![A-Za-z0-9_./-])" + old + r"(?![A-Za-z0-9_.-])")
+
+
+def _retarget_folder(text: str, plan: RelocationPlan) -> tuple[str, int]:
+    pattern = _folder_pattern(plan)
+    if pattern is None:
+        return text, 0
+    return pattern.subn(docs_prefix(plan.new_docs_dir), text)
+
+
 def _folder_names(plan: RelocationPlan) -> tuple[str, ...]:
     """Docs-folder files whose links back to the root need the new depth.
 
@@ -454,6 +475,8 @@ def _plan_link_edits(root: Path, plan: RelocationPlan) -> None:
         for old, new in pairs:
             text, count = _retarget(text, old, new)
             total += count
+        text, count = _retarget_folder(text, plan)
+        total += count
         if total:
             plan.link_edits.append((path, total))
 
@@ -497,6 +520,9 @@ def _plan_external_refs(root: Path, plan: RelocationPlan) -> None:
         except (OSError, UnicodeDecodeError):
             continue
         patterns = [re.compile(r"(?<![A-Za-z0-9_./-])" + re.escape(n)) for n in needles]
+        folder = _folder_pattern(plan)
+        if folder is not None:
+            patterns.append(folder)
         line_numbers = [
             number
             for number, line in enumerate(text.splitlines(), start=1)
@@ -554,6 +580,8 @@ def apply_relocation(plan: RelocationPlan) -> list[str]:
         for old, new in pairs:
             text, count = _retarget(text, old, new)
             total += count
+        text, count = _retarget_folder(text, plan)
+        total += count
         if text != original:
             path.write_text(text, encoding="utf-8")
             written.append(path)

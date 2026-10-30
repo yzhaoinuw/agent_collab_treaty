@@ -226,6 +226,29 @@ class RelocateTests(unittest.TestCase):
         apply_relocation(plan)
         self.assertEqual("# Ours now\n", (root / "treaty_docs" / "README.md").read_text(encoding="utf-8"))
 
+    def test_folder_rename_rewrites_bare_folder_mentions_in_root_docs(self) -> None:
+        """`treaty_docs` -> `agent_worklog` is the rename v0.11.0 recommends. The
+        template's structure map draws the folder on its own line, so a bare
+        `treaty_docs/` must follow; a path to the adopter's own file in there
+        must not, because that file does not move."""
+        root = self._project("treaty_docs")
+        (root / "project_overview.md").write_text(
+            "|- treaty_docs/\n[docs](treaty_docs/)\n![x](treaty_docs/fig.png)\n",
+            encoding="utf-8",
+        )
+        (root / "CHANGELOG.md").write_text("See treaty_docs/ for notes.\n", encoding="utf-8")
+        _git(root, "add", "-A")
+        _git(root, "-c", "user.email=t@e.st", "-c", "user.name=T", "commit", "-qm", "c")
+
+        plan = plan_relocation(root, "agent_worklog")
+        self.assertIn((root / "CHANGELOG.md", [1]), plan.external_refs)
+        apply_relocation(plan)
+        self.assertEqual(
+            "|- agent_worklog/\n[docs](agent_worklog/)\n![x](treaty_docs/fig.png)\n",
+            (root / "project_overview.md").read_text(encoding="utf-8"),
+        )
+        self.assertIn("treaty_docs/", (root / "CHANGELOG.md").read_text(encoding="utf-8"))
+
     def test_multi_segment_target_gets_matching_link_depth(self) -> None:
         root = self._project(".")
         apply_relocation(plan_relocation(root, "docs/agents"))
