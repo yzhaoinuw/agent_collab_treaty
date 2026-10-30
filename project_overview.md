@@ -6,7 +6,7 @@ This document orients a new agent or human collaborator to the Agent Collab Trea
 
 `agent-collab-treaty` is a small Python package that publishes the `treaty` CLI. The CLI installs and updates a Copier template containing a shared documentation contract for human + multi-agent collaboration on any codebase.
 
-The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md` and `project_overview.md` at the repo root, plus `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/` (the `docs_dir` default; `treaty_docs/` before v0.11.0, and still this repo's own folder).
+The product is not an agent runtime. It is the coordination layer agents read before doing work: `AGENTS.md` and `project_overview.md` at the repo root, plus `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/` (the `docs_dir` default since v0.11.0; `treaty_docs/` before).
 
 ## Active Runtime Path
 
@@ -89,7 +89,7 @@ The product is not an agent runtime. It is the coordination layer agents read be
 
 - TestPyPI dry-runs are manual via `workflow_dispatch`.
 - Real PyPI releases happen on `v*` tag pushes.
-- The GitHub Release body comes from [`scripts/release_notes.py`](scripts/release_notes.py): commit messages since the previous tag plus the template files that changed (#32). It leaves out release bumps, `[bot]` commits, and commits that touch only `treaty_docs/`. GitHub's generated notes list merged PRs only, and most changes land without one.
+- The GitHub Release body comes from [`scripts/release_notes.py`](scripts/release_notes.py): commit messages since the previous tag plus the template files that changed (#32). It leaves out release bumps, `[bot]` commits, and commits that touch only this repo's own treaty docs (`agent_worklog/`, or `treaty_docs/` before v0.11.0). GitHub's generated notes list merged PRs only, and most changes land without one.
 - Both workflows use PyPI Trusted Publishing (OIDC); no API token should be added to repo secrets.
 
 ## Repo Structure Map
@@ -118,7 +118,8 @@ project_root/
 |- scripts/
 |  |- count_adopters.sh
 |  `- release_notes.py
-|- treaty_docs/
+|- agent_worklog/
+|  |- README.md
 |  |- next_steps.md
 |  |- work_log.md
 |  `- work_log_archive/
@@ -145,12 +146,12 @@ project_root/
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) - contributor front door and maintainer release/publishing mechanics.
 - [`CITATION.cff`](CITATION.cff) - citation metadata; Zenodo reads it when archiving a release, and its `version:`/`date-released:` are bumped as part of the release checklist.
 - [`.github/workflows/`](.github/workflows/) - active PyPI/TestPyPI release automation.
-- Root [`AGENTS.md`](AGENTS.md), this file, and [`treaty_docs/`](treaty_docs/) ([`next_steps.md`](treaty_docs/next_steps.md), [`work_log.md`](treaty_docs/work_log.md)) - dogfooded docs for maintaining this repo.
+- Root [`AGENTS.md`](AGENTS.md), this file, and [`agent_worklog/`](agent_worklog/) ([`next_steps.md`](agent_worklog/next_steps.md), [`work_log.md`](agent_worklog/work_log.md)) - dogfooded docs for maintaining this repo.
 
 ### Likely older or secondary
 
 - There are no known legacy code paths yet.
-- [`treaty_docs/work_log_archive/`](treaty_docs/work_log_archive/) is historical context, not active code.
+- [`agent_worklog/work_log_archive/`](agent_worklog/work_log_archive/) is historical context, not active code.
 - Local pointer files such as `CLAUDE.md`, `CODEX.md`, and `GEMINI.md` are intentionally ignored if created locally.
 
 ## Authored vs. Derived
@@ -216,8 +217,8 @@ If you only want to understand the current product, read files in this order:
 4. [`template/AGENTS.md.jinja`](template/AGENTS.md.jinja)
 5. [`template/{{ docs_dir }}/treaty_conventions.md.jinja`](template/%7B%7B%20docs_dir%20%7D%7D/treaty_conventions.md.jinja)
 6. [`template/project_overview.md`](template/project_overview.md)
-7. [`treaty_docs/next_steps.md`](treaty_docs/next_steps.md)
-8. [`treaty_docs/work_log.md`](treaty_docs/work_log.md)
+7. [`agent_worklog/next_steps.md`](agent_worklog/next_steps.md)
+8. [`agent_worklog/work_log.md`](agent_worklog/work_log.md)
 
 The key idea: `treaty init` copies the template into a target repo, and `treaty update` later applies upstream template changes using Copier metadata. Everything else is documentation quality, update safety, and agent-discovery ergonomics.
 

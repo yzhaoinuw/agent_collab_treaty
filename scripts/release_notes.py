@@ -22,8 +22,9 @@ UPGRADE = (
 )
 
 # This repo's own treaty docs. A commit that only touches them changes nothing
-# a user installs, so it has no place in the release notes.
-OWN_DOCS = "treaty_docs/"
+# a user installs, so it has no place in the release notes. Both names: the
+# folder was treaty_docs/ until v0.11.0, and older tags' notes are rebuilt too.
+OWN_DOCS = ("agent_worklog/", "treaty_docs/")
 
 # What each shipped file costs an adopter at update time.
 FILE_COST = {

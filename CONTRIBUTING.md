@@ -25,7 +25,7 @@ python -m venv .venv && .venv/bin/python -m pip install -e .
   treaty --help && treaty --version && treaty validate .
   ```
 
-- This repo dogfoods the treaty it ships: substantive changes prepend a `treaty_docs/work_log.md` entry and update `treaty_docs/next_steps.md`. The criteria live in `AGENTS.md` § When To Update Treaty Docs.
+- This repo dogfoods the treaty it ships: substantive changes prepend an `agent_worklog/work_log.md` entry and update `agent_worklog/next_steps.md`. The criteria live in `AGENTS.md` § When To Update Treaty Docs.
 
 ## Touching `template/`
 
@@ -39,7 +39,7 @@ The template is the product — what `treaty init` installs into other people's 
 
 Two GitHub Actions workflows handle publishing, both via [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) (OIDC), so no API tokens are stored in the repo:
 
-- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release. The release body comes from `scripts/release_notes.py`: commit subjects and body bullets since the previous tag, plus the template files that changed. Release bumps, `[bot]` commits, and commits that touch only `treaty_docs/` are left out. GitHub's own generated notes list merged PRs only, and most changes land without one. Preview it with `python scripts/release_notes.py vX.Y.Z` after tagging locally.
+- `.github/workflows/release.yml` — fires on a `v*` tag push, builds sdist + wheel, publishes to PyPI, creates a GitHub Release. The release body comes from `scripts/release_notes.py`: commit subjects and body bullets since the previous tag, plus the template files that changed. Release bumps, `[bot]` commits, and commits that touch only this repo's own treaty docs (`agent_worklog/`) are left out. GitHub's own generated notes list merged PRs only, and most changes land without one. Preview it with `python scripts/release_notes.py vX.Y.Z` after tagging locally.
 - `.github/workflows/test-publish.yml` — manual `workflow_dispatch`, publishes to TestPyPI for dry-runs.
 
 Cutting a release (doc gate first — see `AGENTS.md` § Release / Tag Checklist):

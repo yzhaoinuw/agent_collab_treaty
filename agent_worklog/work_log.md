@@ -41,6 +41,15 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### Wrap-up: this repo's own docs moved to `agent_worklog/`; relocate gap fixed (claude-opus-5-5, high)
+
+- **Renamed this repo's `treaty_docs/` with `treaty relocate --to agent_worklog`, eating our own cooking.** The maintainer accepted the earlier concern: past PyPI READMEs link to `main/treaty_docs/...` and now 404. Only the current PyPI page is normally seen. The release-notes filter (`OWN_DOCS`) now matches both names, because notes for older tags are rebuilt too.
+- **Gap found by dogfooding:** relocate rewrote file paths (`treaty_docs/work_log.md`) but not the bare folder (`[treaty_docs/](treaty_docs/)`, or `|- treaty_docs/` in a diagram), and didn't even report them, because they sat in treaty-owned root docs. The template's own `project_overview.md` structure map draws `{{ docs_dir }}/`, so every adopter doing the folder-to-folder rename v0.11.0 recommends would keep a stale folder name. Fixed for folder-to-folder moves: bare mentions are rewritten in `AGENTS.md`/`project_overview.md` and reported in other files. A path that continues past the slash (`treaty_docs/fig.png`) is left alone, since the adopter's own files don't move. Flat moves are untouched (nothing to name). `sleep_scoring` didn't hit this: its customized docs had no bare mentions, and Codex fixed the paper by hand. This is unreleased.
+- **This repo's folder README is hand-written, not the template text:** the repo has no `treaty_conventions.md` (its `AGENTS.md` carries the conventions), so the template's link to it would be broken. Root-vs-template boundary.
+- Open issues: only #19, still on hold.
+- Verification:
+  - `treaty relocate --to agent_worklog --dry-run`, then applied; `python -m unittest discover -s tests` (full suite, see below); `treaty validate .`; `git diff --check`
+
 ### v0.11.0 field result: Codex relocated `sleep_scoring` (claude-opus-5-5, high)
 
 - **The first real v0.11.0 run, as the maintainer intended:** Codex on another machine ran update plus `relocate --to agent_worklog` on `sleep_scoring` (ae41dd1, on both `main` and `dev`). Checked here from a `git archive` snapshot: pinned at `v0.11.0`, `docs_dir: agent_worklog`, every doc moved with history (`R` renames), `agent_worklog/README.md` byte-identical to `folder_readme_text('agent_worklog')`, no `treaty_docs` references left outside the logs, no conflict markers, `treaty validate` passes. The paper's disclosure line now reads `agent_worklog/`. The README's three sleep_scoring showcase links return 200, so the 404 window from the v0.11.0 README is closed.

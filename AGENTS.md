@@ -2,7 +2,7 @@
 
 The first file to read when joining a session on this repo. It defines the runtime, common tasks, conventions, and project-specific reminders for maintaining the Agent Collab Treaty package.
 
-**Keep this file lean — aim for under 150 lines.** It is a quick-reference map, not a manual: when a topic needs more than a few tight lines, put the detail in the doc it points to (`README.md`, `project_overview.md`, `treaty_docs/work_log.md`) and link there instead of growing this file.
+**Keep this file lean — aim for under 150 lines.** It is a quick-reference map, not a manual: when a topic needs more than a few tight lines, put the detail in the doc it points to (`README.md`, `project_overview.md`, `agent_worklog/work_log.md`) and link there instead of growing this file.
 
 ## Startup Rule
 
@@ -10,7 +10,7 @@ At the start of a new session, read this file first; do not auto-read every mark
 
 ## What This Repo Maintains
 
-This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md` and `project_overview.md` at the repo root; `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/`, or flat at the root, minus that README, when `docs_dir` is `.`). The default was `treaty_docs/` before v0.11.0, and this repo's own docs still live there.
+This repo publishes `agent-collab-treaty`, a Python package exposing the `treaty` CLI, which installs and updates a Copier template of standard collaboration docs (`AGENTS.md` and `project_overview.md` at the repo root; `treaty_conventions.md`, `next_steps.md`, `work_log.md`, `work_log_archive/`, and a folder `README.md` under `agent_worklog/`, or flat at the root, minus that README, when `docs_dir` is `.`). The default was `treaty_docs/` before v0.11.0.
 
 **Template split (since v0.5.0):** `template/AGENTS.md.jinja` holds what adopters customize; `template/treaty_conventions.md.jinja` holds the mechanics we maintain. New generic guidance goes in conventions, not AGENTS — that's what keeps `treaty update` close to conflict-free downstream. The root repo does not install a `treaty_conventions.md` of its own: its `AGENTS.md` already links straight to the docs below.
 
@@ -48,11 +48,11 @@ Pre-flight checklist before committing:
 - `treaty validate .` passes for the dogfooded docs.
 - Template changes tested by rendering into a scratch dir.
 - User-facing docs (`README.md`, `project_overview.md`, template docs) match the behavior.
-- A new `treaty_docs/work_log.md` entry describes the work, model/version metadata, and the verification commands actually run.
+- A new `agent_worklog/work_log.md` entry describes the work, model/version metadata, and the verification commands actually run.
 
 ## When To Update Treaty Docs
 
-At the end of any substantive session, prepend a `treaty_docs/work_log.md` entry unless the user says not to or the exchange was trivial. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed, so log the decision, the reversal, the approach tried and discarded and why, evidence future agents shouldn't have to rediscover, and shared-state changes (branch/PR/release/env). Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `treaty_docs/next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate. **Check the log before every push to `dev` or merge to `main`, too** — a long session has no clear end, so that is the trigger that reliably fires.
+At the end of any substantive session, prepend an `agent_worklog/work_log.md` entry unless the user says not to or the exchange was trivial. **The log records decisions about the project, not the content of the work produced** — the diff already says what changed, so log the decision, the reversal, the approach tried and discarded and why, evidence future agents shouldn't have to rediscover, and shared-state changes (branch/PR/release/env). Log reverted experiments when they leave reusable evidence, a decision, or a warning. Update `agent_worklog/next_steps.md` in the same pass: add follow-ups, remove completed items, keep "Currently Hot" accurate. **Check the log before every push to `dev` or merge to `main`, too** — a long session has no clear end, so that is the trigger that reliably fires.
 
 ## Agent Roles, PR Policy, and Merges
 
@@ -72,8 +72,8 @@ The `update-adopters-badge` workflow runs weekly and, when the count changes, pu
 Treat commit + push + tag (or "cut a release" / "publish version X") as a release. Clear this doc gate **before** creating or pushing the tag:
 
 - Version bumped in `pyproject.toml` **and** `src/agent_collab_treaty/__init__.py`, consistent with the tag. Update `version:` and `date-released:` in `CITATION.cff` in the same pass — but **leave its `identifiers:` DOI alone**: that is the Zenodo *concept* DOI, which already resolves to the newest archive. Swapping in the per-release version DOI would pin every future citation to one release.
-- User-facing docs updated when behavior changed. (No changelog file; release history lives in `treaty_docs/work_log.md` plus the GitHub Release body, which `scripts/release_notes.py` builds from the commit messages since the previous tag. So the commit bodies are the release notes: keep their bullets user-facing.)
-- `treaty_docs/work_log.md` updated with the summary, verification commands run, and release/branch/tag state, using the verified local date.
+- User-facing docs updated when behavior changed. (No changelog file; release history lives in `agent_worklog/work_log.md` plus the GitHub Release body, which `scripts/release_notes.py` builds from the commit messages since the previous tag. So the commit bodies are the release notes: keep their bullets user-facing.)
+- `agent_worklog/work_log.md` updated with the summary, verification commands run, and release/branch/tag state, using the verified local date.
 
 Then create the annotated tag and push. Pushing a `v*` tag triggers `.github/workflows/release.yml` (PyPI trusted publishing + GitHub Release). Afterward verify refs with `git ls-remote --tags origin` and `git ls-remote --heads origin <branch>`. `test-publish.yml` is a manual TestPyPI dry-run.
 
@@ -85,12 +85,12 @@ Short title line; a short body with flat bullets when a commit bundles several r
 
 Read these only as needed:
 
-- **`treaty_docs/work_log.md`** / **`treaty_docs/work_log_archive/`** — recent implementation history, experiments, verification breadcrumbs. The live log holds at most the **5 most recent unique dates**; default to reading the two most recent. Find anchors with `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' treaty_docs/work_log.md`. When prepending: if today already has a `## YYYY-MM-DD` header, add a `###` session under it; when a new date would exceed 5 dates, move the oldest 5 as a chunk into `treaty_docs/work_log_archive/work_log_<earliest>_to_<latest>.md`. Verify the local date first (`date +%F`); never write a future-dated entry (`treaty validate` fails with `work-log-future-date`).
-- **`treaty_docs/next_steps.md`** — unfinished work; read the "Currently Hot" pointer first and remove items when done.
+- **`agent_worklog/work_log.md`** / **`agent_worklog/work_log_archive/`** — recent implementation history, experiments, verification breadcrumbs. The live log holds at most the **5 most recent unique dates**; default to reading the two most recent. Find anchors with `rg -n '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' agent_worklog/work_log.md`. When prepending: if today already has a `## YYYY-MM-DD` header, add a `###` session under it; when a new date would exceed 5 dates, move the oldest 5 as a chunk into `agent_worklog/work_log_archive/work_log_<earliest>_to_<latest>.md`. Verify the local date first (`date +%F`); never write a future-dated entry (`treaty validate` fails with `work-log-future-date`).
+- **`agent_worklog/next_steps.md`** — unfinished work; read the "Currently Hot" pointer first and remove items when done.
 - **`project_overview.md`** — codebase structure; "What Looks Active vs. Legacy" and "Authored vs. Derived" are the key maps.
 - **`README.md`** — user-facing setup, install, update, badge. **`CONTRIBUTING.md`** — human-contributor front door; also holds the release/publishing mechanics (workflows, trusted publishing) that used to live in the README's Developer Notes.
 - **`template/`** — what `treaty init` installs (keep it generic). **`copier.yml`** — questions, defaults, post-copy messaging. **`.github/workflows/`** — release and adopters-badge automation.
-- **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters from two sources: `yzhaoinuw/*` repos are listed and read **directly** via the repos API, and code search covers third parties. Do not go back to code-search-only — it does not index most of our newer repos and undercounted 13 adopters as 6 (see `treaty_docs/work_log.md`, 2026-07-26); the third-party half remains a floor for the same reason. The `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
+- **Treaty & adopters badges (README):** `treaty init` offers an opt-in "adopted" badge (tri-color SVG primary; shields.io fallback for non-GitHub renders). `scripts/count_adopters.sh` counts public adopters from two sources: `yzhaoinuw/*` repos are listed and read **directly** via the repos API, and code search covers third parties. Do not go back to code-search-only — it does not index most of our newer repos and undercounted 13 adopters as 6 (see `agent_worklog/work_log.md`, 2026-07-26); the third-party half remains a floor for the same reason. The `adopters` badge is refreshed weekly and only rewritten on a clean positive count. An `ADOPTERS_TOKEN` PAT reduces throttling.
 
 ## Project-Specific Reminders
 

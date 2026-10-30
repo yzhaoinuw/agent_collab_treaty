@@ -50,7 +50,7 @@ Not samples — living docs, filled in by months of real sessions:
 
 - **[sleep_scoring](https://github.com/yzhaoinuw/sleep_scoring)** — sleep-staging app, logged since April 2026 (folder layout): [agent_worklog/](https://github.com/yzhaoinuw/sleep_scoring/tree/main/agent_worklog) · [work_log.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/agent_worklog/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/sleep_scoring/blob/main/agent_worklog/next_steps.md)
 - **[fp_analysis](https://github.com/yzhaoinuw/fp_analysis)** — fiber-photometry app, logged since March 2026 (flat layout): [work_log.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/fp_analysis/blob/main/next_steps.md)
-- **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/treaty_docs/next_steps.md)
+- **This repo** maintains itself the same way: [work_log.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/agent_worklog/work_log.md) · [next_steps.md](https://github.com/yzhaoinuw/agent_collab_treaty/blob/main/agent_worklog/next_steps.md)
 
 Open any `work_log.md` and read one entry. It says *why* something was decided, not which files changed — that's what makes it worth reading months later, by an agent or by you.
 
