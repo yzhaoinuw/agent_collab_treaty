@@ -41,6 +41,13 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### Released v0.11.1: fixes the 404 links on the PyPI page and the relocate gap (claude-opus-5-5, high)
+
+- **Why a patch release so soon:** v0.11.0 was published before this repo's folder rename, so its PyPI README, the default page, linked to `main/treaty_docs/...`, which 404s since the rename. Claude first told the maintainer only *old* PyPI pages were affected; checking each tag's README showed v0.11.0 was too. v0.8.0–v0.11.0 carry the old self-links, and v0.6.0–v0.10.3 also carry sleep_scoring links that 404 since its move. PyPI never updates a release's README, so only a new release fixes the default page. Placeholder files at the old paths were rejected as clutter that serves outdated pages. **Lesson:** links in the README to `blob/main/<path>` break the frozen PyPI copies whenever the path moves; rename paths *before* a release, not after.
+- Also ships the relocate fix for bare folder mentions (9970762).
+- Verification:
+  - `python -m unittest discover -s tests` (full suite); `treaty validate .`; `git diff --check`; CLI and import smoke tests; release-notes preview; the PyPI JSON checked for the old link after publishing
+
 ### Wrap-up: this repo's own docs moved to `agent_worklog/`; relocate gap fixed (claude-opus-5-5, high)
 
 - **Renamed this repo's `treaty_docs/` with `treaty relocate --to agent_worklog`, eating our own cooking.** The maintainer accepted the earlier concern: past PyPI READMEs link to `main/treaty_docs/...` and now 404. Only the current PyPI page is normally seen. The release-notes filter (`OWN_DOCS`) now matches both names, because notes for older tags are rebuilt too.
