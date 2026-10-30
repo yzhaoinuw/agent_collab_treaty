@@ -39,6 +39,16 @@ Keep the parenthetical compact. Examples:
 Newest entry goes on top. If the session did multiple distinct pieces of work, use multiple `###` subsections under one `##` date header.
 -->
 
+## 2026-10-30
+
+### README pitch rewritten for readers who don't ship software (claude-opus-5-5, high)
+
+- **Decision (maintainer):** the opening highlights must make sense to people who only run analyses or write reports in a repo. Dropped the phrases from software releases ("in flight", "shipped", "status update", "language- and framework-agnostic") for plain wording, and named software, data analysis, research and writing as fits.
+- **The disclosure bullet now points at nothing outside the reader's own project.** The sleep_scoring/JOSS example is gone: the evidence is the reader's own `agent_worklog/`, which their agent can turn into a disclosure statement. Who asks was widened from journals to funders, employers and labs. The wording still says "every *logged* session", the same restraint as on 2026-10-29: the log is not a transcript of every chat.
+- **"How to read this README" removed.** The maintainer's reasoning: a README that needs reading instructions isn't plain enough. The prompt labels ("Prompt — type this into your agent's chat") and the Install line "Nothing needs to be installed on your side first" already carry the same information where it's needed.
+- Verification:
+  - `treaty validate .`; `git diff --check`
+
 ## 2026-10-29
 
 ### Released v0.11.1: fixes the 404 links on the PyPI page and the relocate gap (claude-opus-5-5, high)
