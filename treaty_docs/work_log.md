@@ -41,6 +41,13 @@ Newest entry goes on top. If the session did multiple distinct pieces of work, u
 
 ## 2026-10-29
 
+### v0.11.0 field result: Codex relocated `sleep_scoring` (claude-opus-5-5, high)
+
+- **The first real v0.11.0 run, as the maintainer intended:** Codex on another machine ran update plus `relocate --to agent_worklog` on `sleep_scoring` (ae41dd1, on both `main` and `dev`). Checked here from a `git archive` snapshot: pinned at `v0.11.0`, `docs_dir: agent_worklog`, every doc moved with history (`R` renames), `agent_worklog/README.md` byte-identical to `folder_readme_text('agent_worklog')`, no `treaty_docs` references left outside the logs, no conflict markers, `treaty validate` passes. The paper's disclosure line now reads `agent_worklog/`. The README's three sleep_scoring showcase links return 200, so the 404 window from the v0.11.0 README is closed.
+- **Found, older than the migration:** overlapping archive chunks in `sleep_scoring`, from b554dd5 and 5ba8193; details are in next_steps. This one is the maintainer's to fix, and validate doesn't detect it yet.
+- Verification:
+  - `treaty validate .` on the ae41dd1 snapshot; README byte comparison; `grep` for leftover `treaty_docs` and conflict markers; `curl` status for the three README links
+
 ### README pitch repositioned after v0.11.0 (claude-opus-5-5, high)
 
 - **Decision:** the opening pitch now names three jobs, adding **AI-use disclosure** to handoff and the project record, and answers "doesn't my agent already have memory?". The maintainer raised both. Disclosure is a benefit built-in agent memory can't offer: the log is written during the work, so a maintainer cites it instead of reconstructing it, as sleep_scoring's JOSS manuscript does.
